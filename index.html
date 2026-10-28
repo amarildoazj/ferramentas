@@ -1,0 +1,661 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Formatador JSON e XML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: abas JSON/XML no topo, barra de ações, e duas áreas lado a lado (entrada e saída) que empilham no celular. */
+  :root {
+    --bg: #f5f3ec;
+    --surface: #fbfaf6;
+    --fg: #29261f;
+    --muted: #6f6a5c;
+    --line: #e1ddd0;
+    --accent: #c4623f;
+    --accent-soft: #f0dfd5;
+    --btn-bg: #b0512f;
+    --btn-fg: #ffffff;
+    --danger: #a62b20;
+    --danger-soft: #fbe9e6;
+    --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+    --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1f1d19;
+      --surface: #272520;
+      --fg: #efebe0;
+      --muted: #a39e8f;
+      --line: #3a372f;
+      --accent: #e08863;
+      --accent-soft: #3a2b23;
+      --btn-bg: #e08863;
+      --btn-fg: #1f1d19;
+      --danger: #ff9d90;
+      --danger-soft: #3b2420;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1f1d19;
+    --surface: #272520;
+    --fg: #efebe0;
+    --muted: #a39e8f;
+    --line: #3a372f;
+    --accent: #e08863;
+    --accent-soft: #3a2b23;
+    --btn-bg: #e08863;
+    --btn-fg: #1f1d19;
+    --danger: #ff9d90;
+    --danger-soft: #3b2420;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-inline: 1.25rem;
+    padding-block: 2.5rem 3rem;
+  }
+  .wrap { max-width: 80rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  header { display: flex; flex-direction: column; gap: 0.5rem; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1 {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(2.25rem, 6vw, 3.5rem); line-height: 1.05;
+    margin: 0; text-wrap: balance; letter-spacing: -0.01em;
+  }
+  .lede { margin: 0; color: var(--muted); max-width: 40rem; text-wrap: pretty; }
+
+  .theme-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font: inherit; font-size: 0.8125rem; font-weight: 600;
+    color: var(--fg); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 0.45rem 0.9rem; cursor: pointer;
+  }
+  .theme-btn:hover { border-color: var(--accent); }
+  .ico { display: inline-flex; }
+  .ico svg { width: 1rem; height: 1rem; }
+
+  #tool { width: 100%; max-width: none; margin-inline: 0; }
+
+  /* Abas */
+  .tabs { display: flex; gap: 1.5rem; border-bottom: 1px solid var(--line); }
+  .tab {
+    font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; line-height: 1;
+    color: var(--muted); background: none; border: 0; cursor: pointer;
+    padding: 0.25rem 0 0.75rem; margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+  }
+  .tab:hover { color: var(--fg); }
+  .tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+  /* Barra de ações */
+  .bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .btn {
+    font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.2;
+    color: var(--fg); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 0.625rem;
+    padding: 0.55rem 1rem; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.small { font-size: 0.8125rem; padding: 0.35rem 0.7rem; }
+  .sel { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+  .sel select {
+    font: inherit; font-size: 0.875rem; font-weight: 500; color: var(--fg);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 0.625rem;
+    padding: 0.5rem 0.75rem;
+  }
+  button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Status */
+  .status {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
+    min-height: 2.75rem; padding: 0.55rem 0.9rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 0.75rem;
+    font-size: 0.875rem; color: var(--muted); min-width: 0;
+  }
+  .status .lead { font-weight: 600; color: var(--fg); }
+  .status .msg { min-width: 0; overflow-wrap: anywhere; }
+  .status .stats { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .status.ok .lead { color: var(--accent); }
+  .status.error { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+  .status.error .lead { color: var(--danger); }
+  .status.error .btn { color: var(--danger); border-color: var(--danger); background: transparent; }
+
+  /* Áreas de texto */
+  .panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+  @media (max-width: 36rem) { .panes { grid-template-columns: minmax(0, 1fr); } }
+  .pane {
+    display: flex; flex-direction: column; min-width: 0;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; overflow: hidden;
+  }
+  .pane:focus-within { border-color: var(--accent); }
+  .pane-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.6rem 0.75rem 0.6rem 1.25rem; border-bottom: 1px solid var(--line);
+  }
+  .pane-title { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .pane-actions { display: flex; gap: 0.4rem; }
+  .pane textarea {
+    display: block; flex: 1 1 auto; width: 100%; min-height: 28rem; resize: vertical;
+    border: 0; outline: none; background: transparent; color: var(--fg);
+    font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.6;
+    padding: 1rem 1.25rem; white-space: pre; overflow: auto; tab-size: 2;
+  }
+  .pane textarea::placeholder { color: var(--muted); opacity: 0.7; }
+  @media (max-width: 36rem) { .pane textarea { font-size: 16px; min-height: 20rem; } }
+
+  footer { font-size: 0.8125rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem; }
+  footer p { margin: 0; text-wrap: pretty; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="top">
+      <span class="eyebrow">Ferramentas de desenvolvimento</span>
+      <button type="button" class="theme-btn" id="themeBtn" aria-pressed="false">
+        <span class="ico" id="iconMoon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span>
+        <span class="ico" id="iconSun" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
+        <span id="themeLabel">Modo escuro</span>
+      </button>
+    </div>
+    <h1>Formatador de JSON e XML</h1>
+    <p class="lede">Cole o conteúdo, formate para ler ou minifique para enviar. Formatar também desfaz uma minificação.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Formato">
+    <button type="button" class="tab" role="tab" id="tabJson" data-kind="json" aria-selected="true" aria-controls="tool">JSON</button>
+    <button type="button" class="tab" role="tab" id="tabXml" data-kind="xml" aria-selected="false" aria-controls="tool">XML</button>
+  </div>
+
+  <section id="tool" role="tabpanel" class="wrap" style="gap:1rem" aria-label="Ferramenta">
+    <div class="bar">
+      <button type="button" class="btn primary" id="btnFormat" title="Organiza com quebras de linha e indentação (também desminifica). Atalho: Ctrl+Enter">Formatar</button>
+      <button type="button" class="btn" id="btnMinify" title="Remove espaços e quebras de linha">Minificar</button>
+      <label class="sel" for="indent">Indentação
+        <select id="indent">
+          <option value="2" selected>2 espaços</option>
+          <option value="4">4 espaços</option>
+          <option value="tab">Tab</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="status idle" id="status" role="status" aria-live="polite">
+      <span class="lead" id="statusLead">Pronto</span>
+      <span class="msg" id="statusMsg">Cole ou digite algo na entrada.</span>
+      <button type="button" class="btn small" id="btnGoto" hidden>Ir para o erro</button>
+      <span class="stats" id="statusStats"></span>
+    </div>
+
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head">
+          <span class="pane-title">Entrada</span>
+          <div class="pane-actions">
+            <button type="button" class="btn small" id="btnExample">Exemplo</button>
+            <button type="button" class="btn small" id="btnClear">Limpar</button>
+          </div>
+        </div>
+        <textarea id="inp" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Entrada"></textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-head">
+          <span class="pane-title">Saída</span>
+          <div class="pane-actions">
+            <button type="button" class="btn small" id="btnUse" title="Copia a saída para a entrada, para encadear operações">Usar como entrada</button>
+            <button type="button" class="btn small" id="btnCopy">Copiar</button>
+          </div>
+        </div>
+        <textarea id="out" readonly spellcheck="false" wrap="off" aria-label="Saída"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Tudo acontece no seu navegador. Nada do que você cola é enviado a algum servidor.</p>
+    <p>No XML, textos misturados com tags podem ter os espaços ajustados ao formatar, e os comentários são removidos ao minificar. No JSON, os números e a ordem das chaves ficam exatamente como estavam.</p>
+  </footer>
+</div>
+
+<script>
+/*PURE-START*/
+  function posToLC(s, pos) {
+    var line = 1, col = 1;
+    for (var i = 0; i < pos && i < s.length; i++) {
+      if (s[i] === "\n") { line++; col = 1; } else { col++; }
+    }
+    return { line: line, col: col };
+  }
+  function lcToPos(s, line, col) {
+    var pos = 0, l = 1;
+    while (l < line && pos < s.length) { if (s[pos] === "\n") l++; pos++; }
+    return Math.min(pos + Math.max(col - 1, 0), s.length);
+  }
+
+  /* ---------- JSON ---------- */
+  function jsonCheck(s) {
+    var i = 0, n = s.length, HEX = /^[0-9a-fA-F]{4}$/, NUM = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
+    function fail(msg, pos) { throw { pos: pos == null ? i : pos, msg: msg }; }
+    function ws() {
+      while (i < n) {
+        var c = s.charCodeAt(i);
+        if (c === 32 || c === 9 || c === 10 || c === 13 || c === 0xFEFF) i++; else break;
+      }
+    }
+    function str() {
+      var st = i; i++;
+      while (i < n) {
+        var c = s[i];
+        if (c === '"') { i++; return; }
+        if (c === "\\") {
+          var e = s[i + 1];
+          if (e === "u") {
+            if (!HEX.test(s.substr(i + 2, 4))) fail("Sequência \\u inválida: use 4 dígitos hexadecimais", i);
+            i += 6;
+          } else if (e !== undefined && '"\\/bfnrt'.indexOf(e) >= 0) {
+            i += 2;
+          } else {
+            fail("Escape inválido dentro do texto", i);
+          }
+        } else if (s.charCodeAt(i) < 32) {
+          fail("Quebra de linha ou caractere de controle dentro de um texto. Use \\n.", i);
+        } else {
+          i++;
+        }
+      }
+      fail("Texto sem aspas de fechamento", st);
+    }
+    function val(d) {
+      if (d > 1000) fail("Aninhamento profundo demais");
+      ws();
+      if (i >= n) fail("Fim inesperado: esperava um valor");
+      var c = s[i];
+      if (c === "{") {
+        i++; ws();
+        if (s[i] === "}") { i++; return; }
+        for (;;) {
+          ws();
+          if (i >= n) fail("Fim inesperado: esperava uma chave");
+          if (s[i] === "}") fail("Vírgula sobrando antes de '}'");
+          if (s[i] !== '"') fail(s[i] === "'" ? "Chaves precisam de aspas duplas (\"), não simples (')" : "Esperava uma chave entre aspas duplas");
+          str(); ws();
+          if (s[i] !== ":") fail(i >= n ? "Fim inesperado: esperava ':'" : "Esperava ':' depois da chave");
+          i++; val(d + 1); ws();
+          if (s[i] === ",") { i++; continue; }
+          if (s[i] === "}") { i++; return; }
+          fail(i >= n ? "Fim inesperado: falta '}'" : "Esperava ',' ou '}'");
+        }
+      }
+      if (c === "[") {
+        i++; ws();
+        if (s[i] === "]") { i++; return; }
+        for (;;) {
+          ws();
+          if (s[i] === "]") fail("Vírgula sobrando antes de ']'");
+          val(d + 1); ws();
+          if (s[i] === ",") { i++; continue; }
+          if (s[i] === "]") { i++; return; }
+          fail(i >= n ? "Fim inesperado: falta ']'" : "Esperava ',' ou ']'");
+        }
+      }
+      if (c === '"') { str(); return; }
+      if (c === "-" || (c >= "0" && c <= "9")) {
+        NUM.lastIndex = i;
+        var m = NUM.exec(s);
+        if (!m) fail("Número inválido");
+        i += m[0].length; return;
+      }
+      var lits = ["true", "false", "null"];
+      for (var k = 0; k < 3; k++) {
+        if (s.startsWith(lits[k], i)) { i += lits[k].length; return; }
+      }
+      fail(c === "'" ? "Textos precisam de aspas duplas (\"), não simples (')" : "Caractere inesperado '" + c + "'");
+    }
+    val(0); ws();
+    if (i < n) fail("Conteúdo extra depois do JSON");
+  }
+
+  function isWs(c) { return c === " " || c === "\t" || c === "\n" || c === "\r" || c === "﻿"; }
+
+  function jsonFormat(s, ind) {
+    var out = "", lvl = 0, inStr = false, esc = false, n = s.length;
+    function nl() { return "\n" + ind.repeat(lvl); }
+    for (var i = 0; i < n; i++) {
+      var c = s[i];
+      if (inStr) {
+        out += c;
+        if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false;
+        continue;
+      }
+      if (isWs(c)) continue;
+      if (c === '"') { inStr = true; out += c; }
+      else if (c === "{" || c === "[") {
+        var j = i + 1;
+        while (j < n && isWs(s[j])) j++;
+        var close = c === "{" ? "}" : "]";
+        if (s[j] === close) { out += c + close; i = j; }
+        else { lvl++; out += c + nl(); }
+      }
+      else if (c === "}" || c === "]") { lvl--; out += nl() + c; }
+      else if (c === ",") { out += "," + nl(); }
+      else if (c === ":") { out += ": "; }
+      else out += c;
+    }
+    return out;
+  }
+
+  function jsonMin(s) {
+    var out = "", inStr = false, esc = false;
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i];
+      if (inStr) {
+        out += c;
+        if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false;
+        continue;
+      }
+      if (isWs(c)) continue;
+      if (c === '"') inStr = true;
+      out += c;
+    }
+    return out;
+  }
+
+  /* ---------- XML ---------- */
+  var NAME_RE = /^[A-Za-z_:À-￿][\w:.\-·À-￿]*$/;
+
+  function xmlTokens(s) {
+    var n = s.length, i = 0, toks = [], stack = [], roots = 0;
+    function fail(msg, pos) { throw { pos: pos, msg: msg }; }
+    while (i < n) {
+      if (s[i] !== "<") {
+        var j = s.indexOf("<", i);
+        if (j < 0) j = n;
+        var txt = s.slice(i, j);
+        if (txt.trim()) {
+          if (!stack.length) fail("Texto fora do elemento raiz", i + txt.search(/\S/));
+          toks.push({ t: "text", s: txt.trim() });
+        }
+        i = j; continue;
+      }
+      var pos = i, end;
+      if (s.startsWith("<!--", i)) {
+        end = s.indexOf("-->", i + 4);
+        if (end < 0) fail("Comentário não fechado (falta -->)", pos);
+        toks.push({ t: "comment", s: s.slice(i, end + 3) }); i = end + 3; continue;
+      }
+      if (s.startsWith("<![CDATA[", i)) {
+        end = s.indexOf("]]>", i + 9);
+        if (end < 0) fail("Bloco CDATA não fechado (falta ]]>)", pos);
+        if (!stack.length) fail("CDATA fora do elemento raiz", pos);
+        toks.push({ t: "cdata", s: s.slice(i, end + 3) }); i = end + 3; continue;
+      }
+      if (s.startsWith("<?", i)) {
+        end = s.indexOf("?>", i + 2);
+        if (end < 0) fail("Instrução <?...?> não fechada (falta ?>)", pos);
+        toks.push({ t: "pi", s: s.slice(i, end + 2) }); i = end + 2; continue;
+      }
+      if (s.startsWith("<!", i)) {
+        var q0 = i + 2, d = 0;
+        while (q0 < n) {
+          var ch = s[q0];
+          if (ch === "[") d++; else if (ch === "]") d--; else if (ch === ">" && d <= 0) break;
+          q0++;
+        }
+        if (q0 >= n) fail("Declaração <!...> não fechada (falta >)", pos);
+        toks.push({ t: "doctype", s: s.slice(i, q0 + 1) }); i = q0 + 1; continue;
+      }
+      var k = i + 1, q = null;
+      while (k < n) {
+        var c = s[k];
+        if (q) { if (c === q) q = null; }
+        else if (c === '"' || c === "'") q = c;
+        else if (c === ">") break;
+        k++;
+      }
+      if (k >= n) fail("Tag não fechada: falta '>'", pos);
+      var raw = s.slice(i, k + 1);
+      var m = /^<(\/?)([^\s\/>]*)/.exec(raw);
+      var closing = m[1] === "/", name = m[2];
+      if (!name) fail("Símbolo '<' solto. Dentro de textos, use &lt;", pos);
+      if (!NAME_RE.test(name)) fail('Nome de tag inválido: "' + name + '"', pos + 1 + (closing ? 1 : 0));
+      if (closing) {
+        if (!stack.length) fail("Tag de fechamento </" + name + "> sem abertura", pos);
+        var top = stack[stack.length - 1];
+        if (top.name !== name) fail("Esperava </" + top.name + "> mas encontrou </" + name + "> (a tag <" + top.name + "> abriu na linha " + posToLC(s, top.pos).line + ")", pos);
+        stack.pop(); toks.push({ t: "close", s: raw });
+      } else {
+        if (!stack.length) { roots++; if (roots > 1) fail("Só pode haver um elemento raiz, e este é o segundo", pos); }
+        if (raw.slice(-2) === "/>") toks.push({ t: "self", s: raw });
+        else { stack.push({ name: name, pos: pos }); toks.push({ t: "open", s: raw }); }
+      }
+      i = k + 1;
+    }
+    if (stack.length) { var t = stack[stack.length - 1]; fail("A tag <" + t.name + "> não foi fechada", t.pos); }
+    if (!roots) fail("Nenhum elemento encontrado", 0);
+    return toks;
+  }
+
+  function xmlFormat(toks, ind) {
+    var lines = [], lvl = 0;
+    function pad() { return ind.repeat(lvl); }
+    for (var i = 0; i < toks.length; i++) {
+      var t = toks[i];
+      if (t.t === "open") {
+        var a = toks[i + 1], b = toks[i + 2];
+        if (a && (a.t === "text" || a.t === "cdata") && b && b.t === "close") { lines.push(pad() + t.s + a.s + b.s); i += 2; }
+        else if (a && a.t === "close") { lines.push(pad() + t.s + a.s); i += 1; }
+        else { lines.push(pad() + t.s); lvl++; }
+      } else if (t.t === "close") {
+        lvl--; lines.push(pad() + t.s);
+      } else {
+        lines.push(pad() + t.s);
+      }
+    }
+    return lines.join("\n");
+  }
+
+  function xmlMin(toks) {
+    return toks.filter(function (t) { return t.t !== "comment"; }).map(function (t) { return t.s; }).join("");
+  }
+/*PURE-END*/
+
+  /* ---------- Interface ---------- */
+  var SAMPLES = {
+    json: '{"pedido":{"numero":10482,"cliente":{"nome":"Maria Souza","cpf":"123.456.789-09","ativo":true},"itens":[{"sku":"CAF-250","descricao":"Café torrado 250 g","quantidade":2,"preco":18.9},{"sku":"FIL-103","descricao":"Filtro de papel nº 103","quantidade":1,"preco":7.5}],"frete":null,"total":45.3,"criadoEm":"2026-10-28T19:18:00-03:00"}}',
+    xml: '<?xml version="1.0" encoding="UTF-8"?><catalogo loja="Centro"><produto id="CAF-250"><nome>Café torrado 250 g</nome><preco moeda="BRL">18.90</preco><estoque>34</estoque></produto><produto id="FIL-103"><nome>Filtro de papel nº 103</nome><preco moeda="BRL">7.50</preco><estoque>0</estoque><!-- reposição prevista para a próxima semana --></produto></catalogo>'
+  };
+  var PLACEHOLDERS = { json: '{"chave": "valor"}', xml: "<raiz><item/></raiz>" };
+
+  function $(id) { return document.getElementById(id); }
+  var inp = $("inp"), out = $("out"), statusBox = $("status");
+  var statusLead = $("statusLead"), statusMsg = $("statusMsg"), statusStats = $("statusStats");
+  var btnGoto = $("btnGoto"), indentSel = $("indent");
+  var kind = "json", state = { json: null, xml: null }, curStatus = null;
+
+  function bytes(s) { return new TextEncoder().encode(s).length; }
+  function fmtSize(b) { return b < 1024 ? b + " B" : (b / 1024).toFixed(1).replace(".", ",") + " KB"; }
+
+  function setStatus(o) {
+    curStatus = o;
+    statusBox.className = "status " + o.type;
+    statusLead.textContent = o.type === "error" ? "Erro" : o.type === "ok" ? "Pronto" : "Pronto";
+    statusMsg.textContent = o.msg;
+    statusStats.textContent = o.stats || "";
+    btnGoto.hidden = !(o.type === "error" && o.pos != null);
+  }
+
+  function indentStr() {
+    var v = indentSel.value;
+    return v === "tab" ? "\t" : " ".repeat(+v);
+  }
+
+  function processJSON(text, mode) {
+    try { jsonCheck(text); } catch (e) { if (e && e.msg) return { error: e }; throw e; }
+    return { text: mode === "format" ? jsonFormat(text, indentStr()) : jsonMin(text) };
+  }
+
+  function processXML(text, mode) {
+    var toks;
+    try { toks = xmlTokens(text); } catch (e) { if (e && e.msg) return { error: e }; throw e; }
+    if (typeof DOMParser !== "undefined") {
+      var doc = new DOMParser().parseFromString(text.replace(/^﻿/, ""), "application/xml");
+      var pe = doc.getElementsByTagName("parsererror")[0];
+      if (pe) {
+        var t = (pe.textContent || "").replace(/\s+/g, " ").trim();
+        var m = /error on line (\d+) at column (\d+): (.*?)(?: Below is a rendering.*)?$/i.exec(t);
+        var f = /Line Number (\d+), Column (\d+)/i.exec(t);
+        var pos = null, detail = t;
+        if (m) { pos = lcToPos(text, +m[1], +m[2]); detail = m[3]; }
+        else if (f) { pos = lcToPos(text, +f[1], +f[2]); }
+        return { error: { pos: pos, msg: "Erro de sintaxe. Detalhe do navegador: " + detail } };
+      }
+    }
+    return { text: mode === "format" ? xmlFormat(toks, indentStr()) : xmlMin(toks) };
+  }
+
+  function run(mode) {
+    var text = inp.value;
+    if (!text.trim()) {
+      out.value = "";
+      setStatus({ type: "idle", msg: "Cole ou digite algo na entrada." });
+      return;
+    }
+    var label = kind === "json" ? "JSON" : "XML";
+    var res = kind === "json" ? processJSON(text, mode) : processXML(text, mode);
+    if (res.error) {
+      out.value = "";
+      var msg = res.error.msg;
+      if (res.error.pos != null) {
+        var lc = posToLC(text, res.error.pos);
+        msg += " (linha " + lc.line + ", coluna " + lc.col + ")";
+      }
+      setStatus({ type: "error", msg: label + " inválido. " + msg, pos: res.error.pos });
+      return;
+    }
+    out.value = res.text;
+    var a = bytes(text), b = bytes(res.text), stats = fmtSize(a) + " → " + fmtSize(b);
+    if (a !== b) {
+      var pct = Math.round((b - a) / a * 100);
+      stats += " (" + (pct > 0 ? "+" : "−") + Math.abs(pct) + "%)";
+    }
+    setStatus({ type: "ok", msg: label + (mode === "format" ? " formatado." : " minificado."), stats: stats });
+  }
+
+  function save() { state[kind] = { inp: inp.value, out: out.value, status: curStatus }; }
+
+  function load(k) {
+    kind = k;
+    ["json", "xml"].forEach(function (x) {
+      $("tab" + (x === "json" ? "Json" : "Xml")).setAttribute("aria-selected", x === k ? "true" : "false");
+    });
+    inp.placeholder = PLACEHOLDERS[k];
+    var s = state[k];
+    if (s) { inp.value = s.inp; out.value = s.out; setStatus(s.status); }
+    else { inp.value = SAMPLES[k]; run("format"); }
+    try { localStorage.setItem("formatador-aba", k); } catch (e) {}
+  }
+
+  document.querySelectorAll(".tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var k = b.getAttribute("data-kind");
+      if (k === kind) return;
+      save(); load(k);
+    });
+  });
+
+  $("btnFormat").addEventListener("click", function () { run("format"); });
+  $("btnMinify").addEventListener("click", function () { run("minify"); });
+  indentSel.addEventListener("change", function () { if (out.value) { var m = curStatus && /minificado/.test(curStatus.msg) ? "minify" : "format"; run(m); } });
+  inp.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run("format"); }
+  });
+  $("btnExample").addEventListener("click", function () { inp.value = SAMPLES[kind]; run("format"); });
+  $("btnClear").addEventListener("click", function () {
+    inp.value = ""; out.value = "";
+    setStatus({ type: "idle", msg: "Cole ou digite algo na entrada." });
+    inp.focus();
+  });
+  $("btnUse").addEventListener("click", function () {
+    if (!out.value) return;
+    inp.value = out.value; out.value = "";
+    setStatus({ type: "idle", msg: "Saída movida para a entrada. Escolha Formatar ou Minificar." });
+  });
+
+  btnGoto.addEventListener("click", function () {
+    var pos = curStatus && curStatus.pos;
+    if (pos == null) return;
+    inp.focus();
+    inp.setSelectionRange(pos, Math.min(pos + 1, inp.value.length));
+    var lh = parseFloat(getComputedStyle(inp).lineHeight) || 20;
+    inp.scrollTop = Math.max(0, (posToLC(inp.value, pos).line - 3) * lh);
+  });
+
+  var btnCopy = $("btnCopy");
+  btnCopy.addEventListener("click", function () {
+    var v = out.value;
+    if (!v) return;
+    function done(ok) {
+      btnCopy.textContent = ok ? "Copiado" : "Selecione e copie";
+      setTimeout(function () { btnCopy.textContent = "Copiar"; }, 1600);
+    }
+    function fallback() {
+      out.focus(); out.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      done(ok);
+    }
+    var p = null;
+    try { p = navigator.clipboard.writeText(v); } catch (e) {}
+    if (p && p.then) p.then(function () { done(true); }, fallback); else fallback();
+  });
+
+  /* Modo escuro */
+  var rootEl = document.documentElement;
+  var themeBtn = $("themeBtn"), iconMoon = $("iconMoon"), iconSun = $("iconSun"), themeLabel = $("themeLabel");
+  var darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function isDark() {
+    var t = rootEl.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return !!(darkQuery && darkQuery.matches);
+  }
+  function applyThemeUi() {
+    var dark = isDark();
+    themeBtn.setAttribute("aria-pressed", dark ? "true" : "false");
+    iconMoon.hidden = dark;
+    iconSun.hidden = !dark;
+    themeLabel.textContent = dark ? "Modo claro" : "Modo escuro";
+  }
+  try {
+    var savedTheme = localStorage.getItem("formatador-tema");
+    if (savedTheme === "dark" || savedTheme === "light") rootEl.setAttribute("data-theme", savedTheme);
+  } catch (e) {}
+  themeBtn.addEventListener("click", function () {
+    var next = isDark() ? "light" : "dark";
+    rootEl.setAttribute("data-theme", next);
+    try { localStorage.setItem("formatador-tema", next); } catch (e) {}
+    applyThemeUi();
+  });
+  if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener("change", applyThemeUi);
+  applyThemeUi();
+
+  var startKind = "json";
+  try { var sk = localStorage.getItem("formatador-aba"); if (sk === "xml") startKind = "xml"; } catch (e) {}
+  load(startKind);
+</script>
+
+</body></html>
