@@ -598,6 +598,15 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-in input { border: 0; background: transparent; outline: 0 !important; font-variant-numeric: tabular-nums; }
 #viewSal .sal-aum { margin: 0; align-self: end; padding-bottom: 0.7rem; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
 #viewSal .sal-aum.on { color: var(--fg); font-weight: 600; }
+#viewSal .sal-conta { display: grid; grid-template-columns: minmax(0, 1fr) 8rem 1.75rem; gap: 0.5rem; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.6rem; }
+#viewSal .sal-conta .sal-in { background: var(--surface); }
+#viewSal .sal-conta input.nm { background: var(--surface); padding: 0.45rem 0.6rem; font-size: 0.9375rem; }
+#viewSal .sal-conta .sal-in input { padding: 0.45rem 0.6rem 0.45rem 0.3rem; font-size: 0.9375rem; }
+#viewSal .sal-conta .rm { all: unset; cursor: pointer; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 50%; color: var(--muted); font-size: 1.1rem; }
+#viewSal .sal-conta .rm:hover { background: var(--accent-soft); color: var(--fg); }
+#viewSal .sal-conta .rm:focus-visible { outline: 2px solid var(--accent); }
+@media (min-width: 100rem) { #viewSal ul.sal-clist { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); } }
+@media (max-width: 30rem) { #viewSal .sal-conta { grid-template-columns: minmax(0, 1fr) 1.75rem; } #viewSal .sal-conta .nm { grid-column: 1; } #viewSal .sal-conta .sal-in { grid-column: 1; } #viewSal .sal-conta .rm { grid-column: 2; grid-row: 1; } }
 #viewSal .sal-num { font-variant-numeric: tabular-nums; }
 #viewSal .sal-sec { display: flex; flex-direction: column; gap: 0.6rem; border-top: 1px solid var(--line); padding-top: 1rem; }
 #viewSal .sal-hint { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
@@ -670,7 +679,7 @@ html.tela-cheia #viewSal .sal-form { order: 1; }
 @media (min-width: 64rem) {
   html.tela-cheia #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
   html.tela-cheia #viewSal .sal-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
-  html.tela-cheia #viewSal .sal-form > :last-child { grid-column: auto; }
+  html.tela-cheia #viewSal .sal-contas { grid-column: 1 / -1; }
 }
 #viewSal .sal-form { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
 #viewSal .res-a, #viewSal .res-b, #viewSal .res-c { display: contents; }
@@ -681,7 +690,6 @@ html.tela-cheia #viewSal .sal-form { order: 1; }
   #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
   #viewSal .sal-res { order: -1; }
   #viewSal .sal-form { order: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-  #viewSal .sal-form > :last-child { grid-column: 1 / -1; }
 }
 @media (min-width: 70rem) {
   #viewSal .sal-res { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 2rem; row-gap: 1rem; align-items: start; }
@@ -692,7 +700,7 @@ html.tela-cheia #viewSal .sal-form { order: 1; }
 }
 @media (min-width: 100rem) {
   #viewSal .sal-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  #viewSal .sal-form > :last-child { grid-column: auto; }
+  #viewSal .sal-contas { grid-column: 1 / -1; }
 }
 #viewSal { --pc-liq: #2e9e5b; --pc-inss: var(--accent); --pc-ir: #8a5cc2; --pc-fgts: var(--holiday); --pc-va: #12a39a; --pc-out: #9a8f78; }
 :root[data-theme="dark"] #viewSal { --pc-ir: #b08ae0; --pc-liq: #4fbf7f; --pc-out: #b8ad94; --pc-va: #3cc7bd; }
@@ -1198,6 +1206,22 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
           <button type="button" class="sal-b" id="s-forget" hidden>Apagar dados salvos</button>
         </div>
         <p class="sal-hint" id="s-saveMsg">Os dados ficam salvos somente neste navegador, neste aparelho. Não são enviados para lugar nenhum, e limpar os dados do navegador apaga tudo.</p>
+      </div>
+    </section>
+    <section class="sal-card sal-contas" aria-label="Contas mensais">
+      <div class="sal-sec">
+        <h2>Contas mensais</h2>
+        <p class="sal-hint">Coloque as suas contas fixas do mês. O resumo do ano desconta essas contas do que você recebe e mostra quanto sobra.</p>
+        <ul class="sal-adds sal-clist" id="s-contas"></ul>
+        <div class="sal-btns">
+          <button type="button" class="sal-b" data-conta="Aluguel ou financiamento">+ Aluguel ou financiamento</button>
+          <button type="button" class="sal-b" data-conta="Luz">+ Luz</button>
+          <button type="button" class="sal-b" data-conta="Água">+ Água</button>
+          <button type="button" class="sal-b" data-conta="Internet e celular">+ Internet e celular</button>
+          <button type="button" class="sal-b" data-conta="Mercado">+ Mercado</button>
+          <button type="button" class="sal-b" data-conta="Transporte">+ Transporte</button>
+          <button type="button" class="sal-b" data-conta="">+ Outra conta</button>
+        </div>
       </div>
     </section>
   </div>
@@ -2730,6 +2754,15 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         row("Total de descontos", "− " + R(c2(yInss + yIr + yOut)), "neg tot") +
         row("Parte do bruto para INSS e IRRF", pct.format(Math.round(gov * 10) / 10) + "%", "", "impostos e contribuição sobre o total bruto") +
         row("FGTS depositado no ano", R(yFgts), "", "8% sobre 12 salários, 13º e 1/3 das férias · não sai do seu bolso");
+      var ct = totalContas();
+      if (ct > 0) {
+        var yCt = c2(12 * ct), sobra = c2(yLiq - yCt), pc = yLiq > 0 ? yCt / yLiq * 100 : 0, neg = sobra < 0;
+        $("s-yrA").innerHTML += row("Contas do ano", "− " + R(yCt), "neg", "12 vezes as contas mensais") +
+          row(neg ? "Falta no ano" : "Sobra no ano", (neg ? "− " : "") + R(Math.abs(sobra)), (neg ? "neg" : "ok") + " tot", "total líquido do ano menos as contas") +
+          row(neg ? "Falta por mês" : "Sobra por mês", (neg ? "− " : "") + R(Math.abs(c2(sobra / 12))), neg ? "neg" : "ok", "média, dividindo o ano por 12");
+        $("s-yrB").innerHTML += row("Contas por mês", R(ct), "", "soma das contas mensais") +
+          row("Do líquido vai para as contas", pct.format(Math.round(pc * 10) / 10) + "%", "", "contas do ano sobre o total líquido");
+      }
     })();
     vaVal = c2(vaVal);
     $("s-r-vaBox").hidden = !vaVal;
@@ -2796,6 +2829,30 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   })();
   mes.addEventListener("input", function () { autoDias(); calcula(); });
 
+  /* Contas mensais */
+  var listaContas = $("s-contas");
+  function addConta(nome, valor) {
+    var li = document.createElement("li"); li.className = "sal-conta";
+    li.innerHTML = '<input class="nm" aria-label="Nome da conta" placeholder="Nome da conta">' +
+      '<span class="sal-in"><i>R$</i><input class="vl" aria-label="Valor mensal" inputmode="decimal" autocomplete="off" placeholder="0,00"></span>' +
+      '<button type="button" class="rm" aria-label="Remover conta" title="Remover">×</button>';
+    li.querySelector(".nm").value = nome || ""; li.querySelector(".vl").value = valor || "";
+    listaContas.appendChild(li); return li;
+  }
+  document.querySelectorAll("[data-conta]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var nome = b.getAttribute("data-conta"), li = addConta(nome);
+      li.querySelector(nome ? ".vl" : ".nm").focus(); calcula();
+    });
+  });
+  listaContas.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest(".rm");
+    if (b) { listaContas.removeChild(b.parentNode); calcula(); }
+  });
+  listaContas.addEventListener("input", calcula);
+  listaContas.addEventListener("focusout", function (e) { if (e.target.classList.contains("vl")) fmt(e.target); });
+  function totalContas() { var t = 0; listaContas.querySelectorAll(".vl").forEach(function (i) { t += num(i.value); }); return c2(t); }
+
   /* Opções de férias */
   var PLANOS = { normal: [["30", "30 dias seguidos"], ["14+16", "2 períodos: 14 + 16 dias"], ["15+15", "2 períodos: 15 + 15 dias"], ["14+8+8", "3 períodos: 14 + 8 + 8 dias"], ["14+10+6", "3 períodos: 14 + 10 + 6 dias"], ["14+11+5", "3 períodos: 14 + 11 + 5 dias"]],
     venda: [["20", "20 dias seguidos"], ["14+6", "2 períodos: 14 + 6 dias"], ["15+5", "2 períodos: 15 + 5 dias"]] };
@@ -2815,12 +2872,14 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   function aplica(o) {
     Object.keys(campos).forEach(function (k) { if (o[k] != null) campos[k].value = o[k]; });
     dsr.checked = o.dsr !== false; parc.checked = !!o.parc; cortaInss.checked = !!o.corta; ferVenda.checked = !!o.venda; buildPlanos(false); if (o.plano) ferPlan.value = o.plano;
+    listaContas.textContent = ""; (o.contas || []).forEach(function (c) { addConta(c.nome, c.v); });
     lista.textContent = "";
     (o.adds || []).forEach(function (a) { add(null, a.nome, a.v, a.tp, a.tb, a.va); });
   }
   function dados() {
-    var o = { dsr: dsr.checked, parc: parc.checked, corta: cortaInss.checked, venda: ferVenda.checked, plano: ferPlan.value, adds: [] };
+    var o = { dsr: dsr.checked, parc: parc.checked, corta: cortaInss.checked, venda: ferVenda.checked, plano: ferPlan.value, contas: [], adds: [] };
     Object.keys(campos).forEach(function (k) { o[k] = campos[k].value; });
+    listaContas.querySelectorAll(".sal-conta").forEach(function (li) { o.contas.push({ nome: li.querySelector(".nm").value, v: li.querySelector(".vl").value }); });
     lista.querySelectorAll(".sal-add").forEach(function (li) {
       o.adds.push({ nome: li.querySelector(".nm").value, v: li.querySelector(".vl").value, tp: li.querySelector(".tp").value, tb: li.querySelector(".tb").checked, va: li.hasAttribute("data-va") });
     });
