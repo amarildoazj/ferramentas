@@ -631,7 +631,17 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal #s-det p { margin: 0; display: flex; justify-content: space-between; gap: 1rem; } #viewSal #s-det .h { color: var(--fg); font-weight: 600; margin-top: 0.4rem; }
 #viewSal .sal-foot { font-size: 0.8125rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem; }
 #viewSal .sal-foot p { margin: 0; text-wrap: pretty; }
-@media (max-width: 30rem) { #viewSal .sal-card { padding: 1.1rem; } #viewSal .sal-2 { grid-template-columns: 1fr; } }
+#viewSal .sal-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+#viewSal .sal-2b { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+#viewSal .sal-2b[hidden] { display: none; }
+#viewSal .sal-help { all: unset; box-sizing: border-box; cursor: pointer; display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; margin-left: 0.2rem; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 0.7rem; font-weight: 700; line-height: 1; vertical-align: 1px; }
+#viewSal .sal-help:hover, #viewSal .sal-help[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+#viewSal .sal-help:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewSal .sal-tip { margin: 0; font-size: 0.8125rem; line-height: 1.45; background: var(--accent-soft); border-radius: 0.7rem; padding: 0.65rem 0.8rem; text-wrap: pretty; }
+#viewSal .sal-tip[hidden] { display: none; }
+#viewSal .sal-chk { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; }
+#viewSal .sal-chk input { width: auto; accent-color: var(--accent); }
+@media (max-width: 30rem) { #viewSal .sal-3 { grid-template-columns: 1fr 1fr; } #viewSal .sal-card { padding: 1.1rem; } #viewSal .sal-2 { grid-template-columns: 1fr; } }
 
   /* Horas do Brasil */
 #viewHrs .wrap { max-width: 90rem; margin-inline: auto; display: flex; flex-direction: column; gap: 2rem; }
@@ -1036,6 +1046,24 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       </div>
 
       <div class="sal-sec">
+        <h3>Horas extras</h3>
+        <p class="sal-hint">O valor da hora é o salário mais os adicionais tributáveis, dividido pela jornada mensal.</p>
+        <div class="sal-3">
+          <label class="sal-f"><span>Jornada mensal <small>horas</small></span><input id="s-jor" type="number" min="1" max="300" step="1" value="220" class="sal-num"></label>
+          <label class="sal-f"><span>Horas a 50% <button type="button" class="sal-help" data-tip="s-tip50" aria-label="O que são horas a 50%?" aria-expanded="false" aria-controls="s-tip50">?</button></span><input id="s-he50" type="number" min="0" step="0.5" value="0" class="sal-num"></label>
+          <label class="sal-f"><span>Horas a 100% <button type="button" class="sal-help" data-tip="s-tip100" aria-label="O que são horas a 100%?" aria-expanded="false" aria-controls="s-tip100">?</button></span><input id="s-he100" type="number" min="0" step="0.5" value="0" class="sal-num"></label>
+        </div>
+        <p class="sal-tip" id="s-tip50" hidden><b>Horas a 50%:</b> horas trabalhadas além da jornada em dias normais (segunda a sábado). A lei exige no mínimo 50% a mais sobre o valor da hora normal, ou seja, cada hora vale 1,5 vez a hora normal.</p>
+        <p class="sal-tip" id="s-tip100" hidden><b>Horas a 100%:</b> horas pagas em dobro, ou seja, 2 vezes a hora normal. É o caso de trabalho em domingos e feriados sem folga compensatória, ou o que a sua convenção coletiva ou contrato prever.</p>
+        <p class="sal-tip" id="s-tipdsr" hidden><b>DSR:</b> descanso semanal remunerado, o pagamento dos domingos e feriados. Como as horas extras habituais aumentam a média do mês, a lei manda refletir esse valor no DSR. A conta é: horas extras ÷ dias úteis do mês × domingos e feriados. Desmarque se a sua empresa não paga esse reflexo.</p>
+        <label class="sal-chk"><input type="checkbox" id="s-dsr" checked> Incluir reflexo no descanso semanal (DSR) <button type="button" class="sal-help" data-tip="s-tipdsr" aria-label="O que é DSR?" aria-expanded="false" aria-controls="s-tipdsr">?</button></label>
+        <div class="sal-2b" id="s-dsrBox">
+          <label class="sal-f"><span>Dias úteis do mês</span><input id="s-du" type="number" min="1" max="31" value="25" class="sal-num"></label>
+          <label class="sal-f"><span>Domingos e feriados</span><input id="s-dd" type="number" min="0" max="31" value="5" class="sal-num"></label>
+        </div>
+      </div>
+
+      <div class="sal-sec">
         <h3>Adicionais</h3>
         <p class="sal-hint">Valores que somam ao salário. Em % é sobre o salário bruto. Marque “Tributável” quando entram na base do INSS, IRRF e FGTS (como o quinquênio). A ajuda de custo indenizatória não entra.</p>
         <ul class="sal-adds" id="s-adds"></ul>
@@ -1053,6 +1081,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       <dl class="sal-rows">
         <div><dt>Salário bruto</dt><dd id="s-r-bruto"></dd></div>
         <div id="s-r-addsL"><dt>Adicionais</dt><dd id="s-r-adds"></dd></div>
+        <div id="s-r-heL"><dt>Horas extras <small id="s-r-heN"></small></dt><dd id="s-r-he"></dd></div>
         <div class="tot"><dt>Total de proventos</dt><dd id="s-r-prov"></dd></div>
         <div class="neg"><dt>INSS <small id="s-r-inssN"></small></dt><dd id="s-r-inss"></dd></div>
         <div class="neg"><dt>IRRF <small id="s-r-irN"></small></dt><dd id="s-r-ir"></dd></div>
@@ -1060,7 +1089,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <div class="tot"><dt>Total de descontos</dt><dd id="s-r-tdesc"></dd></div>
       </dl>
       <div class="sal-fgts"><div><span>FGTS (8%)</span><small>Depositado pelo empregador. Não sai do seu salário.</small></div><b id="s-fgts"></b></div>
-      <details class="sal-det">
+      <details class="sal-det" open>
         <summary>Ver como foi calculado</summary>
         <div id="s-det"></div>
       </details>
@@ -1069,7 +1098,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
   <footer class="sal-foot">
     <p>Estimativa para empregado CLT, com a tabela do INSS de 2026 (teto de R$ 8.475,55) e a tabela do IRRF de 2026 com a isenção até R$ 5.000 e o redutor até R$ 7.350 (Lei 15.270/2025). O IRRF usa o desconto simplificado de R$ 607,20 quando ele é maior que o INSS mais os dependentes.</p>
-    <p>Não considera 13º, férias, horas extras, pensão alimentícia nem previdência privada. O valor real pode variar conforme a folha da empresa. Tudo é calculado no seu navegador.</p>
+    <p>Não considera 13º, férias, adicional noturno, pensão alimentícia nem previdência privada. O valor real pode variar conforme a folha da empresa. Tudo é calculado no seu navegador.</p>
   </footer>
 </div>
     </section>
@@ -2356,11 +2385,21 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     var b = e.target.closest && e.target.closest(".rm");
     if (b) { b.parentNode.parentNode.removeChild(b.parentNode); calcula(); }
   });
-  [bruto, dep, desc].forEach(function (x) { x.addEventListener("input", calcula); });
+  var jor = $("s-jor"), he50 = $("s-he50"), he100 = $("s-he100"), dsr = $("s-dsr"), du = $("s-du"), dd = $("s-dd");
+  [bruto, dep, desc, jor, he50, he100, dsr, du, dd].forEach(function (x) { x.addEventListener("input", calcula); });
   function fmt(i) { var n = num(i.value); i.value = n ? brl.format(n).replace(/^R\$\s?/, "") : ""; }
   [bruto, desc].forEach(function (x) { x.addEventListener("blur", function () { fmt(x); }); });
   lista.addEventListener("focusout", function (e) { if (e.target.classList.contains("vl") && e.target.parentNode.querySelector(".tp").value === "r") fmt(e.target); });
   lista.addEventListener("input", calcula); lista.addEventListener("change", calcula);
+
+  document.querySelectorAll(".sal-help").forEach(function (b) {
+    b.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var open = b.getAttribute("aria-expanded") === "true";
+      document.querySelectorAll(".sal-help").forEach(function (x) { x.setAttribute("aria-expanded", "false"); $(x.getAttribute("data-tip")).hidden = true; });
+      if (!open) { b.setAttribute("aria-expanded", "true"); $(b.getAttribute("data-tip")).hidden = false; }
+    });
+  });
 
   function linha(a, b) { return "<p><span>" + a + "</span><span>" + b + "</span></p>"; }
 
@@ -2374,7 +2413,15 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       adicionais.push({ nome: li.querySelector(".nm").value.trim() || "Adicional", val: val, tb: tb, p: p, v: v });
       if (tb) trib += val; else nao += val;
     });
-    trib = c2(trib);
+    var jh = Math.max(1, parseFloat(jor.value) || 220), h50 = Math.max(0, parseFloat(he50.value) || 0), h100 = Math.max(0, parseFloat(he100.value) || 0);
+    var vh = trib / jh, heVal = c2(vh * 1.5 * h50 + vh * 2 * h100), dsrVal = 0;
+    $("s-dsrBox").hidden = !dsr.checked;
+    if (heVal && dsr.checked) {
+      var nu = Math.max(1, parseInt(du.value, 10) || 25), nd2 = Math.max(0, parseInt(dd.value, 10) || 0);
+      dsrVal = c2(heVal / nu * nd2);
+    }
+    var heTot = c2(heVal + dsrVal);
+    trib = c2(trib + heTot);
     var inss = calcInss(trib);
     var dedLegal = inss.valor + nd * DED_DEP, simpl = dedLegal < DED_SIMPL;
     var ded = simpl ? DED_SIMPL : dedLegal;
@@ -2389,7 +2436,9 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
     $("s-liq").textContent = R(liq);
     $("s-r-bruto").textContent = R(sal);
-    var somaAd = c2(prov - sal);
+    var somaAd = c2(prov - sal - heTot);
+    $("s-r-heL").hidden = !heTot; $("s-r-he").textContent = "+ " + R(heTot);
+    $("s-r-heN").textContent = dsrVal ? "(com DSR)" : "";
     $("s-r-addsL").hidden = !adicionais.length; $("s-r-adds").textContent = "+ " + R(somaAd);
     $("s-r-prov").textContent = R(prov);
     $("s-r-inss").textContent = "− " + R(inss.valor);
@@ -2410,6 +2459,13 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     d += linha("Alíquota " + pct.format(f[1] * 100) + "% menos " + R(f[2]), R(irTab));
     d += linha("Redutor (isenção até R$ 5.000)", "− " + R(red));
     d += linha("IRRF a pagar", R(ir));
+    if (heTot) {
+      d += '<p class="h"><span>Horas extras</span><span></span></p>';
+      d += linha("Valor da hora normal (" + pct.format(jh) + " h)", R(c2(vh)));
+      if (h50) d += linha(pct.format(h50) + " h a 50%", "+ " + R(c2(vh * 1.5 * h50)));
+      if (h100) d += linha(pct.format(h100) + " h a 100%", "+ " + R(c2(vh * 2 * h100)));
+      if (dsrVal) d += linha("DSR sobre horas extras", "+ " + R(dsrVal));
+    }
     if (adicionais.length) {
       d += '<p class="h"><span>Adicionais</span><span></span></p>';
       adicionais.forEach(function (a) { d += linha(a.nome + (a.p ? " (" + pct.format(a.v) + "%)" : "") + (a.tb ? "" : " · não tributável"), "+ " + R(a.val)); });
