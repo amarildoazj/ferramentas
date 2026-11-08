@@ -664,6 +664,7 @@ html.tela-cheia #viewSal > .wrap { max-width: none; margin: 0; width: 100%; over
 html.tela-cheia #viewSal header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
 html.tela-cheia #viewSal .hrs-bar .theme-btn { margin-left: 0; }
 html.tela-cheia #viewSal .sal-res { order: -1; }
+html.tela-cheia #viewSal .sal-form { order: 1; }
 @media (min-width: 64rem) {
   html.tela-cheia #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
   html.tela-cheia #viewSal .sal-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
@@ -677,7 +678,7 @@ html.tela-cheia #viewSal .sal-res { order: -1; }
   #viewSal .wrap { max-width: 90rem; }
   #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
   #viewSal .sal-res { order: -1; }
-  #viewSal .sal-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  #viewSal .sal-form { order: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   #viewSal .sal-form > :last-child { grid-column: 1 / -1; }
 }
 @media (min-width: 70rem) {
@@ -706,6 +707,22 @@ html.tela-cheia #viewSal .sal-res { order: -1; }
 #viewSal .pie-leg i { width: 0.75rem; height: 0.75rem; border-radius: 3px; align-self: center; }
 #viewSal .pie-leg b { font-weight: 600; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
 #viewSal .pie-leg small { grid-column: 2 / -1; color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+#viewSal .ex-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+@media (min-width: 52rem) { #viewSal .ex-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; } #viewSal .ex-col + .ex-col { border-left: 1px solid var(--line); padding-left: 2rem; } }
+#viewSal .ex-col { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+#viewSal .ex-col h3 { color: var(--fg); font-weight: 700; margin-bottom: 0.25rem; }
+#viewSal .ex-col h4 { margin: 0.9rem 0 0.1rem; font-size: 0.875rem; font-weight: 700; color: var(--fg); }
+#viewSal .ex-col h4:first-of-type { margin-top: 0; }
+#viewSal .fer-ctl { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.5rem; }
+#viewSal .ex-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.4rem 0; border-bottom: 1px solid var(--line); font-size: 0.9375rem; }
+#viewSal .ex-row span:first-child small { display: block; color: var(--muted); font-size: 0.75rem; }
+#viewSal .ex-row b { font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; font-weight: 600; }
+#viewSal .ex-row.neg b { color: var(--accent); }
+#viewSal .ex-row.tot { font-weight: 700; }
+#viewSal .ex-row.tot b { font-weight: 700; }
+#viewSal .ex-row.ok b { color: #1f7a45; }
+:root[data-theme="dark"] #viewSal .ex-row.ok b { color: #6fd39a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #viewSal .ex-row.ok b { color: #6fd39a; } }
 #viewSal .sal-parc { display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg); border: 1px solid var(--line); border-radius: 0.8rem; padding: 0.8rem 1rem; }
 #viewSal .sal-parc div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 #viewSal .sal-parc small { color: var(--muted); font-size: 0.8125rem; }
@@ -1231,11 +1248,28 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       </div>
       </div>
     </section>
+    <section class="sal-card sal-extra" aria-label="13º salário e férias">
+      <h2>13º salário e férias</h2>
+      <p class="sal-hint">Estimativa com o mesmo salário e adicionais acima. Horas extras e adicionais tributáveis entram como se fossem a média do ano.</p>
+      <div class="ex-cols">
+        <div class="ex-col" id="s-x13"></div>
+        <div class="ex-col" id="s-xfer">
+          <h3>Férias</h3>
+          <div class="fer-ctl">
+            <label class="sal-f"><span>Como vai tirar <button type="button" class="sal-help" data-tip="s-tipfer" aria-label="Regras para tirar férias" aria-expanded="false" aria-controls="s-tipfer">?</button></span><select id="s-ferPlan"></select></label>
+            <label class="sal-chk"><input type="checkbox" id="s-ferVenda"> Vender 10 dias (abono pecuniário)</label>
+          </div>
+          <p class="sal-tip" id="s-tipfer" hidden><b>Regras das férias (CLT):</b> são 30 dias por ano. Dá para tirar tudo de uma vez ou dividir em até 3 períodos, sendo um com pelo menos 14 dias e os outros com pelo menos 5 dias cada. Também dá para vender até 10 dias (abono pecuniário), e aí você descansa 20. Em todos os casos você recebe o salário dos dias mais 1/3. O pagamento sai até 2 dias antes de cada período. O abono não tem INSS nem imposto de renda.</p>
+          <div id="s-ferout"></div>
+        </div>
+      </div>
+      <p class="sal-hint">O INSS e o IRRF do 13º e das férias são calculados à parte do salário do mês, sem o desconto simplificado e sem o redutor. O valor real pode mudar conforme a folha da empresa.</p>
+    </section>
   </div>
 
   <footer class="sal-foot">
     <p>Estimativa para empregado CLT, com a tabela do INSS de 2026 (teto de R$ 8.475,55) e a tabela do IRRF de 2026 com a isenção até R$ 5.000 e o redutor até R$ 7.350 (Lei 15.270/2025). O IRRF usa o desconto simplificado de R$ 607,20 quando ele é maior que o INSS mais os dependentes.</p>
-    <p>Não considera 13º, férias, adicional noturno, pensão alimentícia nem previdência privada. O valor real pode variar conforme a folha da empresa. Tudo é calculado no seu navegador.</p>
+    <p>Não considera adicional noturno, pensão alimentícia nem previdência privada. O valor real pode variar conforme a folha da empresa. Tudo é calculado no seu navegador.</p>
   </footer>
 </div>
     </section>
@@ -2523,7 +2557,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (b) { b.parentNode.parentNode.removeChild(b.parentNode); calcula(); }
   });
   var jor = $("s-jor"), he50 = $("s-he50"), he100 = $("s-he100"), dsr = $("s-dsr"), du = $("s-du"), dd = $("s-dd");
-  var mes = $("s-mes"), cortaInss = $("s-corta");
+  var mes = $("s-mes"), cortaInss = $("s-corta"), ferPlan = $("s-ferPlan"), ferVenda = $("s-ferVenda");
   var parc = $("s-parc"), parcPct = $("s-parcPct"), parcBase = $("s-parcBase");
   [bruto, dep, desc, jor, he50, he100, dsr, du, dd, parc, parcPct, parcBase, cortaInss].forEach(function (x) { x.addEventListener("input", calcula); });
   function fmt(i) { var n = num(i.value); i.value = n ? brl.format(n).replace(/^R\$\s?/, "") : ""; }
@@ -2612,6 +2646,51 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       var fi = Math.round((Math.max(0, liq) + c2(vaVal)) / tot * 1000) / 10;
       $("s-pieResto").textContent = "(−" + pct.format(Math.round((100 - fi) * 10) / 10) + "%)";
     }
+
+    /* 13º e férias */
+    (function () {
+      function tx(v) {
+        var iv = calcInss(v, cortaInss.checked).valor, b = Math.max(0, c2(v - iv - nd * DED_DEP)), f2 = IRRF[IRRF.length - 1];
+        for (var k = 0; k < IRRF.length; k++) if (b <= IRRF[k][0]) { f2 = IRRF[k]; break; }
+        return { inss: iv, ir: Math.max(0, c2(b * f2[1] - f2[2])) };
+      }
+      function row(l, v, cls, sub) { return '<div class="ex-row ' + (cls || "") + '"><span>' + l + (sub ? "<small>" + sub + "</small>" : "") + "</span><b>" + v + "</b></div>"; }
+      var base = trib;
+      var d13 = tx(base), liq13 = c2(base - d13.inss - d13.ir), p1 = c2(base / 2), p2 = c2(liq13 - p1);
+      $("s-x13").innerHTML = "<h3>13º salário</h3>" +
+        row("13º bruto", R(base), "", "um salário inteiro, com a média dos adicionais") +
+        row("1ª parcela", R(p1), "ok", "até 30 de novembro · 50% do 13º, sem descontos") +
+        row("INSS", "− " + R(d13.inss), "neg", "descontado na 2ª parcela") +
+        row("IRRF", "− " + R(d13.ir), "neg", "descontado na 2ª parcela") +
+        row("2ª parcela", R(p2), "ok tot", "até 20 de dezembro · restante, com os descontos") +
+        row("Total líquido do 13º", R(liq13), "tot");
+      var plano = ferPlan.value.split("+").map(Number).filter(Boolean), venda = ferVenda.checked;
+      var out = "", totBruto = 0, totLiq = 0, totLiqSem = 0, totAbono = 0, abTer = 0;
+      plano.forEach(function (d, n) {
+        var princ = c2(base * d / 30), um = c2(princ / 3), br = c2(princ + um), t = tx(br), ts = tx(princ);
+        var lq = c2(br - t.inss - t.ir), lqSem = c2(princ - ts.inss - ts.ir);
+        totBruto += br; totLiq += lq; totLiqSem += lqSem;
+        out += row("Período " + (n + 1) + " · " + d + " dias", R(lq), "ok",
+          "salário " + R(princ) + " + 1/3 " + R(um) + " = " + R(br) + " · INSS − " + R(t.inss) + " · IRRF − " + R(t.ir));
+      });
+      if (venda) {
+        var ab = c2(base * 10 / 30), abT = c2(ab / 3);
+        totAbono = c2(ab + abT); abTer = abT;
+        out += row("Abono de 10 dias + 1/3", "+ " + R(totAbono), "ok", "sem INSS e sem imposto de renda · " + R(ab) + " + " + R(abT));
+      }
+      var totalLiq = c2(totLiq + totAbono), um3Liq = c2(totLiq - totLiqSem + abTer);
+      out += row("Total líquido das férias", R(totalLiq), "ok tot", plano.length > 1 ? "soma dos " + plano.length + " pagamentos, cada um até 2 dias antes do período" : "pago até 2 dias antes de sair");
+      out += row("Só o acréscimo de 1/3, líquido", R(um3Liq), "ok", "o que o 1/3 rende depois do imposto de renda");
+      var descanso = plano.reduce(function (a, b) { return a + b; }, 0);
+      out += row("Dias de descanso", descanso + " dias", "", venda ? "mais 10 dias vendidos" : "");
+      if (plano.length === 1 && plano[0] === 30 && !venda) {
+        out += "<h4>Comparando com um mês normal</h4>" +
+          row("Mês normal", R(liq), "", "salário líquido do resultado acima") +
+          row("Mês de férias (30 dias)", R(totalLiq)) +
+          row("Diferença", (totalLiq - liq >= 0 ? "+ " : "− ") + R(Math.abs(c2(totalLiq - liq))), "ok tot", "nas férias você recebe isso no lugar do salário do mês");
+      }
+      $("s-ferout").innerHTML = out;
+    })();
     vaVal = c2(vaVal);
     $("s-r-vaBox").hidden = !vaVal;
     $("s-vaTot").textContent = R(c2(liq + vaVal)); $("s-vaVal").textContent = R(vaVal);
@@ -2677,18 +2756,30 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   })();
   mes.addEventListener("input", function () { autoDias(); calcula(); });
 
+  /* Opções de férias */
+  var PLANOS = { normal: [["30", "30 dias seguidos"], ["14+16", "2 períodos: 14 + 16 dias"], ["15+15", "2 períodos: 15 + 15 dias"], ["14+8+8", "3 períodos: 14 + 8 + 8 dias"], ["14+10+6", "3 períodos: 14 + 10 + 6 dias"], ["14+11+5", "3 períodos: 14 + 11 + 5 dias"]],
+    venda: [["20", "20 dias seguidos"], ["14+6", "2 períodos: 14 + 6 dias"], ["15+5", "2 períodos: 15 + 5 dias"]] };
+  function buildPlanos(manter) {
+    var lista = PLANOS[ferVenda.checked ? "venda" : "normal"], atual = manter ? ferPlan.value : "";
+    ferPlan.innerHTML = lista.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("");
+    if (atual && lista.some(function (o) { return o[0] === atual; })) ferPlan.value = atual;
+  }
+  ferVenda.addEventListener("change", function () { buildPlanos(false); calcula(); });
+  ferPlan.addEventListener("change", calcula);
+  buildPlanos(false);
+
   /* Salvar no navegador */
   var KEY = "ferramentas-salario", msg = $("s-saveMsg"), msgPadrao = msg.textContent, btnForget = $("s-forget");
   var campos = { mes: mes, bruto: bruto, dep: dep, desc: desc, jor: jor, he50: he50, he100: he100, du: du, dd: dd, parcPct: parcPct, parcBase: parcBase };
   function lerSalvo() { try { var t = localStorage.getItem(KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
   function aplica(o) {
     Object.keys(campos).forEach(function (k) { if (o[k] != null) campos[k].value = o[k]; });
-    dsr.checked = o.dsr !== false; parc.checked = !!o.parc; cortaInss.checked = !!o.corta;
+    dsr.checked = o.dsr !== false; parc.checked = !!o.parc; cortaInss.checked = !!o.corta; ferVenda.checked = !!o.venda; buildPlanos(false); if (o.plano) ferPlan.value = o.plano;
     lista.textContent = "";
     (o.adds || []).forEach(function (a) { add(null, a.nome, a.v, a.tp, a.tb, a.va); });
   }
   function dados() {
-    var o = { dsr: dsr.checked, parc: parc.checked, corta: cortaInss.checked, adds: [] };
+    var o = { dsr: dsr.checked, parc: parc.checked, corta: cortaInss.checked, venda: ferVenda.checked, plano: ferPlan.value, adds: [] };
     Object.keys(campos).forEach(function (k) { o[k] = campos[k].value; });
     lista.querySelectorAll(".sal-add").forEach(function (li) {
       o.adds.push({ nome: li.querySelector(".nm").value, v: li.querySelector(".vl").value, tp: li.querySelector(".tp").value, tb: li.querySelector(".tb").checked, va: li.hasAttribute("data-va") });
