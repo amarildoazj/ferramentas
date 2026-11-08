@@ -131,8 +131,8 @@
       padding: 0 0 1rem; border-right: 0; border-bottom: 1px solid var(--line); min-height: 0;
     }
     .brand { flex: 1 1 100%; }
-    .menu { flex-direction: row; flex-wrap: wrap; }
-    .theme-btn { margin-left: auto; align-self: center; order: 3; }
+    .menu { flex-direction: row; flex-wrap: wrap; flex: 1 1 100%; order: 2; }
+    .theme-btn { margin-left: 0; align-self: flex-start; order: 1; }
   }
 
   /* Formatador */
@@ -651,6 +651,21 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-save { display: flex; flex-direction: column; gap: 0.6rem; border-top: 1px solid var(--line); padding-top: 1rem; }
 #viewSal .sal-b-main { background: var(--accent); border-color: var(--accent); color: #fff; }
 #viewSal .sal-b-main:hover { color: #fff; filter: brightness(1.08); }
+#viewSal .sal-form { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+#viewSal .res-a, #viewSal .res-b, #viewSal .res-c { display: contents; }
+#viewSal .sal-form .sal-sec:not(:first-child) { border-top: 0; padding-top: 0; }
+#viewSal .sal-card > .sal-sec:first-child { border-top: 0; padding-top: 0; }
+@media (min-width: 100rem) {
+  #viewSal .wrap { max-width: 90rem; }
+  #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
+  #viewSal .sal-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  #viewSal .sal-res { position: static; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 2rem; row-gap: 1rem; align-items: start; }
+  #viewSal .res-a, #viewSal .res-b, #viewSal .res-c { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+  #viewSal .res-b, #viewSal .res-c { border-left: 1px solid var(--line); padding-left: 2rem; }
+  #viewSal .res-b { padding-top: 0.2rem; }
+  #viewSal .sal-det { border-top: 0; padding-top: 0; }
+  #viewSal .res-b .sal-fgts:first-child { margin-top: 0; }
+}
 #viewSal .sal-parc { display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg); border: 1px solid var(--line); border-radius: 0.8rem; padding: 0.8rem 1rem; }
 #viewSal .sal-parc div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 #viewSal .sal-parc small { color: var(--muted); font-size: 0.8125rem; }
@@ -1049,6 +1064,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   </header>
 
   <div class="sal-grid">
+    <div class="sal-form">
     <section class="sal-card" aria-label="Dados do salário">
       <h2>Seus dados</h2>
       <label class="sal-f"><span>Salário bruto</span>
@@ -1072,8 +1088,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         </div>
       </div>
 
+    </section>
+    <section class="sal-card" aria-label="Horas extras">
       <div class="sal-sec">
-        <h3>Horas extras</h3>
+        <h2>Horas extras</h2>
         <p class="sal-hint">O valor da hora é o salário mais os adicionais tributáveis, dividido pela jornada mensal.</p>
         <div class="sal-3">
           <label class="sal-f"><span>Jornada mensal <small>horas</small></span><input id="s-jor" type="number" min="1" max="300" step="1" value="220" class="sal-num"></label>
@@ -1091,8 +1109,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         </div>
       </div>
 
+    </section>
+    <section class="sal-card" aria-label="Adicionais e salvar">
       <div class="sal-sec">
-        <h3>Adicionais</h3>
+        <h2>Adicionais</h2>
         <p class="sal-hint">Valores que somam ao salário. Em % é sobre o salário bruto. Marque “Tributável” quando entram na base do INSS, IRRF e FGTS (como o quinquênio). Ajuda de custo indenizatória e vale alimentação não entram.</p>
         <ul class="sal-adds" id="s-adds"></ul>
         <div class="sal-btns">
@@ -1110,8 +1130,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <p class="sal-hint" id="s-saveMsg">Os dados ficam salvos somente neste navegador, neste aparelho. Não são enviados para lugar nenhum, e limpar os dados do navegador apaga tudo.</p>
       </div>
     </section>
+  </div>
 
     <section class="sal-card sal-res" aria-label="Resultado" aria-live="polite">
+      <div class="res-a">
       <h2>Resultado</h2>
       <div class="sal-liq"><span>Salário líquido</span><b id="s-liq">R$ 0,00</b></div>
       <div class="sal-va" id="s-r-vaBox" hidden>
@@ -1128,14 +1150,19 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <div class="neg" id="s-r-descL"><dt>Outros descontos</dt><dd id="s-r-desc"></dd></div>
         <div class="tot"><dt>Total de descontos</dt><dd id="s-r-tdesc"></dd></div>
       </dl>
+      </div>
+      <div class="res-b">
       <div class="sal-parc" id="s-r-parc" hidden>
         <div><span>1ª parcela · adiantamento <small id="s-p1n"></small></span><b id="s-p1"></b></div>
         <div><span>2ª parcela · restante, com os descontos</span><b id="s-p2"></b></div>
       </div>
       <div class="sal-fgts"><div><span>FGTS (8%)</span><small>Depositado pelo empregador. Não sai do seu salário.</small></div><b id="s-fgts"></b></div>
+      </div>
+      <div class="res-c">
       <div class="sal-det">
         <h3>Como foi calculado</h3>
         <div id="s-det"></div>
+      </div>
       </div>
     </section>
   </div>
