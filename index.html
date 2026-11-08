@@ -639,6 +639,16 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-help:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #viewSal .sal-tip { margin: 0; font-size: 0.8125rem; line-height: 1.45; background: var(--accent-soft); border-radius: 0.7rem; padding: 0.65rem 0.8rem; text-wrap: pretty; }
 #viewSal .sal-tip[hidden] { display: none; }
+#viewSal .sal-va { display: flex; flex-direction: column; gap: 0.15rem; margin-top: -0.6rem; background: color-mix(in srgb, #2e9e5b 14%, var(--surface)); border: 1px solid color-mix(in srgb, #2e9e5b 35%, var(--line)); border-radius: 0.7rem; padding: 0.5rem 1rem; }
+#viewSal .sal-va[hidden] { display: none; }
+#viewSal .sal-va div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 0.875rem; font-weight: 600; color: #1f7a45; }
+#viewSal .sal-va b { font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+#viewSal .sal-va small { font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+:root[data-theme="dark"] #viewSal .sal-va div { color: #6fd39a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #viewSal .sal-va div { color: #6fd39a; } }
+#viewSal .sal-save { display: flex; flex-direction: column; gap: 0.6rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+#viewSal .sal-b-main { background: var(--accent); border-color: var(--accent); color: #fff; }
+#viewSal .sal-b-main:hover { color: #fff; filter: brightness(1.08); }
 #viewSal .sal-parc { display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg); border: 1px solid var(--line); border-radius: 0.8rem; padding: 0.8rem 1rem; }
 #viewSal .sal-parc div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 #viewSal .sal-parc small { color: var(--muted); font-size: 0.8125rem; }
@@ -1089,11 +1099,22 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
           <button type="button" class="sal-b" data-add="outro">+ Outro adicional</button>
         </div>
       </div>
+      <div class="sal-save">
+        <div class="sal-btns">
+          <button type="button" class="sal-b sal-b-main" id="s-save">Salvar meus dados</button>
+          <button type="button" class="sal-b" id="s-forget" hidden>Apagar dados salvos</button>
+        </div>
+        <p class="sal-hint" id="s-saveMsg">Os dados ficam salvos somente neste navegador, neste aparelho. Não são enviados para lugar nenhum, e limpar os dados do navegador apaga tudo.</p>
+      </div>
     </section>
 
     <section class="sal-card sal-res" aria-label="Resultado" aria-live="polite">
       <h2>Resultado</h2>
       <div class="sal-liq"><span>Salário líquido</span><b id="s-liq">R$ 0,00</b></div>
+      <div class="sal-va" id="s-r-vaBox" hidden>
+        <div><span>Salário líquido com vale alimentação</span><b id="s-vaTot"></b></div>
+        <small>Inclui <span id="s-vaVal"></span> de vale alimentação, que não entra no líquido acima.</small>
+      </div>
       <dl class="sal-rows">
         <div><dt>Salário bruto</dt><dd id="s-r-bruto"></dd></div>
         <div id="s-r-addsL"><dt>Adicionais</dt><dd id="s-r-adds"></dd></div>
@@ -2380,8 +2401,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     return { valor: c2(tot), det: det };
   }
 
-  function add(tipo, nome, valor, t, trib) {
-    var li = document.createElement("li"); li.className = "sal-add";
+  function add(tipo, nome, valor, t, trib, isVa) {
+    var li = document.createElement("li"); li.className = "sal-add"; if (isVa) li.setAttribute("data-va", "1");
     li.innerHTML = '<input class="nm" aria-label="Nome do adicional" placeholder="Nome (ex.: Gratificação)">' +
       '<input class="vl" aria-label="Valor" inputmode="decimal" autocomplete="off" placeholder="0,00">' +
       '<select class="tp" aria-label="Tipo"><option value="r">R$</option><option value="p">%</option></select>' +
@@ -2394,10 +2415,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     lista.appendChild(li);
     return li;
   }
-  var PRE = { quin: ["Quinquênio", "", "p", true], ajuda: ["Ajuda de custo", "", "r", false], va: ["Vale alimentação", "", "r", false], outro: ["", "", "r", true] };
+  var PRE = { quin: ["Quinquênio", "", "p", true], ajuda: ["Ajuda de custo", "", "r", false], va: ["Vale alimentação", "", "r", false, true], outro: ["", "", "r", true] };
   document.querySelectorAll("[data-add]").forEach(function (b) {
     b.addEventListener("click", function () {
-      var p = PRE[b.getAttribute("data-add")], li = add(null, p[0], p[1], p[2], p[3]);
+      var p = PRE[b.getAttribute("data-add")], li = add(null, p[0], p[1], p[2], p[3], p[4]);
       li.querySelector(p[0] ? ".vl" : ".nm").focus(); calcula();
     });
   });
@@ -2426,13 +2447,14 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
   function calcula() {
     var sal = num(bruto.value), nd = Math.max(0, Math.min(20, parseInt(dep.value, 10) || 0)), outros = num(desc.value);
-    var trib = sal, nao = 0, adicionais = [];
+    var trib = sal, nao = 0, adicionais = [], vaVal = 0;
     lista.querySelectorAll(".sal-add").forEach(function (li) {
       var v = num(li.querySelector(".vl").value), p = li.querySelector(".tp").value === "p";
       var val = c2(p ? sal * v / 100 : v), tb = li.querySelector(".tb").checked;
       if (!val) return;
-      adicionais.push({ nome: li.querySelector(".nm").value.trim() || "Adicional", val: val, tb: tb, p: p, v: v });
-      if (tb) trib += val; else nao += val;
+      var isVa = li.hasAttribute("data-va");
+      adicionais.push({ nome: li.querySelector(".nm").value.trim() || "Adicional", val: val, tb: tb, p: p, v: v, va: isVa });
+      if (isVa && !tb) vaVal += val; else if (tb) trib += val; else nao += val;
     });
     var jh = Math.max(1, parseFloat(jor.value) || 220), h50 = Math.max(0, parseFloat(he50.value) || 0), h100 = Math.max(0, parseFloat(he100.value) || 0);
     var vh = trib / jh, heVal = c2(vh * 1.5 * h50 + vh * 2 * h100), dsrVal = 0;
@@ -2457,10 +2479,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
     $("s-liq").textContent = R(liq);
     $("s-r-bruto").textContent = R(sal);
-    var somaAd = c2(prov - sal - heTot);
+    var somaAd = c2(prov - sal - heTot), temAd = adicionais.some(function (a) { return !(a.va && !a.tb); });
     $("s-r-heL").hidden = !heTot; $("s-r-he").textContent = "+ " + R(heTot);
     $("s-r-heN").textContent = dsrVal ? "(com DSR)" : "";
-    $("s-r-addsL").hidden = !adicionais.length; $("s-r-adds").textContent = "+ " + R(somaAd);
+    $("s-r-addsL").hidden = !temAd; $("s-r-adds").textContent = "+ " + R(somaAd);
     $("s-r-prov").textContent = R(prov);
     $("s-r-inss").textContent = "− " + R(inss.valor);
     $("s-r-inssN").textContent = trib ? "(" + pct.format(inss.valor / trib * 100) + "% do bruto)" : "";
@@ -2469,6 +2491,9 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     $("s-r-descL").hidden = !outros; $("s-r-desc").textContent = "− " + R(outros);
     $("s-r-tdesc").textContent = "− " + R(tdesc);
     $("s-fgts").textContent = R(fgts);
+    vaVal = c2(vaVal);
+    $("s-r-vaBox").hidden = !vaVal;
+    $("s-vaTot").textContent = R(c2(liq + vaVal)); $("s-vaVal").textContent = R(vaVal);
     $("s-parcBox").hidden = !parc.checked; $("s-r-parc").hidden = !parc.checked;
     var p1 = 0;
     if (parc.checked) {
@@ -2498,11 +2523,40 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     }
     if (adicionais.length) {
       d += '<p class="h"><span>Adicionais</span><span></span></p>';
-      adicionais.forEach(function (a) { d += linha(a.nome + (a.p ? " (" + pct.format(a.v) + "%)" : "") + (a.tb ? "" : " · não tributável"), "+ " + R(a.val)); });
+      adicionais.forEach(function (a) { d += linha(a.nome + (a.p ? " (" + pct.format(a.v) + "%)" : "") + (a.va && !a.tb ? " · fora do líquido" : a.tb ? "" : " · não tributável"), "+ " + R(a.val)); });
     }
     $("s-det").innerHTML = d;
   }
 
+  /* Salvar no navegador */
+  var KEY = "ferramentas-salario", msg = $("s-saveMsg"), msgPadrao = msg.textContent, btnForget = $("s-forget");
+  var campos = { bruto: bruto, dep: dep, desc: desc, jor: jor, he50: he50, he100: he100, du: du, dd: dd, parcPct: parcPct, parcBase: parcBase };
+  function lerSalvo() { try { var t = localStorage.getItem(KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+  function aplica(o) {
+    Object.keys(campos).forEach(function (k) { if (o[k] != null) campos[k].value = o[k]; });
+    dsr.checked = o.dsr !== false; parc.checked = !!o.parc;
+    lista.textContent = "";
+    (o.adds || []).forEach(function (a) { add(null, a.nome, a.v, a.tp, a.tb, a.va); });
+  }
+  function dados() {
+    var o = { dsr: dsr.checked, parc: parc.checked, adds: [] };
+    Object.keys(campos).forEach(function (k) { o[k] = campos[k].value; });
+    lista.querySelectorAll(".sal-add").forEach(function (li) {
+      o.adds.push({ nome: li.querySelector(".nm").value, v: li.querySelector(".vl").value, tp: li.querySelector(".tp").value, tb: li.querySelector(".tb").checked, va: li.hasAttribute("data-va") });
+    });
+    return o;
+  }
+  function aviso(t, ok) { msg.textContent = t; msg.style.color = ok === false ? "var(--accent)" : ""; }
+  $("s-save").addEventListener("click", function () {
+    try { localStorage.setItem(KEY, JSON.stringify(dados())); btnForget.hidden = false; aviso("Salvo neste navegador. Quando você voltar aqui, os dados estarão preenchidos. Só você, neste aparelho, tem acesso.", true); }
+    catch (e) { aviso("Não foi possível salvar: o navegador bloqueou o armazenamento (modo privado ou dados do site desativados).", false); }
+  });
+  btnForget.addEventListener("click", function () {
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    btnForget.hidden = true; aviso("Dados apagados deste navegador. " + msgPadrao, true);
+  });
+  var salvo = lerSalvo();
+  if (salvo) { try { aplica(salvo); btnForget.hidden = false; aviso("Dados salvos carregados deste navegador. Altere e clique em Salvar para atualizar.", true); } catch (e) {} }
   calcula();
 })();
 
