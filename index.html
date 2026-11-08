@@ -577,6 +577,62 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewCmp footer { font-size: 0.8125rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem; }
 #viewCmp footer p { margin: 0; text-wrap: pretty; }
 
+
+  /* Calculadora de salário */
+#viewSal .wrap { max-width: 64rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+#viewSal header { display: flex; flex-direction: column; gap: 0.5rem; }
+#viewSal h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2.25rem, 6vw, 3.5rem); line-height: 1.05; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+#viewSal .lede { margin: 0; color: var(--muted); max-width: 40rem; text-wrap: pretty; }
+#viewSal .sal-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
+@media (min-width: 52rem) { #viewSal .sal-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } #viewSal .sal-res { position: sticky; top: 1rem; } }
+#viewSal .sal-card { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+#viewSal h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.6rem; margin: 0; line-height: 1.1; }
+#viewSal h3 { font-size: 0.8125rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+#viewSal .sal-f { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.8125rem; font-weight: 600; color: var(--muted); min-width: 0; }
+#viewSal .sal-f small { font-weight: 400; }
+#viewSal .sal-2 { display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr); gap: 0.75rem; }
+#viewSal input, #viewSal select { font: inherit; font-size: 1rem; font-weight: 400; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.55rem 0.7rem; min-width: 0; width: 100%; box-sizing: border-box; }
+#viewSal input:focus-visible, #viewSal select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#viewSal .sal-in { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 0.6rem; padding-left: 0.7rem; }
+#viewSal .sal-in:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+#viewSal .sal-in i { font-style: normal; color: var(--muted); font-weight: 600; font-size: 0.875rem; }
+#viewSal .sal-in input { border: 0; background: transparent; outline: 0 !important; font-variant-numeric: tabular-nums; }
+#viewSal .sal-num { font-variant-numeric: tabular-nums; }
+#viewSal .sal-sec { display: flex; flex-direction: column; gap: 0.6rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+#viewSal .sal-hint { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+#viewSal .sal-adds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+#viewSal .sal-add { display: grid; grid-template-columns: minmax(0, 1fr) 6rem 4.75rem 1.75rem; gap: 0.5rem; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.6rem; }
+@media (max-width: 30rem) { #viewSal .sal-add { grid-template-columns: minmax(0, 1fr) 1.75rem; } #viewSal .sal-add .nm { grid-column: 1; } #viewSal .sal-add .rm { grid-column: 2; grid-row: 1; } #viewSal .sal-add .vl { grid-column: 1; } #viewSal .sal-add .tp { grid-column: 1; } }
+#viewSal .sal-add .rm { all: unset; cursor: pointer; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 50%; color: var(--muted); font-size: 1.1rem; justify-self: end; }
+#viewSal .sal-add .rm:hover { background: var(--accent-soft); color: var(--fg); }
+#viewSal .sal-add .rm:focus-visible { outline: 2px solid var(--accent); }
+#viewSal .sal-add label.tr { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--muted); cursor: pointer; }
+#viewSal .sal-add label.tr input { width: auto; accent-color: var(--accent); }
+#viewSal .sal-add input, #viewSal .sal-add select { background: var(--surface); padding: 0.45rem 0.6rem; font-size: 0.9375rem; }
+#viewSal .sal-btns { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+#viewSal .sal-b { font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; }
+#viewSal .sal-b:hover { border-color: var(--accent); color: var(--accent); }
+#viewSal .sal-b:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewSal .sal-liq { display: flex; flex-direction: column; gap: 0.2rem; background: var(--accent-soft); border-radius: 0.9rem; padding: 1rem 1.25rem; }
+#viewSal .sal-liq span { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+#viewSal .sal-liq b { font-family: var(--font-display); font-weight: 400; font-size: clamp(2.25rem, 7vw, 3.25rem); line-height: 1.05; font-variant-numeric: tabular-nums lining-nums; color: var(--fg); }
+#viewSal .sal-rows { margin: 0; display: flex; flex-direction: column; }
+#viewSal .sal-rows > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+#viewSal .sal-rows dt { color: var(--fg); } #viewSal .sal-rows dt small { color: var(--muted); font-size: 0.8125rem; margin-left: 0.25rem; }
+#viewSal .sal-rows dd { margin: 0; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+#viewSal .sal-rows .neg dd { color: var(--accent); }
+#viewSal .sal-rows .tot { font-weight: 600; }
+#viewSal .sal-fgts { display: flex; justify-content: space-between; align-items: center; gap: 1rem; border: 1px dashed var(--line); border-radius: 0.8rem; padding: 0.8rem 1rem; }
+#viewSal .sal-fgts div { display: flex; flex-direction: column; gap: 0.15rem; } #viewSal .sal-fgts span { font-weight: 600; } #viewSal .sal-fgts small { color: var(--muted); font-size: 0.8125rem; }
+#viewSal .sal-fgts b { font-variant-numeric: tabular-nums lining-nums; font-weight: 600; white-space: nowrap; }
+#viewSal .sal-det summary { cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+#viewSal .sal-det summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewSal #s-det { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+#viewSal #s-det p { margin: 0; display: flex; justify-content: space-between; gap: 1rem; } #viewSal #s-det .h { color: var(--fg); font-weight: 600; margin-top: 0.4rem; }
+#viewSal .sal-foot { font-size: 0.8125rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem; }
+#viewSal .sal-foot p { margin: 0; text-wrap: pretty; }
+@media (max-width: 30rem) { #viewSal .sal-card { padding: 1.1rem; } #viewSal .sal-2 { grid-template-columns: 1fr; } }
+
   /* Horas do Brasil */
 #viewHrs .wrap { max-width: 90rem; margin-inline: auto; display: flex; flex-direction: column; gap: 2rem; }
 #viewHrs header { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -758,6 +814,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       <a href="#comparador" class="mi" data-view="comparador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v20"/></svg><span>Comparador de texto</span></a>
       <a href="#formatador" class="mi" data-view="formatador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg><span>Formatador JSON e XML</span></a>
       <a href="#horas" class="mi" data-view="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Horas do Brasil</span></a>
+      <a href="#salario" class="mi" data-view="salario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h4"/></svg><span>Calculadora de salário</span></a>
     </nav>
   </aside>
   <main class="content">
@@ -954,6 +1011,65 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   <footer>
     <p>O Brasil não usa horário de verão desde 2019, então os fusos ficam fixos o ano inteiro.</p>
     <p>A hora vem do relógio do seu dispositivo, convertida para cada fuso.</p>
+  </footer>
+</div>
+    </section>
+    <section id="viewSal" class="view" aria-label="Calculadora de salário" hidden>
+<div class="wrap">
+  <header>
+    <h1>Quanto cai na conta?</h1>
+    <p class="lede">Informe o salário bruto e os adicionais para ver o salário líquido, o INSS, o IRRF e o FGTS, com as tabelas de 2026.</p>
+  </header>
+
+  <div class="sal-grid">
+    <section class="sal-card" aria-label="Dados do salário">
+      <h2>Seus dados</h2>
+      <label class="sal-f"><span>Salário bruto</span>
+        <span class="sal-in"><i>R$</i><input id="s-bruto" inputmode="decimal" autocomplete="off" placeholder="0,00" value="5.000,00"></span>
+      </label>
+      <div class="sal-2">
+        <label class="sal-f"><span>Dependentes</span>
+          <input id="s-dep" type="number" min="0" max="20" step="1" value="0" class="sal-num"></label>
+        <label class="sal-f"><span>Outros descontos <small>plano de saúde, VT…</small></span>
+          <span class="sal-in"><i>R$</i><input id="s-desc" inputmode="decimal" autocomplete="off" placeholder="0,00"></span>
+        </label>
+      </div>
+
+      <div class="sal-sec">
+        <h3>Adicionais</h3>
+        <p class="sal-hint">Valores que somam ao salário. Em % é sobre o salário bruto. Marque “Tributável” quando entram na base do INSS, IRRF e FGTS (como o quinquênio). A ajuda de custo indenizatória não entra.</p>
+        <ul class="sal-adds" id="s-adds"></ul>
+        <div class="sal-btns">
+          <button type="button" class="sal-b" data-add="quin">+ Quinquênio (%)</button>
+          <button type="button" class="sal-b" data-add="ajuda">+ Ajuda de custo (R$)</button>
+          <button type="button" class="sal-b" data-add="outro">+ Outro adicional</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="sal-card sal-res" aria-label="Resultado" aria-live="polite">
+      <h2>Resultado</h2>
+      <div class="sal-liq"><span>Salário líquido</span><b id="s-liq">R$ 0,00</b></div>
+      <dl class="sal-rows">
+        <div><dt>Salário bruto</dt><dd id="s-r-bruto"></dd></div>
+        <div id="s-r-addsL"><dt>Adicionais</dt><dd id="s-r-adds"></dd></div>
+        <div class="tot"><dt>Total de proventos</dt><dd id="s-r-prov"></dd></div>
+        <div class="neg"><dt>INSS <small id="s-r-inssN"></small></dt><dd id="s-r-inss"></dd></div>
+        <div class="neg"><dt>IRRF <small id="s-r-irN"></small></dt><dd id="s-r-ir"></dd></div>
+        <div class="neg" id="s-r-descL"><dt>Outros descontos</dt><dd id="s-r-desc"></dd></div>
+        <div class="tot"><dt>Total de descontos</dt><dd id="s-r-tdesc"></dd></div>
+      </dl>
+      <div class="sal-fgts"><div><span>FGTS (8%)</span><small>Depositado pelo empregador. Não sai do seu salário.</small></div><b id="s-fgts"></b></div>
+      <details class="sal-det">
+        <summary>Ver como foi calculado</summary>
+        <div id="s-det"></div>
+      </details>
+    </section>
+  </div>
+
+  <footer class="sal-foot">
+    <p>Estimativa para empregado CLT, com a tabela do INSS de 2026 (teto de R$ 8.475,55) e a tabela do IRRF de 2026 com a isenção até R$ 5.000 e o redutor até R$ 7.350 (Lei 15.270/2025). O IRRF usa o desconto simplificado de R$ 607,20 quando ele é maior que o INSS mais os dependentes.</p>
+    <p>Não considera 13º, férias, horas extras, pensão alimentícia nem previdência privada. O valor real pode variar conforme a folha da empresa. Tudo é calculado no seu navegador.</p>
   </footer>
 </div>
     </section>
@@ -2183,9 +2299,130 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   };
 })();
 
+
+/* Calculadora de salário */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var bruto = $("s-bruto"), dep = $("s-dep"), desc = $("s-desc"), lista = $("s-adds");
+  var brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  var pct = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
+  function R(v) { return brl.format(v); }
+  function c2(v) { return Math.round(v * 100 + 1e-9) / 100; }
+  function num(t) {
+    t = String(t || "").replace(/[^\d,.\-]/g, "");
+    if (t.indexOf(",") >= 0) t = t.replace(/\./g, "").replace(",", ".");
+    else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+    var n = parseFloat(t);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  /* Tabelas 2026 */
+  var INSS = [[1621.00, 0.075], [2902.84, 0.09], [4354.27, 0.12], [8475.55, 0.14]];
+  var IRRF = [[2428.80, 0, 0], [2826.65, 0.075, 182.16], [3751.05, 0.15, 394.16], [4664.68, 0.225, 675.49], [Infinity, 0.275, 908.73]];
+  var DED_DEP = 189.59, DED_SIMPL = 607.20;
+
+  function calcInss(base) {
+    var tot = 0, ant = 0, det = [];
+    for (var i = 0; i < INSS.length; i++) {
+      var teto = INSS[i][0], fx = Math.min(base, teto) - ant;
+      if (fx > 0) { var v = fx * INSS[i][1]; tot += v; det.push([INSS[i][1], fx, v]); }
+      ant = teto;
+    }
+    return { valor: c2(tot), det: det };
+  }
+
+  function add(tipo, nome, valor, t, trib) {
+    var li = document.createElement("li"); li.className = "sal-add";
+    li.innerHTML = '<input class="nm" aria-label="Nome do adicional" placeholder="Nome (ex.: Gratificação)">' +
+      '<input class="vl" aria-label="Valor" inputmode="decimal" autocomplete="off" placeholder="0,00">' +
+      '<select class="tp" aria-label="Tipo"><option value="r">R$</option><option value="p">%</option></select>' +
+      '<button type="button" class="rm" aria-label="Remover adicional" title="Remover">×</button>' +
+      '<label class="tr"><input type="checkbox" class="tb"> Tributável (entra no INSS, IRRF e FGTS)</label>';
+    li.querySelector(".nm").value = nome || "";
+    li.querySelector(".vl").value = valor || "";
+    li.querySelector(".tp").value = t || "r";
+    li.querySelector(".tb").checked = !!trib;
+    lista.appendChild(li);
+    return li;
+  }
+  var PRE = { quin: ["Quinquênio", "", "p", true], ajuda: ["Ajuda de custo", "", "r", false], outro: ["", "", "r", true] };
+  document.querySelectorAll("[data-add]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var p = PRE[b.getAttribute("data-add")], li = add(null, p[0], p[1], p[2], p[3]);
+      li.querySelector(p[0] ? ".vl" : ".nm").focus(); calcula();
+    });
+  });
+  lista.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest(".rm");
+    if (b) { b.parentNode.parentNode.removeChild(b.parentNode); calcula(); }
+  });
+  [bruto, dep, desc].forEach(function (x) { x.addEventListener("input", calcula); });
+  function fmt(i) { var n = num(i.value); i.value = n ? brl.format(n).replace(/^R\$\s?/, "") : ""; }
+  [bruto, desc].forEach(function (x) { x.addEventListener("blur", function () { fmt(x); }); });
+  lista.addEventListener("focusout", function (e) { if (e.target.classList.contains("vl") && e.target.parentNode.querySelector(".tp").value === "r") fmt(e.target); });
+  lista.addEventListener("input", calcula); lista.addEventListener("change", calcula);
+
+  function linha(a, b) { return "<p><span>" + a + "</span><span>" + b + "</span></p>"; }
+
+  function calcula() {
+    var sal = num(bruto.value), nd = Math.max(0, Math.min(20, parseInt(dep.value, 10) || 0)), outros = num(desc.value);
+    var trib = sal, nao = 0, adicionais = [];
+    lista.querySelectorAll(".sal-add").forEach(function (li) {
+      var v = num(li.querySelector(".vl").value), p = li.querySelector(".tp").value === "p";
+      var val = c2(p ? sal * v / 100 : v), tb = li.querySelector(".tb").checked;
+      if (!val) return;
+      adicionais.push({ nome: li.querySelector(".nm").value.trim() || "Adicional", val: val, tb: tb, p: p, v: v });
+      if (tb) trib += val; else nao += val;
+    });
+    trib = c2(trib);
+    var inss = calcInss(trib);
+    var dedLegal = inss.valor + nd * DED_DEP, simpl = dedLegal < DED_SIMPL;
+    var ded = simpl ? DED_SIMPL : dedLegal;
+    var base = Math.max(0, c2(trib - ded));
+    var f = IRRF[IRRF.length - 1];
+    for (var i = 0; i < IRRF.length; i++) if (base <= IRRF[i][0]) { f = IRRF[i]; break; }
+    var irTab = Math.max(0, c2(base * f[1] - f[2])), red = 0;
+    if (trib <= 5000) red = Math.min(312.89, irTab);
+    else if (trib <= 7350) red = Math.min(irTab, Math.max(0, c2(978.62 - 0.133145 * trib)));
+    var ir = Math.max(0, c2(irTab - red));
+    var prov = c2(trib + nao), tdesc = c2(inss.valor + ir + outros), liq = c2(prov - tdesc), fgts = c2(trib * 0.08);
+
+    $("s-liq").textContent = R(liq);
+    $("s-r-bruto").textContent = R(sal);
+    var somaAd = c2(prov - sal);
+    $("s-r-addsL").hidden = !adicionais.length; $("s-r-adds").textContent = "+ " + R(somaAd);
+    $("s-r-prov").textContent = R(prov);
+    $("s-r-inss").textContent = "− " + R(inss.valor);
+    $("s-r-inssN").textContent = trib ? "(" + pct.format(inss.valor / trib * 100) + "% do bruto)" : "";
+    $("s-r-ir").textContent = "− " + R(ir);
+    $("s-r-irN").textContent = ir === 0 && trib ? "(isento)" : (trib ? "(" + pct.format(ir / trib * 100) + "% do bruto)" : "");
+    $("s-r-descL").hidden = !outros; $("s-r-desc").textContent = "− " + R(outros);
+    $("s-r-tdesc").textContent = "− " + R(tdesc);
+    $("s-fgts").textContent = R(fgts);
+
+    var d = linha("Base do INSS e FGTS", R(trib));
+    d += '<p class="h"><span>INSS (faixa a faixa)</span><span></span></p>';
+    inss.det.forEach(function (x) { d += linha(pct.format(x[0] * 100) + "% sobre " + R(x[1]), R(c2(x[2]))); });
+    if (trib > INSS[INSS.length - 1][0]) d += linha("Teto do INSS atingido", R(INSS[INSS.length - 1][0]));
+    d += '<p class="h"><span>IRRF</span><span></span></p>';
+    d += linha(simpl ? "Desconto simplificado" : "Dedução (INSS" + (nd ? " + " + nd + " dependente" + (nd > 1 ? "s" : "") : "") + ")", "− " + R(ded));
+    d += linha("Base de cálculo", R(base));
+    d += linha("Alíquota " + pct.format(f[1] * 100) + "% menos " + R(f[2]), R(irTab));
+    d += linha("Redutor (isenção até R$ 5.000)", "− " + R(red));
+    d += linha("IRRF a pagar", R(ir));
+    if (adicionais.length) {
+      d += '<p class="h"><span>Adicionais</span><span></span></p>';
+      adicionais.forEach(function (a) { d += linha(a.nome + (a.p ? " (" + pct.format(a.v) + "%)" : "") + (a.tb ? "" : " · não tributável"), "+ " + R(a.val)); });
+    }
+    $("s-det").innerHTML = d;
+  }
+
+  calcula();
+})();
+
 /* Menu lateral e tema */
 (function () {
-  var VIEWS = { comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs" };
+  var VIEWS = { comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal" };
   var items = document.querySelectorAll(".mi");
   function current() {
     var h = (location.hash || "").replace(/^#/, "");
