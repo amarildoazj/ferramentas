@@ -1105,6 +1105,9 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         </label>
       </div>
 
+      <label class="sal-chk"><input type="checkbox" id="s-corta"> Cortar os centavos de cada faixa do INSS <button type="button" class="sal-help" data-tip="s-tipcorta" aria-label="O que é cortar os centavos?" aria-expanded="false" aria-controls="s-tipcorta">?</button></label>
+      <p class="sal-tip" id="s-tipcorta" hidden><b>Cortar os centavos:</b> o INSS é calculado faixa a faixa. Algumas folhas de pagamento cortam os centavos de cada faixa em vez de arredondar, e o total do INSS fica 1 ou 2 centavos menor. Desmarcado, a calculadora soma as faixas e arredonda só o total. Confira no seu contracheque qual vale para a sua empresa.</p>
+
       <div class="sal-sec">
         <h3>Forma de pagamento</h3>
         <label class="sal-chk"><input type="checkbox" id="s-parc"> Recebo em 2 parcelas (adiantamento + restante) <button type="button" class="sal-help" data-tip="s-tipparc" aria-label="Como funciona o pagamento em 2 parcelas?" aria-expanded="false" aria-controls="s-tipparc">?</button></label>
@@ -2448,11 +2451,11 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   var IRRF = [[2428.80, 0, 0], [2826.65, 0.075, 182.16], [3751.05, 0.15, 394.16], [4664.68, 0.225, 675.49], [Infinity, 0.275, 908.73]];
   var DED_DEP = 189.59, DED_SIMPL = 607.20;
 
-  function calcInss(base) {
+  function calcInss(base, corta) {
     var tot = 0, ant = 0, det = [];
     for (var i = 0; i < INSS.length; i++) {
       var teto = INSS[i][0], fx = Math.min(base, teto) - ant;
-      if (fx > 0) { var v = fx * INSS[i][1]; tot += v; det.push([INSS[i][1], fx, v]); }
+      if (fx > 0) { var v = fx * INSS[i][1]; if (corta) v = Math.floor(v * 100 + 1e-6) / 100; tot += v; det.push([INSS[i][1], fx, v]); }
       ant = teto;
     }
     return { valor: c2(tot), det: det };
@@ -2484,9 +2487,9 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (b) { b.parentNode.parentNode.removeChild(b.parentNode); calcula(); }
   });
   var jor = $("s-jor"), he50 = $("s-he50"), he100 = $("s-he100"), dsr = $("s-dsr"), du = $("s-du"), dd = $("s-dd");
-  var mes = $("s-mes");
+  var mes = $("s-mes"), cortaInss = $("s-corta");
   var parc = $("s-parc"), parcPct = $("s-parcPct"), parcBase = $("s-parcBase");
-  [bruto, dep, desc, jor, he50, he100, dsr, du, dd, parc, parcPct, parcBase].forEach(function (x) { x.addEventListener("input", calcula); });
+  [bruto, dep, desc, jor, he50, he100, dsr, du, dd, parc, parcPct, parcBase, cortaInss].forEach(function (x) { x.addEventListener("input", calcula); });
   function fmt(i) { var n = num(i.value); i.value = n ? brl.format(n).replace(/^R\$\s?/, "") : ""; }
   [bruto, desc].forEach(function (x) { x.addEventListener("blur", function () { fmt(x); }); });
   lista.addEventListener("focusout", function (e) { if (e.target.classList.contains("vl") && e.target.parentNode.querySelector(".tp").value === "r") fmt(e.target); });
@@ -2523,7 +2526,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     }
     var heTot = c2(heVal + dsrVal);
     trib = c2(trib + heTot);
-    var inss = calcInss(trib);
+    var inss = calcInss(trib, cortaInss.checked);
     var dedLegal = inss.valor + nd * DED_DEP, simpl = dedLegal < DED_SIMPL;
     var ded = simpl ? DED_SIMPL : dedLegal;
     var base = Math.max(0, c2(trib - ded));
@@ -2620,12 +2623,12 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   function lerSalvo() { try { var t = localStorage.getItem(KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
   function aplica(o) {
     Object.keys(campos).forEach(function (k) { if (o[k] != null) campos[k].value = o[k]; });
-    dsr.checked = o.dsr !== false; parc.checked = !!o.parc;
+    dsr.checked = o.dsr !== false; parc.checked = !!o.parc; cortaInss.checked = !!o.corta;
     lista.textContent = "";
     (o.adds || []).forEach(function (a) { add(null, a.nome, a.v, a.tp, a.tb, a.va); });
   }
   function dados() {
-    var o = { dsr: dsr.checked, parc: parc.checked, adds: [] };
+    var o = { dsr: dsr.checked, parc: parc.checked, corta: cortaInss.checked, adds: [] };
     Object.keys(campos).forEach(function (k) { o[k] = campos[k].value; });
     lista.querySelectorAll(".sal-add").forEach(function (li) {
       o.adds.push({ nome: li.querySelector(".nm").value, v: li.querySelector(".vl").value, tp: li.querySelector(".tp").value, tb: li.querySelector(".tb").checked, va: li.hasAttribute("data-va") });
