@@ -665,6 +665,12 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   }
 #viewHrs .cal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
 #viewHrs .cal-title { font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; line-height: 1.1; margin: 0; text-transform: capitalize; }
+#viewHrs .cal-nav { display: inline-flex; align-items: center; gap: 0.25rem; }
+#viewHrs .cal-arrow { all: unset; box-sizing: border-box; cursor: pointer; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; color: var(--muted); }
+#viewHrs .cal-arrow:hover { background: var(--accent-soft); color: var(--fg); }
+#viewHrs .cal-arrow:focus-visible, #viewHrs button.cal-year:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#viewHrs button.cal-year { all: unset; box-sizing: border-box; cursor: pointer; padding: 0.15rem 0.35rem; border-radius: 0.4rem; color: var(--muted); font-size: 0.875rem; font-weight: 600; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+#viewHrs button.cal-year:hover { background: var(--accent-soft); color: var(--fg); }
 #viewHrs .cal-year { color: var(--muted); font-size: 0.875rem; font-weight: 600; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
 #viewHrs .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; }
 #viewHrs .cal-dow {
@@ -925,7 +931,11 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   <section class="calendar" aria-label="Calendário do mês atual">
     <div class="cal-head">
       <h2 class="cal-title" id="h-calTitle">Mês</h2>
-      <span class="cal-year" id="h-calYear"></span>
+      <span class="cal-nav">
+        <button type="button" class="cal-arrow" id="h-calPrev" aria-label="Mês anterior" title="Mês anterior">‹</button>
+        <button type="button" class="cal-year" id="h-calYear" title="Voltar para hoje"></button>
+        <button type="button" class="cal-arrow" id="h-calNext" aria-label="Próximo mês" title="Próximo mês">›</button>
+      </span>
     </div>
     <div class="cal-grid" id="h-calGrid"></div>
     <p class="cal-note" id="h-calNote"></p>
@@ -2026,10 +2036,26 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     var key = y + "-" + m + "-" + d;
     if (key === calKey) return;
     calKey = key;
+    tY = y; tM = m; tD = d; vY = y; vM = m;
+    renderCal();
+  }
+
+  var tY, tM, tD, vY, vM;
+  function shiftMonth(delta) {
+    vM += delta;
+    if (vM < 1) { vM = 12; vY--; } else if (vM > 12) { vM = 1; vY++; }
+    renderCal();
+  }
+  document.getElementById(P + "calPrev").addEventListener("click", function () { shiftMonth(-1); });
+  document.getElementById(P + "calNext").addEventListener("click", function () { shiftMonth(1); });
+  calYear.addEventListener("click", function () { vY = tY; vM = tM; renderCal(); });
+
+  function renderCal() {
+    var y = vY, m = vM, d = (vY === tY && vM === tM) ? tD : 0;
 
     var offset = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
     var total = new Date(Date.UTC(y, m, 0)).getUTCDate();
-    var weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    var weekday = new Date(Date.UTC(tY, tM - 1, tD)).getUTCDay();
 
     calTitle.textContent = MESES[m - 1];
     calYear.textContent = y;
@@ -2048,8 +2074,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       }
       calGrid.appendChild(cell);
     }
-    calNote.textContent = "Hoje é " + DOW_LONGO[weekday] + ", " + d + " de " + MESES[m - 1] + " de " + y + " (data de Brasília).";
-    renderHolidays(y, m, d);
+    calNote.textContent = "Hoje é " + DOW_LONGO[weekday] + ", " + tD + " de " + MESES[tM - 1] + " de " + tY + " (data de Brasília).";
+    renderHolidays(y, m);
   }
 
   /* Feriados do ano */
@@ -2096,8 +2122,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     return nome;
   }
 
-  function renderHolidays(y, m, d) {
-    var today = Date.UTC(y, m - 1, d);
+  function renderHolidays(y, m) {
+    var today = Date.UTC(tY, tM - 1, tD);
     var list = buildHolidays(y).sort(function (a, b) { return a.start - b.start; });
     var nac = list.filter(function (h) { return !h.facultativo; }).length;
     var fac = list.length - nac;
@@ -2116,9 +2142,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       } else {
         var diff = Math.round((h.start - today) / 86400000);
         chipText = diff <= 0 ? "hoje" : diff === 1 ? "amanhã" : "em " + diff + " dias";
-        if (!nextDone) { li.classList.add("next"); nextDone = true; }
+        if (!nextDone) { nextDone = true; if (y === tY) li.classList.add("next"); }
       }
 
+      if (h.start.getUTCMonth() === m - 1 || (h.end && h.end.getUTCMonth() === m - 1)) li.classList.add("mes");
       var sameMonth = h.end && h.end.getUTCMonth() === h.start.getUTCMonth();
       var dayText = sameMonth ? h.start.getUTCDate() + "–" + h.end.getUTCDate() : String(h.start.getUTCDate());
       var sub = h.end
@@ -2138,8 +2165,14 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       li.appendChild(el("span", "hol-chip", chipText));
       holList.appendChild(li);
     });
-    var nextRow = holList.querySelector(".next");
-    holList.scrollTop = nextRow ? nextRow.offsetTop : 0;
+    var rows = holList.children, alvo = null;
+    for (var r = 0; r < rows.length && !alvo; r++) {
+      if (rows[r].classList.contains("mes")) alvo = rows[r];
+    }
+    if (!alvo) {
+      for (var q = 0; q < list.length && !alvo; q++) if (list[q].start.getUTCMonth() > m - 1) alvo = rows[q];
+    }
+    holList.scrollTop = alvo ? alvo.offsetTop : 0;
   }
 
     tick();
