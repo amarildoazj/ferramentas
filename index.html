@@ -639,6 +639,11 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-help:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #viewSal .sal-tip { margin: 0; font-size: 0.8125rem; line-height: 1.45; background: var(--accent-soft); border-radius: 0.7rem; padding: 0.65rem 0.8rem; text-wrap: pretty; }
 #viewSal .sal-tip[hidden] { display: none; }
+#viewSal .sal-parc { display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg); border: 1px solid var(--line); border-radius: 0.8rem; padding: 0.8rem 1rem; }
+#viewSal .sal-parc div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+#viewSal .sal-parc small { color: var(--muted); font-size: 0.8125rem; }
+#viewSal .sal-parc b { font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; font-weight: 600; }
+#viewSal .sal-parc[hidden] { display: none; }
 #viewSal .sal-chk { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; }
 #viewSal .sal-chk input { width: auto; accent-color: var(--accent); }
 @media (max-width: 30rem) { #viewSal .sal-3 { grid-template-columns: 1fr 1fr; } #viewSal .sal-card { padding: 1.1rem; } #viewSal .sal-2 { grid-template-columns: 1fr; } }
@@ -1046,6 +1051,16 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       </div>
 
       <div class="sal-sec">
+        <h3>Forma de pagamento</h3>
+        <label class="sal-chk"><input type="checkbox" id="s-parc"> Recebo em 2 parcelas (adiantamento + restante) <button type="button" class="sal-help" data-tip="s-tipparc" aria-label="Como funciona o pagamento em 2 parcelas?" aria-expanded="false" aria-controls="s-tipparc">?</button></label>
+        <p class="sal-tip" id="s-tipparc" hidden><b>2 parcelas:</b> a empresa paga um adiantamento no meio do mês, sem descontos, e o restante no fim do mês, já com INSS, IRRF e demais descontos. O total recebido é o mesmo salário líquido. O adiantamento costuma ser 40% do salário, mas depende da empresa.</p>
+        <div class="sal-2b" id="s-parcBox" hidden>
+          <label class="sal-f"><span>Adiantamento <small>%</small></span><input id="s-parcPct" type="number" min="1" max="100" step="1" value="40" class="sal-num"></label>
+          <label class="sal-f"><span>Calculado sobre</span><select id="s-parcBase"><option value="b">Salário bruto</option><option value="l">Salário líquido</option></select></label>
+        </div>
+      </div>
+
+      <div class="sal-sec">
         <h3>Horas extras</h3>
         <p class="sal-hint">O valor da hora é o salário mais os adicionais tributáveis, dividido pela jornada mensal.</p>
         <div class="sal-3">
@@ -1065,11 +1080,12 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
       <div class="sal-sec">
         <h3>Adicionais</h3>
-        <p class="sal-hint">Valores que somam ao salário. Em % é sobre o salário bruto. Marque “Tributável” quando entram na base do INSS, IRRF e FGTS (como o quinquênio). A ajuda de custo indenizatória não entra.</p>
+        <p class="sal-hint">Valores que somam ao salário. Em % é sobre o salário bruto. Marque “Tributável” quando entram na base do INSS, IRRF e FGTS (como o quinquênio). Ajuda de custo indenizatória e vale alimentação não entram.</p>
         <ul class="sal-adds" id="s-adds"></ul>
         <div class="sal-btns">
           <button type="button" class="sal-b" data-add="quin">+ Quinquênio (%)</button>
           <button type="button" class="sal-b" data-add="ajuda">+ Ajuda de custo (R$)</button>
+          <button type="button" class="sal-b" data-add="va">+ Vale alimentação (R$)</button>
           <button type="button" class="sal-b" data-add="outro">+ Outro adicional</button>
         </div>
       </div>
@@ -1088,6 +1104,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <div class="neg" id="s-r-descL"><dt>Outros descontos</dt><dd id="s-r-desc"></dd></div>
         <div class="tot"><dt>Total de descontos</dt><dd id="s-r-tdesc"></dd></div>
       </dl>
+      <div class="sal-parc" id="s-r-parc" hidden>
+        <div><span>1ª parcela · adiantamento <small id="s-p1n"></small></span><b id="s-p1"></b></div>
+        <div><span>2ª parcela · restante, com os descontos</span><b id="s-p2"></b></div>
+      </div>
       <div class="sal-fgts"><div><span>FGTS (8%)</span><small>Depositado pelo empregador. Não sai do seu salário.</small></div><b id="s-fgts"></b></div>
       <details class="sal-det" open>
         <summary>Ver como foi calculado</summary>
@@ -2374,7 +2394,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     lista.appendChild(li);
     return li;
   }
-  var PRE = { quin: ["Quinquênio", "", "p", true], ajuda: ["Ajuda de custo", "", "r", false], outro: ["", "", "r", true] };
+  var PRE = { quin: ["Quinquênio", "", "p", true], ajuda: ["Ajuda de custo", "", "r", false], va: ["Vale alimentação", "", "r", false], outro: ["", "", "r", true] };
   document.querySelectorAll("[data-add]").forEach(function (b) {
     b.addEventListener("click", function () {
       var p = PRE[b.getAttribute("data-add")], li = add(null, p[0], p[1], p[2], p[3]);
@@ -2386,7 +2406,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (b) { b.parentNode.parentNode.removeChild(b.parentNode); calcula(); }
   });
   var jor = $("s-jor"), he50 = $("s-he50"), he100 = $("s-he100"), dsr = $("s-dsr"), du = $("s-du"), dd = $("s-dd");
-  [bruto, dep, desc, jor, he50, he100, dsr, du, dd].forEach(function (x) { x.addEventListener("input", calcula); });
+  var parc = $("s-parc"), parcPct = $("s-parcPct"), parcBase = $("s-parcBase");
+  [bruto, dep, desc, jor, he50, he100, dsr, du, dd, parc, parcPct, parcBase].forEach(function (x) { x.addEventListener("input", calcula); });
   function fmt(i) { var n = num(i.value); i.value = n ? brl.format(n).replace(/^R\$\s?/, "") : ""; }
   [bruto, desc].forEach(function (x) { x.addEventListener("blur", function () { fmt(x); }); });
   lista.addEventListener("focusout", function (e) { if (e.target.classList.contains("vl") && e.target.parentNode.querySelector(".tp").value === "r") fmt(e.target); });
@@ -2448,6 +2469,15 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     $("s-r-descL").hidden = !outros; $("s-r-desc").textContent = "− " + R(outros);
     $("s-r-tdesc").textContent = "− " + R(tdesc);
     $("s-fgts").textContent = R(fgts);
+    $("s-parcBox").hidden = !parc.checked; $("s-r-parc").hidden = !parc.checked;
+    var p1 = 0;
+    if (parc.checked) {
+      var pp = Math.max(0, Math.min(100, parseFloat(parcPct.value) || 0));
+      p1 = c2((parcBase.value === "l" ? Math.max(0, liq) : sal) * pp / 100);
+      p1 = Math.min(p1, Math.max(0, liq));
+      $("s-p1").textContent = R(p1); $("s-p2").textContent = R(c2(liq - p1));
+      $("s-p1n").textContent = "(" + pct.format(pp) + "% " + (parcBase.value === "l" ? "do líquido" : "do bruto") + ")";
+    }
 
     var d = linha("Base do INSS e FGTS", R(trib));
     d += '<p class="h"><span>INSS (faixa a faixa)</span><span></span></p>';
