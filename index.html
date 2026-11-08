@@ -633,6 +633,7 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-foot p { margin: 0; text-wrap: pretty; }
 #viewSal .sal-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
 #viewSal .sal-2b { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+#viewSal .sal-mes { grid-column: 1 / -1; }
 #viewSal .sal-2b[hidden] { display: none; }
 #viewSal .sal-help { all: unset; box-sizing: border-box; cursor: pointer; display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; margin-left: 0.2rem; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font-size: 0.7rem; font-weight: 700; line-height: 1; vertical-align: 1px; }
 #viewSal .sal-help:hover, #viewSal .sal-help[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -1083,6 +1084,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <p class="sal-tip" id="s-tipdsr" hidden><b>DSR:</b> descanso semanal remunerado, o pagamento dos domingos e feriados. Como as horas extras habituais aumentam a média do mês, a lei manda refletir esse valor no DSR. A conta é: horas extras ÷ dias úteis do mês × domingos e feriados. Desmarque se a sua empresa não paga esse reflexo.</p>
         <label class="sal-chk"><input type="checkbox" id="s-dsr" checked> Incluir reflexo no descanso semanal (DSR) <button type="button" class="sal-help" data-tip="s-tipdsr" aria-label="O que é DSR?" aria-expanded="false" aria-controls="s-tipdsr">?</button></label>
         <div class="sal-2b" id="s-dsrBox">
+          <label class="sal-f sal-mes"><span>Mês de referência <small id="s-mesN"></small></span><input id="s-mes" type="month"></label>
           <label class="sal-f"><span>Dias úteis do mês</span><input id="s-du" type="number" min="1" max="31" value="25" class="sal-num"></label>
           <label class="sal-f"><span>Domingos e feriados</span><input id="s-dd" type="number" min="0" max="31" value="5" class="sal-num"></label>
         </div>
@@ -2427,6 +2429,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (b) { b.parentNode.parentNode.removeChild(b.parentNode); calcula(); }
   });
   var jor = $("s-jor"), he50 = $("s-he50"), he100 = $("s-he100"), dsr = $("s-dsr"), du = $("s-du"), dd = $("s-dd");
+  var mes = $("s-mes");
   var parc = $("s-parc"), parcPct = $("s-parcPct"), parcBase = $("s-parcBase");
   [bruto, dep, desc, jor, he50, he100, dsr, du, dd, parc, parcPct, parcBase].forEach(function (x) { x.addEventListener("input", calcula); });
   function fmt(i) { var n = num(i.value); i.value = n ? brl.format(n).replace(/^R\$\s?/, "") : ""; }
@@ -2528,9 +2531,37 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     $("s-det").innerHTML = d;
   }
 
+  /* Dias úteis do mês (seg a sáb, sem feriados nacionais) */
+  function pascoa(y) {
+    var a = y % 19, b = Math.floor(y / 100), c = y % 100, d2 = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    var h = (19 * a + b - d2 - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    return { m: Math.floor((h + l - 7 * m + 114) / 31), d: ((h + l - 7 * m + 114) % 31) + 1 };
+  }
+  function feriadosNac(y) {
+    var E = pascoa(y), sx = new Date(Date.UTC(y, E.m - 1, E.d - 2));
+    return [[1, 1], [sx.getUTCMonth() + 1, sx.getUTCDate()], [4, 21], [5, 1], [9, 7], [10, 12], [11, 2], [11, 15], [11, 20], [12, 25]];
+  }
+  var MES_NOME = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  function autoDias() {
+    var m = /^(\d{4})-(\d{2})$/.exec(mes.value);
+    if (!m) { $("s-mesN").textContent = ""; return; }
+    var y = +m[1], mm = +m[2], total = new Date(Date.UTC(y, mm, 0)).getUTCDate(), fer = feriadosNac(y), folga = 0;
+    for (var d = 1; d <= total; d++) {
+      var dow = new Date(Date.UTC(y, mm - 1, d)).getUTCDay();
+      if (dow === 0 || fer.some(function (f) { return f[0] === mm && f[1] === d; })) folga++;
+    }
+    du.value = total - folga; dd.value = folga;
+    $("s-mesN").textContent = "· " + MES_NOME[mm - 1] + " de " + y;
+  }
+  (function () {
+    var p = {}; new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+    mes.value = p.year + "-" + p.month; autoDias();
+  })();
+  mes.addEventListener("input", function () { autoDias(); calcula(); });
+
   /* Salvar no navegador */
   var KEY = "ferramentas-salario", msg = $("s-saveMsg"), msgPadrao = msg.textContent, btnForget = $("s-forget");
-  var campos = { bruto: bruto, dep: dep, desc: desc, jor: jor, he50: he50, he100: he100, du: du, dd: dd, parcPct: parcPct, parcBase: parcBase };
+  var campos = { mes: mes, bruto: bruto, dep: dep, desc: desc, jor: jor, he50: he50, he100: he100, du: du, dd: dd, parcPct: parcPct, parcBase: parcBase };
   function lerSalvo() { try { var t = localStorage.getItem(KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
   function aplica(o) {
     Object.keys(campos).forEach(function (k) { if (o[k] != null) campos[k].value = o[k]; });
