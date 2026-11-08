@@ -596,6 +596,8 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-in:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
 #viewSal .sal-in i { font-style: normal; color: var(--muted); font-weight: 600; font-size: 0.875rem; }
 #viewSal .sal-in input { border: 0; background: transparent; outline: 0 !important; font-variant-numeric: tabular-nums; }
+#viewSal .sal-aum { margin: 0; align-self: end; padding-bottom: 0.7rem; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+#viewSal .sal-aum.on { color: var(--fg); font-weight: 600; }
 #viewSal .sal-num { font-variant-numeric: tabular-nums; }
 #viewSal .sal-sec { display: flex; flex-direction: column; gap: 0.6rem; border-top: 1px solid var(--line); padding-top: 1rem; }
 #viewSal .sal-hint { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
@@ -1131,6 +1133,11 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <span class="sal-in"><i>R$</i><input id="s-bruto" inputmode="decimal" autocomplete="off" placeholder="0,00" value="5.000,00"></span>
       </label>
       <div class="sal-2">
+        <label class="sal-f"><span>Aumento <small>%</small></span>
+          <input id="s-aum" inputmode="decimal" autocomplete="off" placeholder="0" class="sal-num"></label>
+        <p class="sal-aum" id="s-aumN">Reajuste do sindicato ou da empresa, aplicado só no salário bruto. Os adicionais em % acompanham.</p>
+      </div>
+      <div class="sal-2">
         <label class="sal-f"><span>Dependentes</span>
           <input id="s-dep" type="number" min="0" max="20" step="1" value="0" class="sal-num"></label>
         <label class="sal-f"><span>Outros descontos <small>plano de saúde, VT…</small></span>
@@ -1264,6 +1271,14 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         </div>
       </div>
       <p class="sal-hint">O INSS e o IRRF do 13º e das férias são calculados à parte do salário do mês, sem o desconto simplificado e sem o redutor. O valor real pode mudar conforme a folha da empresa.</p>
+    </section>
+    <section class="sal-card sal-extra" aria-label="Resumo do ano">
+      <h2>Resumo do ano</h2>
+      <p class="sal-hint">Estimativa de um ano inteiro: 12 meses iguais ao mês de cima, mais o 13º e o acréscimo das férias escolhidas.</p>
+      <div class="ex-cols">
+        <div class="ex-col" id="s-yrA"></div>
+        <div class="ex-col" id="s-yrB"></div>
+      </div>
     </section>
   </div>
 
@@ -2557,9 +2572,9 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (b) { b.parentNode.parentNode.removeChild(b.parentNode); calcula(); }
   });
   var jor = $("s-jor"), he50 = $("s-he50"), he100 = $("s-he100"), dsr = $("s-dsr"), du = $("s-du"), dd = $("s-dd");
-  var mes = $("s-mes"), cortaInss = $("s-corta"), ferPlan = $("s-ferPlan"), ferVenda = $("s-ferVenda");
+  var aum = $("s-aum"), mes = $("s-mes"), cortaInss = $("s-corta"), ferPlan = $("s-ferPlan"), ferVenda = $("s-ferVenda");
   var parc = $("s-parc"), parcPct = $("s-parcPct"), parcBase = $("s-parcBase");
-  [bruto, dep, desc, jor, he50, he100, dsr, du, dd, parc, parcPct, parcBase, cortaInss].forEach(function (x) { x.addEventListener("input", calcula); });
+  [bruto, aum, dep, desc, jor, he50, he100, dsr, du, dd, parc, parcPct, parcBase, cortaInss].forEach(function (x) { x.addEventListener("input", calcula); });
   function fmt(i) { var n = num(i.value); i.value = n ? brl.format(n).replace(/^R\$\s?/, "") : ""; }
   [bruto, desc].forEach(function (x) { x.addEventListener("blur", function () { fmt(x); }); });
   lista.addEventListener("focusout", function (e) { if (e.target.classList.contains("vl") && e.target.parentNode.querySelector(".tp").value === "r") fmt(e.target); });
@@ -2577,7 +2592,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   function linha(a, b) { return "<p><span>" + a + "</span><span>" + b + "</span></p>"; }
 
   function calcula() {
-    var sal = num(bruto.value), nd = Math.max(0, Math.min(20, parseInt(dep.value, 10) || 0)), outros = num(desc.value);
+    var salBase = num(bruto.value), aumPct = num(aum.value), sal = c2(salBase * (1 + aumPct / 100)), nd = Math.max(0, Math.min(20, parseInt(dep.value, 10) || 0)), outros = num(desc.value);
     var trib = sal, nao = 0, adicionais = [], vaVal = 0;
     lista.querySelectorAll(".sal-add").forEach(function (li) {
       var v = num(li.querySelector(".vl").value), p = li.querySelector(".tp").value === "p";
@@ -2610,6 +2625,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
     $("s-liq").textContent = R(liq); $("s-liq").parentNode.style.setProperty("--len", $("s-liq").textContent.length);
     $("s-r-bruto").textContent = R(sal);
+    $("s-aumN").textContent = aumPct && salBase ? "Salário com aumento: " + R(sal) + " (+ " + R(c2(sal - salBase)) + ")" : "Reajuste do sindicato ou da empresa, aplicado só no salário bruto. Os adicionais em % acompanham.";
+    $("s-aumN").classList.toggle("on", !!(aumPct && salBase));
     var somaAd = c2(prov - sal - heTot), temAd = adicionais.some(function (a) { return !(a.va && !a.tb); });
     $("s-r-heL").hidden = !heTot; $("s-r-he").textContent = "+ " + R(heTot);
     $("s-r-heN").textContent = dsrVal ? "(com DSR)" : "";
@@ -2665,17 +2682,17 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         row("2ª parcela", R(p2), "ok tot", "até 20 de dezembro · restante, com os descontos") +
         row("Total líquido do 13º", R(liq13), "tot");
       var plano = ferPlan.value.split("+").map(Number).filter(Boolean), venda = ferVenda.checked;
-      var out = "", totBruto = 0, totLiq = 0, totLiqSem = 0, totAbono = 0, abTer = 0;
+      var out = "", totBruto = 0, totLiq = 0, totLiqSem = 0, totAbono = 0, abTer = 0, exI = 0, exR = 0, sumUm = 0, abPrinc = 0;
       plano.forEach(function (d, n) {
         var princ = c2(base * d / 30), um = c2(princ / 3), br = c2(princ + um), t = tx(br), ts = tx(princ);
         var lq = c2(br - t.inss - t.ir), lqSem = c2(princ - ts.inss - ts.ir);
-        totBruto += br; totLiq += lq; totLiqSem += lqSem;
+        totBruto += br; totLiq += lq; totLiqSem += lqSem; exI += t.inss - ts.inss; exR += t.ir - ts.ir; sumUm += um;
         out += row("Período " + (n + 1) + " · " + d + " dias", R(lq), "ok",
           "salário " + R(princ) + " + 1/3 " + R(um) + " = " + R(br) + " · INSS − " + R(t.inss) + " · IRRF − " + R(t.ir));
       });
       if (venda) {
         var ab = c2(base * 10 / 30), abT = c2(ab / 3);
-        totAbono = c2(ab + abT); abTer = abT;
+        totAbono = c2(ab + abT); abTer = abT; abPrinc = ab;
         out += row("Abono de 10 dias + 1/3", "+ " + R(totAbono), "ok", "sem INSS e sem imposto de renda · " + R(ab) + " + " + R(abT));
       }
       var totalLiq = c2(totLiq + totAbono), um3Liq = c2(totLiq - totLiqSem + abTer);
@@ -2690,6 +2707,29 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
           row("Diferença", (totalLiq - liq >= 0 ? "+ " : "− ") + R(Math.abs(c2(totalLiq - liq))), "ok tot", "nas férias você recebe isso no lugar do salário do mês");
       }
       $("s-ferout").innerHTML = out;
+
+      /* resumo do ano */
+      var exBruto = c2(sumUm + totAbono), exLiq = c2(um3Liq + abPrinc);
+      var yBruto = c2(12 * prov + base + exBruto);
+      var yInss = c2(12 * inss.valor + d13.inss + exI), yIr = c2(12 * ir + d13.ir + exR), yOut = c2(12 * outros);
+      var yLiq = c2(12 * liq + liq13 + exLiq), yVa = c2(12 * vaVal);
+      var yFgts = c2(0.08 * (12 * trib + base + sumUm));
+      var gov = yBruto ? (yInss + yIr) / yBruto * 100 : 0;
+      $("s-yrA").innerHTML = "<h3>O que você recebe</h3>" +
+        row("12 meses de salário", R(c2(12 * prov)), "", "salário e adicionais, 12 vezes o mês de cima") +
+        row("13º salário", R(base)) +
+        row("Acréscimo das férias", R(exBruto), "", venda ? "1/3 dos dias de descanso e abono de 10 dias" : "1/3 dos dias de descanso") +
+        row("Total bruto do ano", R(yBruto), "tot") +
+        row("Total líquido do ano", R(yLiq), "ok tot", "o que cai na conta, sem vale alimentação") +
+        row("Média líquida por mês", R(c2(yLiq / 12)), "ok", "total líquido dividido por 12") +
+        (yVa ? row("Vale alimentação no ano", R(yVa), "", "12 vezes o valor do mês") + row("Líquido com vale alimentação", R(c2(yLiq + yVa)), "ok tot") : "");
+      $("s-yrB").innerHTML = "<h3>O que sai e o que é depositado</h3>" +
+        row("INSS pago no ano", "− " + R(yInss), "neg", "12 meses, 13º e férias") +
+        row("IRRF pago no ano", "− " + R(yIr), "neg", "12 meses, 13º e férias") +
+        (yOut ? row("Outros descontos", "− " + R(yOut), "neg", "12 vezes o mês") : "") +
+        row("Total de descontos", "− " + R(c2(yInss + yIr + yOut)), "neg tot") +
+        row("Parte do bruto para INSS e IRRF", pct.format(Math.round(gov * 10) / 10) + "%", "", "impostos e contribuição sobre o total bruto") +
+        row("FGTS depositado no ano", R(yFgts), "", "8% sobre 12 salários, 13º e 1/3 das férias · não sai do seu bolso");
     })();
     vaVal = c2(vaVal);
     $("s-r-vaBox").hidden = !vaVal;
@@ -2770,7 +2810,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
   /* Salvar no navegador */
   var KEY = "ferramentas-salario", msg = $("s-saveMsg"), msgPadrao = msg.textContent, btnForget = $("s-forget");
-  var campos = { mes: mes, bruto: bruto, dep: dep, desc: desc, jor: jor, he50: he50, he100: he100, du: du, dd: dd, parcPct: parcPct, parcBase: parcBase };
+  var campos = { mes: mes, bruto: bruto, aum: aum, dep: dep, desc: desc, jor: jor, he50: he50, he100: he100, du: du, dd: dd, parcPct: parcPct, parcBase: parcBase };
   function lerSalvo() { try { var t = localStorage.getItem(KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
   function aplica(o) {
     Object.keys(campos).forEach(function (k) { if (o[k] != null) campos[k].value = o[k]; });
