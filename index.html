@@ -625,10 +625,11 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-fgts { display: flex; justify-content: space-between; align-items: center; gap: 1rem; border: 1px dashed var(--line); border-radius: 0.8rem; padding: 0.8rem 1rem; }
 #viewSal .sal-fgts div { display: flex; flex-direction: column; gap: 0.15rem; } #viewSal .sal-fgts span { font-weight: 600; } #viewSal .sal-fgts small { color: var(--muted); font-size: 0.8125rem; }
 #viewSal .sal-fgts b { font-variant-numeric: tabular-nums lining-nums; font-weight: 600; white-space: nowrap; }
-#viewSal .sal-det summary { cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--muted); }
-#viewSal .sal-det summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewSal .sal-det { border-top: 1px solid var(--line); padding-top: 1rem; }
+#viewSal .sal-det h3 { color: var(--fg); font-weight: 700; }
 #viewSal #s-det { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 #viewSal #s-det p { margin: 0; display: flex; justify-content: space-between; gap: 1rem; } #viewSal #s-det .h { color: var(--fg); font-weight: 600; margin-top: 0.4rem; }
+#viewSal #s-det p > span:last-child { color: var(--accent); }
 #viewSal .sal-foot { font-size: 0.8125rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem; }
 #viewSal .sal-foot p { margin: 0; text-wrap: pretty; }
 #viewSal .sal-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
@@ -839,7 +840,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     <nav class="menu" aria-label="Ferramentas">
       <a href="#comparador" class="mi" data-view="comparador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v20"/></svg><span>Comparador de texto</span></a>
       <a href="#formatador" class="mi" data-view="formatador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg><span>Formatador JSON e XML</span></a>
-      <a href="#horas" class="mi" data-view="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Horas do Brasil</span></a>
+      <a href="#horas" class="mi" data-view="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Calendário e horas</span></a>
       <a href="#salario" class="mi" data-view="salario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h4"/></svg><span>Calculadora de salário</span></a>
     </nav>
   </aside>
@@ -996,7 +997,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   </footer>
 </div>
     </section>
-    <section id="viewHrs" class="view" aria-label="Horas do Brasil" hidden>
+    <section id="viewHrs" class="view" aria-label="Calendário e horas" hidden>
 <div class="wrap">
   <header>
     <h1>Que horas são em cada canto do país?</h1>
@@ -1132,10 +1133,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <div><span>2ª parcela · restante, com os descontos</span><b id="s-p2"></b></div>
       </div>
       <div class="sal-fgts"><div><span>FGTS (8%)</span><small>Depositado pelo empregador. Não sai do seu salário.</small></div><b id="s-fgts"></b></div>
-      <details class="sal-det" open>
-        <summary>Ver como foi calculado</summary>
+      <div class="sal-det">
+        <h3>Como foi calculado</h3>
         <div id="s-det"></div>
-      </details>
+      </div>
     </section>
   </div>
 
