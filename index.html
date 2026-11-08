@@ -691,9 +691,9 @@ html.tela-cheia #viewSal .sal-res { order: -1; }
   #viewSal .sal-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   #viewSal .sal-form > :last-child { grid-column: auto; }
 }
-#viewSal { --pc-liq: #2e9e5b; --pc-inss: var(--accent); --pc-ir: #8a5cc2; --pc-fgts: var(--holiday); --pc-out: #9a8f78; }
-:root[data-theme="dark"] #viewSal { --pc-ir: #b08ae0; --pc-liq: #4fbf7f; --pc-out: #b8ad94; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #viewSal { --pc-ir: #b08ae0; --pc-liq: #4fbf7f; --pc-out: #b8ad94; } }
+#viewSal { --pc-liq: #2e9e5b; --pc-inss: var(--accent); --pc-ir: #8a5cc2; --pc-fgts: var(--holiday); --pc-va: #12a39a; --pc-out: #9a8f78; }
+:root[data-theme="dark"] #viewSal { --pc-ir: #b08ae0; --pc-liq: #4fbf7f; --pc-out: #b8ad94; --pc-va: #3cc7bd; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #viewSal { --pc-ir: #b08ae0; --pc-liq: #4fbf7f; --pc-out: #b8ad94; --pc-va: #3cc7bd; } }
 #viewSal .sal-pie { display: flex; flex-direction: column; gap: 0.75rem; }
 #viewSal .sal-pie[hidden] { display: none; }
 #viewSal .pie-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 0.75rem; }
@@ -1216,7 +1216,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <p>Pedir demissão ou ser demitido por justa causa não libera o saque. Estas são as regras gerais (Lei 8.036/1990), que podem mudar. Confira os detalhes no app FGTS.</p>
       </div>
       <div class="sal-pie" id="s-pie" hidden>
-        <div class="pie-head"><h3>Divisão do salário</h3><span class="pie-fica" id="s-pieFica"></span></div>
+        <div class="pie-head"><h3>Divisão do salário</h3><span class="pie-fica"><span id="s-pieFica"></span> <span class="pie-nao">(sem FGTS <button type="button" class="sal-help" data-tip="s-tipfica" aria-label="Por que não conta o FGTS?" aria-expanded="false" aria-controls="s-tipfica">?</button>)</span></span></div>
+        <p class="sal-tip" id="s-tipfica" hidden><b>Por que não conta o FGTS?</b> O FGTS é um depósito que o empregador faz na sua conta na Caixa e fica bloqueado: você só saca em situações previstas, como demissão sem justa causa ou compra da casa própria. Por isso o “fica para você” soma só o que chega à sua conta (líquido e vale alimentação). Já a lista abaixo inclui o FGTS no total, para mostrar tudo que o salário gera, então as porcentagens dela são diferentes.</p>
         <div class="pie-box">
           <ul class="pie-leg" id="s-pieLeg"></ul>
         </div>
@@ -2588,12 +2589,13 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     $("s-fgts").textContent = R(fgts);
 
     /* gráfico de pizza */
-    var pieBox = $("s-pie"), tot = Math.max(0, prov);
+    var pieBox = $("s-pie"), tot = Math.max(0, prov) + c2(vaVal);
     var fat = [
       ["Salário líquido", Math.max(0, liq), "var(--pc-liq)"],
       ["INSS", inss.valor, "var(--pc-inss)"],
       ["IRRF", ir, "var(--pc-ir)"],
       ["Outros descontos", outros, "var(--pc-out)"],
+      ["Vale alimentação", c2(vaVal), "var(--pc-va)", "fora do líquido"],
       ["FGTS", fgts, "var(--pc-fgts)", "depósito do empregador"]
     ].filter(function (x) { return x[1] > 0 || x[0] === "IRRF" || x[0] === "INSS"; });
     var soma = fat.reduce(function (a, x) { return a + x[1]; }, 0);
@@ -2605,7 +2607,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         leg += '<li><i style="background:' + x[2] + '"></i><span>' + x[0] + '</span><b style="color:' + x[2] + '">' + R(x[1]) + '</b><small>' + pct.format(fr * 100) + '% do total' + (x[3] ? ' · ' + x[3] : '') + '</small></li>';
       });
       $("s-pieLeg").innerHTML = leg;
-      $("s-pieFica").textContent = pct.format(Math.round(Math.max(0, liq) / tot * 1000) / 10) + "% do salário fica para você";
+      $("s-pieFica").textContent = pct.format(Math.round((Math.max(0, liq) + c2(vaVal)) / tot * 1000) / 10) + "% do salário fica para você";
     }
     vaVal = c2(vaVal);
     $("s-r-vaBox").hidden = !vaVal;
