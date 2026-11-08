@@ -258,6 +258,7 @@
 #viewFmt .grip:hover::before, #viewFmt .grip:focus-visible::before, #viewFmt .grip.on::before { opacity: 1; background: var(--accent); }
 #viewFmt .grip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 /* ---------- tela cheia (formatador e comparador) ---------- */
+.linha-ativa { position: absolute; left: 0; right: 0; top: 0; height: 0; display: none; pointer-events: none; background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .contador { flex: none; display: flex; justify-content: flex-end; gap: 0.9rem; padding: 0.3rem 1.25rem; border-top: 1px solid var(--line); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; user-select: none; }
 .btn-full, #c-btnFileA, #c-btnFileB { display: inline-flex; align-items: center; gap: 0.4rem; }
 .btn-full .i-co { display: none; }
@@ -2558,8 +2559,9 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (!pane) return;
     var c = document.createElement("div");
     c.className = "contador"; c.setAttribute("aria-live", "off");
-    var sc = document.createElement("span"), sl = document.createElement("span");
-    c.appendChild(sc); c.appendChild(sl);
+    var sp = document.createElement("span"), sc = document.createElement("span"), sl = document.createElement("span");
+    sp.style.marginRight = "auto"; sp.className = "cursor-pos";
+    c.appendChild(sp); c.appendChild(sc); c.appendChild(sl);
     var grip = pane.querySelector(".grip");
     if (grip) pane.insertBefore(c, grip); else pane.appendChild(c);
     function atualiza() {
@@ -2575,6 +2577,30 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         set: function (x) { d.set.call(t, x); atualiza(); }
       });
     }
+    var host = t.parentNode, band = document.createElement("div");
+    band.className = "linha-ativa"; band.setAttribute("aria-hidden", "true");
+    var emFmt = host.classList.contains("ta-wrap");
+    if (emFmt) host.insertBefore(band, host.firstChild); else host.insertBefore(band, t);
+    function faixa(linha) {
+      if (document.activeElement !== t) { band.style.display = "none"; return; }
+      var cs = getComputedStyle(t), lh = parseFloat(cs.lineHeight) || 20, pt = parseFloat(cs.paddingTop) || 0;
+      var y = pt + (linha - 1) * lh - t.scrollTop;
+      if (y + lh < 0 || y > t.clientHeight) { band.style.display = "none"; return; }
+      band.style.left = emFmt ? "0px" : (3.25 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)) + "px";
+      band.style.top = y + "px"; band.style.height = lh + "px"; band.style.display = "block";
+    }
+    var ultLinha = 1;
+    t.addEventListener("scroll", function () { faixa(ultLinha); });
+    t.addEventListener("blur", function () { band.style.display = "none"; });
+    function posicao() {
+      var v = t.value, a = t.selectionStart, f = t.selectionEnd;
+      if (a == null) return;
+      var antes = v.slice(0, f), ln = antes.split(/\r\n|\r|\n/), linha = ln.length, col = ln[ln.length - 1].length + 1;
+      ultLinha = linha; faixa(linha);
+      sp.textContent = "Linha " + fmt(linha) + ", coluna " + fmt(col) + (f > a ? " (" + fmt(f - a) + " selecionados)" : "");
+    }
+    ["input", "click", "keyup", "focus", "select", "mouseup"].forEach(function (ev) { t.addEventListener(ev, posicao); });
+    document.addEventListener("selectionchange", function () { if (document.activeElement === t) posicao(); });
     t.addEventListener("input", atualiza);
     atualiza();
   });
