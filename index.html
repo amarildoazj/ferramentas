@@ -698,6 +698,7 @@ html.tela-cheia #viewSal .sal-res { order: -1; }
 #viewSal .sal-pie[hidden] { display: none; }
 #viewSal .pie-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 0.75rem; }
 #viewSal .sal-pie h3 { color: var(--fg); font-weight: 700; }
+#viewSal .pie-resto { color: var(--danger, #c0392b); font-weight: 700; }
 #viewSal .pie-fica { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
 #viewSal .pie-box { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
 #viewSal .pie-leg { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; flex: 1 1 100%; min-width: 0; }
@@ -1216,7 +1217,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <p>Pedir demissão ou ser demitido por justa causa não libera o saque. Estas são as regras gerais (Lei 8.036/1990), que podem mudar. Confira os detalhes no app FGTS.</p>
       </div>
       <div class="sal-pie" id="s-pie" hidden>
-        <div class="pie-head"><h3>Divisão do salário</h3><span class="pie-fica"><span id="s-pieFica"></span> <span class="pie-nao">(sem FGTS) <button type="button" class="sal-help" data-tip="s-tipfica" aria-label="Por que não conta o FGTS?" aria-expanded="false" aria-controls="s-tipfica">?</button></span></span></div>
+        <div class="pie-head"><h3>Divisão do salário</h3><span class="pie-fica"><span id="s-pieFica"></span> <span class="pie-resto" id="s-pieResto"></span> <span class="pie-nao">(sem FGTS) <button type="button" class="sal-help" data-tip="s-tipfica" aria-label="Por que não conta o FGTS?" aria-expanded="false" aria-controls="s-tipfica">?</button></span></span></div>
         <p class="sal-tip" id="s-tipfica" hidden><b>Por que não conta o FGTS?</b> O FGTS é um depósito que o empregador faz na sua conta na Caixa e fica bloqueado: você só saca em situações previstas, como demissão sem justa causa ou compra da casa própria. Por isso o “fica para você” soma só o que chega à sua conta (líquido e vale alimentação). Já a lista abaixo inclui o FGTS no total, para mostrar tudo que o salário gera, então as porcentagens dela são diferentes.</p>
         <div class="pie-box">
           <ul class="pie-leg" id="s-pieLeg"></ul>
@@ -2608,6 +2609,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       });
       $("s-pieLeg").innerHTML = leg;
       $("s-pieFica").textContent = pct.format(Math.round((Math.max(0, liq) + c2(vaVal)) / tot * 1000) / 10) + "% do salário fica para você";
+      var fi = Math.round((Math.max(0, liq) + c2(vaVal)) / tot * 1000) / 10;
+      $("s-pieResto").textContent = "(−" + pct.format(Math.round((100 - fi) * 10) / 10) + "%)";
     }
     vaVal = c2(vaVal);
     $("s-r-vaBox").hidden = !vaVal;
