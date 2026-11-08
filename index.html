@@ -641,6 +641,7 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewSal .sal-help:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #viewSal .sal-tip { margin: 0; font-size: 0.8125rem; line-height: 1.45; background: var(--accent-soft); border-radius: 0.7rem; padding: 0.65rem 0.8rem; text-wrap: pretty; }
 #viewSal .sal-tip[hidden] { display: none; }
+#viewSal .sal-tip p { margin: 0 0 0.4rem; } #viewSal .sal-tip p:last-child { margin-bottom: 0; } #viewSal .sal-tip ul { margin: 0 0 0.4rem; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
 #viewSal .sal-va { display: flex; flex-direction: column; gap: 0.15rem; margin-top: -0.6rem; background: color-mix(in srgb, #2e9e5b 14%, var(--surface)); border: 1px solid color-mix(in srgb, #2e9e5b 35%, var(--line)); border-radius: 0.7rem; padding: 0.5rem 1rem; }
 #viewSal .sal-va[hidden] { display: none; }
 #viewSal .sal-va div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 0.875rem; font-weight: 600; color: #1f7a45; }
@@ -690,6 +691,20 @@ html.tela-cheia #viewSal .sal-res { order: -1; }
   #viewSal .sal-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   #viewSal .sal-form > :last-child { grid-column: auto; }
 }
+#viewSal { --pc-liq: #2e9e5b; --pc-inss: var(--accent); --pc-ir: #8a5cc2; --pc-fgts: var(--holiday); --pc-out: #9a8f78; }
+:root[data-theme="dark"] #viewSal { --pc-ir: #b08ae0; --pc-liq: #4fbf7f; --pc-out: #b8ad94; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #viewSal { --pc-ir: #b08ae0; --pc-liq: #4fbf7f; --pc-out: #b8ad94; } }
+#viewSal .sal-pie { display: flex; flex-direction: column; gap: 0.75rem; }
+#viewSal .sal-pie[hidden] { display: none; }
+#viewSal .pie-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 0.75rem; }
+#viewSal .sal-pie h3 { color: var(--fg); font-weight: 700; }
+#viewSal .pie-fica { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+#viewSal .pie-box { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+#viewSal .pie-leg { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; flex: 1 1 100%; min-width: 0; }
+#viewSal .pie-leg li { display: grid; grid-template-columns: 0.75rem minmax(0, 1fr) auto; column-gap: 0.5rem; align-items: baseline; font-size: 0.875rem; }
+#viewSal .pie-leg i { width: 0.75rem; height: 0.75rem; border-radius: 3px; align-self: center; }
+#viewSal .pie-leg b { font-weight: 600; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+#viewSal .pie-leg small { grid-column: 2 / -1; color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 #viewSal .sal-parc { display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg); border: 1px solid var(--line); border-radius: 0.8rem; padding: 0.8rem 1rem; }
 #viewSal .sal-parc div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 #viewSal .sal-parc small { color: var(--muted); font-size: 0.8125rem; }
@@ -1176,17 +1191,36 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         <div id="s-r-heL"><dt>Horas extras <small id="s-r-heN"></small></dt><dd id="s-r-he"></dd></div>
         <div class="tot"><dt>Total de proventos</dt><dd id="s-r-prov"></dd></div>
         <div class="neg"><dt>INSS <small id="s-r-inssN"></small></dt><dd id="s-r-inss"></dd></div>
-        <div class="neg"><dt>IRRF <small id="s-r-irN"></small></dt><dd id="s-r-ir"></dd></div>
+        <div class="neg"><dt>IRRF <button type="button" class="sal-help" data-tip="s-tipir" aria-label="O que é o IRRF?" aria-expanded="false" aria-controls="s-tipir">?</button> <small id="s-r-irN"></small></dt><dd id="s-r-ir"></dd></div>
         <div class="neg" id="s-r-descL"><dt>Outros descontos</dt><dd id="s-r-desc"></dd></div>
         <div class="tot"><dt>Total de descontos</dt><dd id="s-r-tdesc"></dd></div>
       </dl>
+      <p class="sal-tip" id="s-tipir" hidden><b>IRRF (imposto de renda retido na fonte):</b> a empresa desconta do seu salário todo mês e repassa à Receita Federal. O cálculo parte do total tributável, tira o INSS e os dependentes (ou o desconto simplificado de R$ 607,20, o que for maior) e aplica a tabela progressiva de 2026, de 0% até 27,5%. Quem recebe até R$ 5.000 por mês não paga, entre R$ 5.000,01 e R$ 7.350 há um redutor, e acima disso vale a tabela cheia. O valor pode ser acertado na declaração anual.</p>
       </div>
       <div class="res-b">
       <div class="sal-parc" id="s-r-parc" hidden>
         <div><span>1ª parcela · adiantamento <small id="s-p1n"></small></span><b id="s-p1"></b></div>
         <div><span>2ª parcela · restante, com os descontos</span><b id="s-p2"></b></div>
       </div>
-      <div class="sal-fgts"><div><span>FGTS (8%)</span><small>Depositado pelo empregador. Não sai do seu salário.</small></div><b id="s-fgts"></b></div>
+      <div class="sal-fgts"><div><span>FGTS (8%) <button type="button" class="sal-help" data-tip="s-tipfgts" aria-label="Como sacar o FGTS?" aria-expanded="false" aria-controls="s-tipfgts">?</button></span><small>Depositado pelo empregador. Não sai do seu salário.</small></div><b id="s-fgts"></b></div>
+      <div class="sal-tip" id="s-tipfgts" hidden>
+        <p><b>FGTS:</b> o empregador deposita 8% do seu salário todo mês numa conta em seu nome na Caixa. Não é descontado de você. Dá para consultar e pedir o saque pelo app FGTS (opção "Meus Saques") ou numa agência da Caixa.</p>
+        <p><b>Quando pode sacar:</b></p>
+        <ul>
+          <li>Demissão sem justa causa: o saldo todo, mais a multa de 40% paga pela empresa.</li>
+          <li>Demissão por acordo: 80% do saldo e multa de 20%.</li>
+          <li>Casa própria: comprar, financiar, pagar parte das parcelas ou amortizar, com pelo menos 3 anos de FGTS.</li>
+          <li>Aposentadoria, doença grave (como câncer e HIV), desastre natural, 70 anos de idade e falecimento (herdeiros).</li>
+          <li>Saque-aniversário: se você aderir, saca uma parte do saldo todo ano no mês do aniversário. Em contrapartida, se for demitido sem justa causa, recebe só a multa de 40%, sem o saldo. Voltar ao saque-rescisão tem carência.</li>
+        </ul>
+        <p>Pedir demissão ou ser demitido por justa causa não libera o saque. Estas são as regras gerais (Lei 8.036/1990), que podem mudar. Confira os detalhes no app FGTS.</p>
+      </div>
+      <div class="sal-pie" id="s-pie" hidden>
+        <div class="pie-head"><h3>Divisão do salário</h3><span class="pie-fica" id="s-pieFica"></span></div>
+        <div class="pie-box">
+          <ul class="pie-leg" id="s-pieLeg"></ul>
+        </div>
+      </div>
       </div>
       <div class="res-c">
       <div class="sal-det">
@@ -2552,6 +2586,27 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     $("s-r-descL").hidden = !outros; $("s-r-desc").textContent = "− " + R(outros);
     $("s-r-tdesc").textContent = "− " + R(tdesc);
     $("s-fgts").textContent = R(fgts);
+
+    /* gráfico de pizza */
+    var pieBox = $("s-pie"), tot = Math.max(0, prov);
+    var fat = [
+      ["Salário líquido", Math.max(0, liq), "var(--pc-liq)"],
+      ["INSS", inss.valor, "var(--pc-inss)"],
+      ["IRRF", ir, "var(--pc-ir)"],
+      ["Outros descontos", outros, "var(--pc-out)"],
+      ["FGTS", fgts, "var(--pc-fgts)", "depósito do empregador"]
+    ].filter(function (x) { return x[1] > 0 || x[0] === "IRRF" || x[0] === "INSS"; });
+    var soma = fat.reduce(function (a, x) { return a + x[1]; }, 0);
+    pieBox.hidden = !(tot > 0 && soma > 0);
+    if (!pieBox.hidden) {
+      var leg = "";
+      fat.forEach(function (x) {
+        var fr = x[1] / soma;
+        leg += '<li><i style="background:' + x[2] + '"></i><span>' + x[0] + '</span><b style="color:' + x[2] + '">' + R(x[1]) + '</b><small>' + pct.format(fr * 100) + '% do total' + (x[3] ? ' · ' + x[3] : '') + '</small></li>';
+      });
+      $("s-pieLeg").innerHTML = leg;
+      $("s-pieFica").textContent = pct.format(Math.round(Math.max(0, liq) / tot * 1000) / 10) + "% do salário fica para você";
+    }
     vaVal = c2(vaVal);
     $("s-r-vaBox").hidden = !vaVal;
     $("s-vaTot").textContent = R(c2(liq + vaVal)); $("s-vaVal").textContent = R(vaVal);
