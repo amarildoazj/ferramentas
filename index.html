@@ -599,6 +599,7 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
     min-width: 0;
   }
 #viewHrs .clock-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+#viewHrs .grid .clock-head { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
 #viewHrs .clock-name { font-weight: 600; font-size: 1rem; }
 #viewHrs .offset {
     font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em;
@@ -626,7 +627,8 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewHrs .clock.main .date-value { font-size: clamp(1.5rem, 4vw, 2.25rem); }
 #viewHrs .clock.main .clock-name { font-size: 1.125rem; }
 #viewHrs .clock.main .states { font-size: 0.9375rem; }
-#viewHrs .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; }
+#viewHrs .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 1rem; }
+@media (max-width: 36rem) { #viewHrs .grid { grid-template-columns: 1fr; } }
 #viewHrs .hrs-bar { display: flex; justify-content: flex-end; margin-bottom: -1rem; }
 @media (min-width: 36.01rem) {
 html:not(.tela-cheia) #viewHrs > .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; row-gap: 0.5rem; }
