@@ -1546,7 +1546,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     <span class="parab" id="r-mTitle">Parabéns! Ganhador</span>
     <div class="quem" id="r-mWho"></div>
     <p class="vez" id="r-mVez">É a sua vez de apresentar a daily.</p>
-    <p class="data"><span class="lab">Apresentação</span><span class="dia" id="r-mDate"></span></p>
+    <p class="data"><span class="lab">Apresentação para</span><span class="dia" id="r-mDate"></span></p>
     <p class="nota" id="r-mNota" hidden></p>
     <div class="acts">
       <button type="button" class="btn" id="r-mCopy">Copiar imagem</button>
@@ -3333,7 +3333,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   var dataTxt = "", notaTxt = "";
   function showWin() {
     var r = proximoDia(new Date());
-    dataTxt = "Apresentação: " + fmtDia(r.data);
+    dataTxt = "Apresentação para " + fmtDia(r.data);
     var grupos = [];
     r.pulou.forEach(function (x) { /* junta dias seguidos com o mesmo nome (ex.: Carnaval) */
       var g = grupos.filter(function (y) { return y.n === x.n; })[0];
@@ -3396,7 +3396,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       x.font = "400 " + fs + "px " + ff; x.fillStyle = g("--fg", "#29261f"); x.fillText(nm, x0 + numW + gap, y);
       x.textAlign = "center";
     });
-    x.fillStyle = g("--fg", "#29261f"); x.font = "700 42px DM Sans, Arial, sans-serif";
+    x.fillStyle = g("--fg", "#29261f");
+    var fd = 42; do { x.font = "700 " + fd + "px DM Sans, Arial, sans-serif"; fd -= 2; } while (x.measureText(dataTxt).width > W - 200 && fd > 20); /* cabe no cartão mesmo com datas longas */
     x.fillText(dataTxt, W / 2, yData);
     if (notaTxt) { x.fillStyle = g("--muted", "#6f6a5c"); x.font = "400 26px DM Sans, Arial, sans-serif"; x.fillText(notaTxt, W / 2, yNota); }
     return c;
