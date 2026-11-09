@@ -1,3 +1,87 @@
+<!--
+=====================================================================================
+ FERRAMENTAS DEVs · MAPA DO CÓDIGO
+=====================================================================================
+ É um arquivo só (ferramentas.html), sem build e sem bibliotecas: HTML + CSS + JavaScript.
+ Tudo roda no navegador, nada é enviado a servidor. Os textos da tela estão em português.
+
+ O ARQUIVO, DE CIMA PARA BAIXO
+   1. <head>        título, ícone e fontes do Google (Newsreader, DM Sans, DM Mono)
+   2. <style>       todo o CSS, separado por comentários (veja "ONDE FICA CADA PÁGINA")
+   3. <body>        menu lateral (<aside class="side">) e as 4 páginas (<main class="content">)
+   4. <script> #1   JavaScript de cada página + menu lateral e tema
+   5. <script> #2   recursos extras: cores e numeração do formatador, alças de altura,
+                    modo Expandir, divisória arrastável e contador de caracteres
+
+ ONDE FICA CADA PÁGINA
+   As "páginas" são 4 <section class="view"> dentro de <main>. Só uma aparece por vez
+   (as outras ficam com o atributo hidden). O menu lateral troca a página e o endereço
+   (#comparador, #formatador, #horas, #salario). Para achar o trecho, use a busca do
+   editor (Ctrl+F) com o texto indicado.
+
+   PÁGINA                  MENU / ENDEREÇO   SEÇÃO HTML (id)  IDs   CSS                       JS
+   Comparador de texto     #comparador       viewCmp          c-    "/* Comparador */"        IIFE com var P = "c-"
+   Formatador JSON e XML   #formatador       viewFmt          f-    "/* Formatador */"        IIFE com var P = "f-"
+   Calendário e horas      #horas            viewHrs          h-    "/* Horas do Brasil */"   IIFE com var P = "h-"
+   Calculadora de salário  #salario          viewSal          s-    "/* Calculadora de salário */"   "/* Calculadora de salário */"
+
+   Os ids dos campos começam com o prefixo da página (ex.: s-bruto, f-inp, c-inpA, h-clocks).
+   O CSS de cada página começa sempre com #viewXxx, para uma página não mexer na outra.
+
+ PARTES COMPARTILHADAS
+   Menu lateral e troca de página .... JS: "/* Menu lateral e tema */" (objeto VIEWS)
+   Modo escuro/claro ................. botão #themeBtn · atributo data-theme no <html> ·
+                                       salvo em localStorage "ferramentas-tema"
+   Página aberta por último .......... localStorage "ferramentas-view"
+   Cores e medidas ................... variáveis CSS no começo do <style> (:root)
+   Modo Expandir ..................... classe html.tela-cheia (CSS "tela cheia"; JS "Expandir:")
+   Copiar para a área de transferência window.__copia (script #2)
+   Layout geral e telas pequenas ..... CSS "Layout: menu lateral" e @media (max-width: 56rem)
+
+ COMPARADOR (viewCmp)
+   Duas caixas (original e modificado) que comparam sozinhas enquanto você digita.
+   Algoritmo ....... myers() e compareLines(): diferença linha a linha; as linhas parecidas
+                     são pareadas e as palavras alteradas ficam marcadas.
+   Funções ......... compare() monta o resultado, vivo() espera 250 ms depois de digitar,
+                     formataLado() formata JSON/XML ao colar um arquivo ou texto.
+   Marcadores ...... /*DIFF-START*/ no começo da parte do algoritmo.
+
+ FORMATADOR (viewFmt)
+   jsonCheck/jsonFormat/jsonMin e xmlTokens/xmlFormat/xmlMin (começo do script #1).
+   A interface (botões, abas JSON/XML, indentação, exemplo) está no IIFE com P = "f-".
+
+ CALENDÁRIO E HORAS (viewHrs)
+   ZONES ........... os 4 fusos do Brasil (Brasília, Noronha, Amazonas, Acre).
+   tick() .......... atualiza os relógios a cada segundo.
+   updateCalendar() e renderHolidays() ... calendário do mês (setas ‹ ›) e lista de feriados
+                     (Páscoa calculada em easterDate; buildHolidays monta o ano).
+
+ CALCULADORA DE SALÁRIO (viewSal)
+   TABELAS 2026 (atualize aqui todo ano): constantes INSS, IRRF, DED_DEP e DED_SIMPL,
+   mais o redutor do IRRF dentro de calcula() (isenção até R$ 5.000, redutor até R$ 7.350,
+   fórmula 978,62 - 0,133145 x renda, máximo 312,89).
+   calcula() ....... roda a cada alteração de campo e faz, nesta ordem:
+                     1) salário com aumento (%)  2) adicionais (tributáveis x não tributáveis,
+                     vale alimentação separado)  3) horas extras + DSR  4) INSS (calcInss)
+                     5) IRRF (dedução, tabela, redutor)  6) líquido, FGTS e parcelas
+                     7) lista "Divisão do salário"  8) 13º e férias  9) resumo do ano
+                     e contas mensais.
+   Outras funções .. add()/addConta() criam as linhas de adicionais e de contas;
+                     autoDias() calcula dias úteis do mês; buildPlanos() monta as opções
+                     de férias; o botão "Salvar meus dados" grava em localStorage
+                     "ferramentas-salario" (somente neste navegador).
+   Ordem na tela ... definida por CSS (order e @media) em "Calculadora de salário":
+                     celular = dados, resultado, 13º e férias, resumo do ano;
+                     computador = resultado, 13º e férias, resumo do ano, dados.
+
+ DICAS PARA MEXER
+   - Para criar uma página nova: copie uma <section class="view" hidden>, ponha um
+     prefixo novo nos ids, inclua o nome em VIEWS (JS) e um <a class="mi"> no menu.
+   - Mudou uma tabela de imposto? Edite só as constantes da calculadora e confira com
+     um contracheque (a opção "Cortar os centavos de cada faixa do INSS" imita folhas
+     que cortam em vez de arredondar).
+=====================================================================================
+-->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ferramentas DEVs</title>
@@ -678,7 +762,7 @@ html.tela-cheia #viewSal .sal-res { order: -1; }
 html.tela-cheia #viewSal .sal-form { order: 1; }
 @media (min-width: 64rem) {
   html.tela-cheia #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
-  html.tela-cheia #viewSal .sal-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  html.tela-cheia #viewSal .sal-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
   html.tela-cheia #viewSal .sal-contas { grid-column: 1 / -1; }
 }
 #viewSal .sal-form { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
@@ -689,7 +773,7 @@ html.tela-cheia #viewSal .sal-form { order: 1; }
   #viewSal .wrap { max-width: 90rem; }
   #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
   #viewSal .sal-res { order: -1; }
-  #viewSal .sal-form { order: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  #viewSal .sal-form { order: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
 }
 @media (min-width: 70rem) {
   #viewSal .sal-res { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 2rem; row-gap: 1rem; align-items: start; }
@@ -927,6 +1011,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     </nav>
   </aside>
   <main class="content">
+    <!-- ================= PÁGINA: Comparador de texto · menu #comparador · ids c- · JS: IIFE com P = "c-" · CSS: "/* Comparador */" ================= -->
     <section id="viewCmp" class="view" aria-label="Comparador de texto">
 <div class="wrap">
   <header>
@@ -1012,6 +1097,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   </footer>
 </div>
     </section>
+    <!-- ================= PÁGINA: Formatador JSON e XML · menu #formatador · ids f- · JS: IIFE com P = "f-" · CSS: "/* Formatador */" ================= -->
     <section id="viewFmt" class="view" aria-label="Formatador JSON e XML" hidden>
 <div class="wrap">
   <header>
@@ -1079,6 +1165,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   </footer>
 </div>
     </section>
+    <!-- ================= PÁGINA: Calendário e horas · menu #horas · ids h- · JS: IIFE com P = "h-" · CSS: "/* Horas do Brasil */" ================= -->
     <section id="viewHrs" class="view" aria-label="Calendário e horas" hidden>
 <div class="wrap">
   <header>
@@ -1123,6 +1210,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   </footer>
 </div>
     </section>
+    <!-- ================= PÁGINA: Calculadora de salário · menu #salario · ids s- · JS: "/* Calculadora de salário */" · CSS: "/* Calculadora de salário */" ================= -->
     <section id="viewSal" class="view" aria-label="Calculadora de salário" hidden>
 <div class="wrap">
   <header>
@@ -1317,6 +1405,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
 <a class="byrota" href="https://amarildoazj.github.io/rota/" target="_blank" rel="noopener" aria-label="Site criado por Rota"><span>by</span><b class="wm">R<svg viewBox="0 0 40 52" aria-hidden="true"><path fill-rule="evenodd" d="M20 51C8 36 2 28 2 19a18 18 0 0 1 36 0c0 9-6 17-18 32zM20 11a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/></svg>ta.</b></a>
 <script>
+/* ===== SCRIPT 1: lógica de cada página (JSON/XML compartilhado, Formatador, Comparador, Calendário e horas, Calculadora, Menu) ===== */
 /* JSON e XML (compartilhado) */
   function posToLC(s, pos) {
     var line = 1, col = 1;
@@ -1557,6 +1646,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     return toks.filter(function (t) { return t.t !== "comment"; }).map(function (t) { return t.s; }).join("");
   }
 
+/* ===== PÁGINA Formatador JSON e XML: botões, abas, indentação, exemplo, copiar ===== */
 (function () {
   var P = "f-", ROOT = document.getElementById("viewFmt");
   /* ---------- Interface ---------- */
@@ -1725,6 +1815,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   load(startKind);
 })();
 
+/* ===== PÁGINA Comparador de texto: algoritmo de diferença + interface ao vivo ===== */
 (function () {
   var P = "c-", ROOT = document.getElementById("viewCmp");
 /*DIFF-START*/
@@ -2280,6 +2371,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   };
 })();
 
+/* ===== PÁGINA Calendário e horas: fusos, relógios, calendário e feriados ===== */
 (function () {
   var P = "h-", ROOT = document.getElementById("viewHrs");
   var ZONES = [
@@ -2539,7 +2631,9 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 })();
 
 
-/* Calculadora de salário */
+/* ===== PÁGINA Calculadora de salário =====
+   Fluxo: qualquer campo -> calcula() -> preenche Resultado, 13º e férias, Resumo do ano.
+   Tabelas de 2026 logo abaixo ("Tabelas 2026"). Dados salvos: localStorage "ferramentas-salario". */
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var bruto = $("s-bruto"), dep = $("s-dep"), desc = $("s-desc"), lista = $("s-adds");
@@ -2615,6 +2709,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
   function linha(a, b) { return "<p><span>" + a + "</span><span>" + b + "</span></p>"; }
 
+  /* calcula(): lê os campos, calcula tudo e escreve na tela. Chamada a cada alteração. */
   function calcula() {
     var salBase = num(bruto.value), aumPct = num(aum.value), sal = c2(salBase * (1 + aumPct / 100)), nd = Math.max(0, Math.min(20, parseInt(dep.value, 10) || 0)), outros = num(desc.value);
     var trib = sal, nao = 0, adicionais = [], vaVal = 0;
@@ -2899,7 +2994,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   calcula();
 })();
 
-/* Menu lateral e tema */
+/* ===== Menu lateral e tema: troca de página (VIEWS), endereço #..., modo escuro/claro ===== */
 (function () {
   var VIEWS = { comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal" };
   var items = document.querySelectorAll(".mi");
@@ -2961,6 +3056,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 })();
 </script>
 <script>
+/* ===== SCRIPT 2: recursos extras (cores do formatador, alças de altura, Expandir, divisória, contador) ===== */
 /* Formatador: numeração de linhas + cores (JSON e XML) */
 (function () {
   var nativo = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
