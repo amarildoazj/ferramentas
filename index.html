@@ -81,8 +81,9 @@
    draw() ........ desenha a roleta num <canvas> (rot = ângulo atual; ponteiro no topo).
    spin() ........ sorteia o vencedor com rnd() (crypto, sem viés) ANTES de girar e calcula
                    o ângulo final para ele parar sob o ponteiro; a animação é só visual.
-   copyWin() ..... botão "Copiar imagem" do modal: desenha o aviso num canvas (winCanvas) e copia como PNG;
-                   se o navegador negar a cópia, baixa "ganhador.png".
+   copyWin() ..... botão "Copiar imagem" do modal: a imagem (canvas, winCanvas) é preparada ao abrir o modal
+                   (prepImg) e copiada como PNG no toque. Se falhar: no celular abre o compartilhar (navigator.share)
+                   e, por último, mostra a imagem para segurar e copiar; no computador baixa "ganhador.png".
    proximoDia() .. data da apresentação: dia seguinte; sábado/domingo e feriados (window.__feriadoNome, da
                    página Calendário) são pulados, então sexta vai para segunda.
    seq ........... todos os ganhadores desde que a página abriu, na ordem do sorteio (1º, 2º...). O modal
@@ -920,6 +921,9 @@ html.tela-cheia #viewRol .rol-stage { width: min(100%, max(18rem, calc(100dvh - 
 #viewRol .rol-box .data .lab { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 #viewRol .rol-box .data .dia { font-size: clamp(1rem, 4.2vw, 1.6rem); font-weight: 600; color: var(--fg); white-space: nowrap; }
 #viewRol .rol-box .nota { margin: 0; font-size: 0.875rem; color: var(--muted); text-wrap: balance; }
+#viewRol .rol-box .imgbox { width: 100%; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; }
+#viewRol .rol-box .imgbox p { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+#viewRol .rol-box .imgbox img { max-width: 100%; border-radius: 0.6rem; border: 1px solid var(--line); -webkit-touch-callout: default; user-select: auto; }
 #viewRol .rol-box .acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 0.6rem; }
 #viewRol .rol-box .btn { padding: 0.7rem 1.5rem; }
 @keyframes rolPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -1548,6 +1552,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     <p class="vez" id="r-mVez">É a sua vez de apresentar a daily.</p>
     <p class="data"><span class="lab">Apresentação para</span><span class="dia" id="r-mDate"></span></p>
     <p class="nota" id="r-mNota" hidden></p>
+    <div class="imgbox" id="r-mImgBox" hidden><p>Segure a imagem para copiar ou salvar</p><img id="r-mImg" alt="Imagem do ganhador"></div>
     <div class="acts">
       <button type="button" class="btn" id="r-mCopy">Copiar imagem</button>
       <button type="button" class="btn" id="r-mNext">Próximo</button>
@@ -3354,6 +3359,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     $("mNext").hidden = pool().length < 1;
     $("mDate").textContent = fmtDia(r.data);
     $("mNota").textContent = notaTxt; $("mNota").hidden = !notaTxt;
+    $("mImgBox").hidden = true; prepImg();
     modal.hidden = false; $("mOk").focus();
   }
   function closeWin() { if (modal.hidden) return; modal.hidden = true; $("spin").focus(); }
@@ -3402,20 +3408,39 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (notaTxt) { x.fillStyle = g("--muted", "#6f6a5c"); x.font = "400 26px DM Sans, Arial, sans-serif"; x.fillText(notaTxt, W / 2, yNota); }
     return c;
   }
-  function copyWin() {
-    var b = $("mCopy"), names = seq.slice();
-    function msgBtn(t) { b.textContent = t; setTimeout(function () { b.textContent = "Copiar imagem"; }, 2200); }
-    function baixa(cv) {
-      var a = document.createElement("a"); a.download = "ganhador.png"; a.href = cv.toDataURL("image/png");
-      document.body.appendChild(a); a.click(); document.body.removeChild(a); msgBtn("Baixada (sem acesso à cópia)");
-    }
+  /* A imagem é preparada assim que o modal abre (imgPromise). Assim o toque em "Copiar imagem" pede a cópia na hora,
+     sem esperar nada antes: Safari/iPhone e Chrome/Android só aceitam a cópia dentro do próprio toque. */
+  var imgPromise = null;
+  function prepImg() {
+    var names = seq.slice();
     var fonts = document.fonts && document.fonts.load ? Promise.all([document.fonts.load("400 100px Newsreader"), document.fonts.load("700 30px 'DM Sans'")]).catch(function () {}) : Promise.resolve();
-    fonts.then(function () {
-      var cv = winCanvas(names);
-      if (!(navigator.clipboard && window.ClipboardItem && cv.toBlob)) { baixa(cv); return; }
-      var item = new ClipboardItem({ "image/png": new Promise(function (ok, no) { cv.toBlob(function (bl) { bl ? ok(bl) : no(); }, "image/png"); }) });
-      navigator.clipboard.write([item]).then(function () { msgBtn("Imagem copiada!"); }, function () { baixa(cv); });
+    imgPromise = fonts.then(function () {
+      return new Promise(function (ok, no) { winCanvas(names).toBlob(function (bl) { bl ? ok(bl) : no(); }, "image/png"); });
     });
+    imgPromise.catch(function () {});
+  }
+  function copyWin() {
+    var b = $("mCopy"), p = imgPromise;
+    if (!p) return;
+    function msgBtn(t) { b.textContent = t; setTimeout(function () { b.textContent = "Copiar imagem"; }, 2600); }
+    var toque = window.matchMedia && matchMedia("(pointer: coarse)").matches;
+    function mostra(bl) { /* último recurso: mostra a imagem para segurar o dedo e copiar/salvar */
+      $("mImg").src = URL.createObjectURL(bl); $("mImgBox").hidden = false; msgBtn(toque ? "Segure a imagem" : "Use o botão direito na imagem");
+    }
+    function plano(bl) {
+      var file = null; try { file = new File([bl], "ganhador.png", { type: "image/png" }); } catch (e) {}
+      if (toque && file && navigator.canShare && navigator.canShare({ files: [file] })) { /* celular: bandeja de compartilhar (Copiar, Salvar, WhatsApp...) */
+        navigator.share({ files: [file] }).then(function () { msgBtn("Compartilhada"); }, function () { mostra(bl); });
+        return;
+      }
+      if (!toque) { var a = document.createElement("a"); a.download = "ganhador.png"; a.href = URL.createObjectURL(bl); document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+      mostra(bl);
+    }
+    function falhou() { p.then(plano, function () { msgBtn("Não foi possível criar a imagem"); }); }
+    if (navigator.clipboard && window.ClipboardItem) {
+      try { navigator.clipboard.write([new ClipboardItem({ "image/png": p })]).then(function () { msgBtn("Imagem copiada!"); }, falhou); }
+      catch (e) { falhou(); }
+    } else falhou();
   }
   $("mCopy").addEventListener("click", copyWin);
   $("reset").addEventListener("click", function () { /* zera só os ganhadores; a lista de pessoas continua */
