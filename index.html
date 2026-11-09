@@ -604,11 +604,11 @@ var CONFIG = {
 }
 .btn-full, #c-btnFileA, #c-btnFileB { display: inline-flex; align-items: center; gap: 0.4rem; }
 .btn-full .i-co { display: none; }
-/* Expandir: "Modo escuro" e "Recolher" com o mesmo tamanho; Modo escuro redondo e Recolher retangular,
-   como no normal */
+/* Expandir: "Modo escuro" e "Recolher" com a mesma altura e largura ajustada ao texto;
+   Modo escuro redondo e Recolher retangular, como no normal */
 html.tela-cheia #themeBtn, html.tela-cheia .btn-full {
   box-sizing: border-box !important;
-  width: 8.75rem !important;
+  width: auto !important;
   height: 2.25rem !important;
   padding: 0 0.9rem !important;
   margin: 0 !important;
@@ -625,7 +625,7 @@ html.tela-cheia #themeBtn, html.tela-cheia .btn-full {
 html.tela-cheia #themeBtn {
   border-radius: 999px !important;
 }
-/* Modo escuro continua redondo, como no normal */;
+/* Modo escuro continua redondo, como no normal */
 html.tela-cheia .btn-full .i-co { display: inline; }
 html.tela-cheia .btn-full .i-ex { display: none; }
 html.tela-cheia body {
