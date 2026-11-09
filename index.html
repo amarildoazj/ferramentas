@@ -261,6 +261,7 @@ var CONFIG = {
 <style>
   /* Layout: menu lateral à esquerda (comparador, formatador e horas) e a ferramenta escolhida à direita. */
   :root {
+    --menu-topo: 2.5rem;     /* espaço entre o topo da tela e o menu lateral fixado ao rolar */
     --bg: #f5f3ec;
     --surface: #fbfaf6;
     --fg: #29261f;
@@ -347,7 +348,7 @@ var CONFIG = {
     align-items: start;
   }
   .side {
-    position: sticky; top: env(safe-area-inset-top, 0px);
+    position: sticky; top: calc(var(--menu-topo) + env(safe-area-inset-top, 0px));
     display: flex; flex-direction: column; gap: 1.5rem;
     padding-right: 1.5rem; border-right: 1px solid var(--line); min-height: 20rem;
   }
