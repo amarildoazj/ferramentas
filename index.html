@@ -81,6 +81,14 @@
    draw() ........ desenha a roleta num <canvas> (rot = ângulo atual; ponteiro no topo).
    spin() ........ sorteia o vencedor com rnd() (crypto, sem viés) ANTES de girar e calcula
                    o ângulo final para ele parar sob o ponteiro; a animação é só visual.
+   copyWin() ..... botão "Copiar imagem" do modal: desenha o aviso num canvas (winCanvas) e copia como PNG;
+                   se o navegador negar a cópia, baixa "ganhador.png".
+   proximoDia() .. data da apresentação: dia seguinte; sábado/domingo e feriados (window.__feriadoNome, da
+                   página Calendário) são pulados, então sexta vai para segunda.
+   seq ........... todos os ganhadores desde que a página abriu, na ordem do sorteio (1º, 2º...). O modal
+                   mostra todos; "Próximo" sorteia mais um. Só Limpar lista / Time padrão zeram.
+   #r-reset ...... botão "Limpar ganhadores": limpa seq, hist e done (todos voltam à roleta); a lista de pessoas fica.
+   #r-show ....... botão "Mostrar ganhadores": reabre o modal com todos os ganhadores (seq) depois de fechado.
    showWin() ..... modal "Parabéns" com o nome do sorteado (fecha com botão, clique fora, Esc ou Enter).
    pool() ........ quem entra na roleta: presentes e, com "Não repetir", quem ainda não foi.
 
@@ -897,12 +905,23 @@ html.tela-cheia #viewRol .rol-stage { width: min(100%, max(18rem, calc(100dvh - 
 #viewRol .rol-opt input { margin-top: 0.25rem; accent-color: var(--accent); }
 #viewRol .rol-opt small { display: block; color: var(--muted); font-size: 0.8125rem; }
 #viewRol .rol-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-#viewRol .rol-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(20, 16, 10, 0.6); }
-#viewRol .rol-box { width: min(100%, 36rem); background: var(--surface); border: 1px solid var(--line); border-radius: 1.25rem; padding: clamp(1.5rem, 5vw, 2.5rem); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.9rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); animation: rolPop 0.35s cubic-bezier(0.2, 1.3, 0.4, 1); }
+#viewRol .rol-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(20, 16, 10, 0.6); overflow-y: auto; }
+#viewRol .rol-box { width: min(100%, 36rem); max-height: 100%; overflow-y: auto; flex: none; background: var(--surface); border: 1px solid var(--line); border-radius: 1.25rem; padding: clamp(1.5rem, 5vw, 2.5rem); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.9rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); animation: rolPop 0.35s cubic-bezier(0.2, 1.3, 0.4, 1); }
+#viewRol .rol-box.multi.many .quem { font-size: clamp(1.45rem, 5vw, 2.2rem); gap: 0.15rem; }
+#viewRol .rol-box.multi.lots .quem { font-size: clamp(1.1rem, 3.6vw, 1.6rem); gap: 0.1rem; }
+#viewRol .rol-box.multi.lots .quem { column-count: 2; column-gap: 2rem; display: block; }
+#viewRol .rol-box.multi.lots .quem > div { break-inside: avoid; margin-bottom: 0.1rem; }
 #viewRol .rol-box .parab { font-size: 0.875rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
 #viewRol .rol-box .quem { font-family: var(--font-display); font-size: clamp(2.75rem, 12vw, 5.5rem); line-height: 1.05; margin: 0; color: var(--fg); overflow-wrap: anywhere; }
+#viewRol .rol-box.multi .quem { font-size: clamp(1.9rem, 7vw, 3.2rem); display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 0.25rem; max-width: 100%; }
+#viewRol .rol-box .quem .n { font-family: var(--font-body); font-weight: 700; font-size: 0.45em; color: var(--accent); display: inline-block; min-width: 1.6em; margin-right: 0.3em; vertical-align: middle; }
 #viewRol .rol-box .vez { margin: 0; font-size: clamp(1rem, 3vw, 1.25rem); color: var(--muted); text-wrap: balance; }
-#viewRol .rol-box .btn { margin-top: 0.6rem; padding: 0.7rem 2.5rem; }
+#viewRol .rol-box .data { margin: 0.2rem 0 0; display: flex; flex-direction: column; gap: 0.15rem; }
+#viewRol .rol-box .data .lab { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+#viewRol .rol-box .data .dia { font-size: clamp(1rem, 4.2vw, 1.6rem); font-weight: 600; color: var(--fg); white-space: nowrap; }
+#viewRol .rol-box .nota { margin: 0; font-size: 0.875rem; color: var(--muted); text-wrap: balance; }
+#viewRol .rol-box .acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 0.6rem; }
+#viewRol .rol-box .btn { padding: 0.7rem 1.5rem; }
 @keyframes rolPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { #viewRol .rol-box { animation: none; } }
 #viewRol .rol-empty { margin: 0; color: var(--muted); font-size: 0.9375rem; }
@@ -1512,6 +1531,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       <div class="rol-actions">
         <button type="button" class="btn" id="r-clear">Limpar lista</button>
         <button type="button" class="btn" id="r-def">Time padrão</button>
+        <button type="button" class="btn" id="r-show" hidden>Mostrar ganhadores</button>
+        <button type="button" class="btn" id="r-reset" hidden>Limpar ganhadores</button>
       </div>
       <h3>Ordem</h3>
       <ol class="rol-hist" id="r-hist"></ol>
@@ -1522,10 +1543,16 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 </div>
 <div class="rol-modal" id="r-modal" role="dialog" aria-modal="true" aria-labelledby="r-mWho" hidden>
   <div class="rol-box">
-    <span class="parab">Parabéns!</span>
-    <p class="quem" id="r-mWho"></p>
-    <p class="vez">É a sua vez de apresentar a daily.</p>
-    <button type="button" class="btn primary" id="r-mOk">Fechar</button>
+    <span class="parab" id="r-mTitle">Parabéns! Ganhador</span>
+    <div class="quem" id="r-mWho"></div>
+    <p class="vez" id="r-mVez">É a sua vez de apresentar a daily.</p>
+    <p class="data"><span class="lab">Apresentação</span><span class="dia" id="r-mDate"></span></p>
+    <p class="nota" id="r-mNota" hidden></p>
+    <div class="acts">
+      <button type="button" class="btn" id="r-mCopy">Copiar imagem</button>
+      <button type="button" class="btn" id="r-mNext">Próximo</button>
+      <button type="button" class="btn primary" id="r-mOk">Fechar</button>
+    </div>
   </div>
 </div>
     </section>
@@ -2698,6 +2725,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     return nome;
   }
 
+  window.__feriadoNome = holidayName; /* usado pela Roleta para pular feriados (ano, mês 1-12, dia) */
+
   function renderHolidays(y, m) {
     var today = Date.UTC(tY, tM - 1, tD);
     var list = buildHolidays(y).sort(function (a, b) { return a.start - b.start; });
@@ -3132,7 +3161,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   function padrao() { return PADRAO.map(function (n) { return { n: n, off: false }; }); }
   function $(id) { return document.getElementById(P + id); }
   var canvas = $("canvas"), ctx = canvas.getContext("2d");
-  var people = [], done = [], hist = [], norepeat = true, rot = -Math.PI / 2, spinning = false, last = "";
+  var people = [], done = [], hist = [], norepeat = true, rot = -Math.PI / 2, spinning = false, last = "", seq = [];
 
   try {
     var sv = JSON.parse(localStorage.getItem(KEY) || "null");
@@ -3240,7 +3269,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     var r = $("result"); r.textContent = "";
     var sm = document.createElement("span"), big = document.createElement("span");
     sm.className = "sm"; big.className = "big";
-    if (last) { sm.textContent = "Ganhador"; big.textContent = last; }
+    if (last) { sm.textContent = hist.length > 1 ? "Último ganhador" : "Ganhador"; big.textContent = last; }
     else if (!people.length) { sm.textContent = "Comece adicionando as pessoas do time"; }
     else if (!pool().length) { sm.textContent = norepeat && done.length ? "Todos já foram sorteados" : "Marque quem está presente"; }
     else { sm.textContent = "Clique em Girar"; }
@@ -3252,12 +3281,14 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     $("spin").disabled = spinning || n < 1;
     $("clear").disabled = spinning || !people.length;
     $("def").disabled = spinning;
+    $("show").hidden = !seq.length; $("show").disabled = spinning; /* só aparecem depois de um sorteio */
+    $("reset").hidden = !seq.length; $("reset").disabled = spinning;
     draw();
   }
 
   /* ---------- sorteio ---------- */
   function ease(t) { return 1 - Math.pow(1 - t, 4); }
-  function spin() {
+  function spin() { /* os ganhadores se acumulam em seq até Limpar lista / Time padrão (ou recarregar a página) */
     var list = pool(), n = list.length;
     if (spinning || !n) return;
     msg(""); last = ""; spinning = true;
@@ -3279,19 +3310,124 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       rot = ((rot % TAU) + TAU) % TAU;
       spinning = false; last = list[w].n;
       hist.push(last); if (norepeat && done.indexOf(last) < 0) done.push(last);
-      save(); refresh(); showWin(last);
+      seq.push(last);
+      save(); refresh(); showWin();
     }
     requestAnimationFrame(step);
   }
   /* ---------- aviso do sorteado (modal centralizado) ---------- */
   var modal = $("modal");
-  function showWin(name) { $("mWho").textContent = name; modal.hidden = false; $("mOk").focus(); }
+  /* Data da apresentação: sempre o próximo dia útil (dia seguinte; sexta vai para segunda; feriados são pulados) */
+  function proximoDia(base) {
+    var d = new Date(base.getFullYear(), base.getMonth(), base.getDate()), pulou = [];
+    for (var i = 0; i < 15; i++) {
+      d.setDate(d.getDate() + 1);
+      var dow = d.getDay(), fer = window.__feriadoNome ? window.__feriadoNome(d.getFullYear(), d.getMonth() + 1, d.getDate()) : "";
+      if (dow !== 0 && dow !== 6 && !fer) break;
+      if (fer && dow !== 0 && dow !== 6) pulou.push({ d: new Date(d.getTime()), n: fer });
+    }
+    return { data: d, pulou: pulou };
+  }
+  function fmtDia(d, curto) { return d.toLocaleDateString("pt-BR", curto ? { day: "numeric", month: "long" } : { weekday: "long", day: "numeric", month: "long" }); }
+  window.__rolProximoDia = proximoDia;
+  var dataTxt = "", notaTxt = "";
+  function showWin() {
+    var r = proximoDia(new Date());
+    dataTxt = "Apresentação: " + fmtDia(r.data);
+    var grupos = [];
+    r.pulou.forEach(function (x) { /* junta dias seguidos com o mesmo nome (ex.: Carnaval) */
+      var g = grupos.filter(function (y) { return y.n === x.n; })[0];
+      if (g) g.dias.push(fmtDia(x.d, true)); else grupos.push({ n: x.n, dias: [fmtDia(x.d, true)] });
+    });
+    notaTxt = grupos.length ? "Pulando o feriado de " + grupos.map(function (g) { return g.dias.join(" e ") + " (" + g.n + ")"; }).join(" e ") + "." : "";
+    var who = $("mWho"), multi = seq.length > 1;
+    who.textContent = "";
+    if (multi) seq.forEach(function (nm, i) {
+      var li = document.createElement("div"), n = document.createElement("span");
+      n.className = "n"; n.textContent = (i + 1) + "º"; li.appendChild(n); li.appendChild(document.createTextNode(nm)); who.appendChild(li);
+    }); else who.textContent = seq[0];
+    who.parentNode.classList.toggle("multi", multi);
+    who.parentNode.classList.toggle("many", seq.length >= 4); /* letra menor com mais ganhadores, para caberem todos */
+    who.parentNode.classList.toggle("lots", seq.length >= 7);
+    $("mTitle").textContent = multi ? "Parabéns! Ganhadores" : "Parabéns! Ganhador";
+    $("mVez").hidden = multi; /* com vários ganhadores não há frase, só a lista e a data */
+    $("mNext").hidden = pool().length < 1;
+    $("mDate").textContent = fmtDia(r.data);
+    $("mNota").textContent = notaTxt; $("mNota").hidden = !notaTxt;
+    modal.hidden = false; $("mOk").focus();
+  }
   function closeWin() { if (modal.hidden) return; modal.hidden = true; $("spin").focus(); }
+  /* Copia uma imagem do aviso para a área de transferência (desenhada em canvas, sem bibliotecas) */
+  function winCanvas(names) {
+    var cs = getComputedStyle(document.documentElement), g = function (v, d) { return cs.getPropertyValue(v).trim() || d; };
+    var n = names.length, multi = n > 1, W = 1200, k = 2;
+    var fs0 = n === 1 ? 190 : n <= 3 ? 110 : n <= 6 ? 80 : 56, lh = n === 1 ? 0 : fs0 * 1.2, first = n === 1 ? 320 : 290;
+    var last = first + (n - 1) * lh, yVez = last + 80, yData = multi ? last + 100 : yVez + 78, yNota = yData + 52;
+    var H = Math.round(Math.max(n === 1 ? 640 : 0, (notaTxt ? yNota : yData) + 110)), c = document.createElement("canvas");
+    c.width = W * k; c.height = H * k;
+    var x = c.getContext("2d"); x.scale(k, k);
+    x.fillStyle = g("--bg", "#f5f3ec"); x.fillRect(0, 0, W, H);
+    var m = 40, r = 40; x.beginPath();
+    x.moveTo(m + r, m); x.arcTo(W - m, m, W - m, H - m, r); x.arcTo(W - m, H - m, m, H - m, r); x.arcTo(m, H - m, m, m, r); x.arcTo(m, m, W - m, m, r); x.closePath();
+    x.fillStyle = g("--surface", "#fbfaf6"); x.fill(); x.lineWidth = 2; x.strokeStyle = g("--line", "#e1ddd0"); x.stroke();
+    x.textAlign = "center"; x.textBaseline = "alphabetic";
+    x.fillStyle = g("--accent", "#c4623f"); x.font = "700 30px DM Sans, Arial, sans-serif";
+    if ("letterSpacing" in x) x.letterSpacing = "5px";
+    x.fillText(multi ? "PARABÉNS! GANHADORES" : "PARABÉNS! GANHADOR", W / 2, 140);
+    if ("letterSpacing" in x) x.letterSpacing = "0px";
+    var ff = "Newsreader, Iowan Old Style, Georgia, serif", fs = fs0;
+    names.forEach(function (nm) { /* um tamanho só para todos: o que cabe para o nome mais largo */
+      var t = multi ? "0º  " + nm : nm;
+      do { x.font = "400 " + fs + "px " + ff; if (x.measureText(t).width <= W - 200) break; fs -= 4; } while (fs > 36);
+    });
+    var numW = 0, blockW = 0, gap = fs * 0.28;
+    if (multi) {
+      x.font = "700 " + Math.round(fs * 0.42) + "px DM Sans, Arial, sans-serif";
+      names.forEach(function (nm, i) { numW = Math.max(numW, x.measureText((i + 1) + "º").width); });
+      x.font = "400 " + fs + "px " + ff;
+      names.forEach(function (nm) { blockW = Math.max(blockW, numW + gap + x.measureText(nm).width); });
+    }
+    var x0 = W / 2 - blockW / 2; /* lista alinhada à esquerda, bloco centralizado no cartão */
+    names.forEach(function (nm, i) {
+      var y = first + i * lh;
+      if (!multi) { x.fillStyle = g("--fg", "#29261f"); x.font = "400 " + fs + "px " + ff; x.fillText(nm, W / 2, y); return; }
+      x.textAlign = "left";
+      x.font = "700 " + Math.round(fs * 0.42) + "px DM Sans, Arial, sans-serif"; x.fillStyle = g("--accent", "#c4623f"); x.fillText((i + 1) + "º", x0, y);
+      x.font = "400 " + fs + "px " + ff; x.fillStyle = g("--fg", "#29261f"); x.fillText(nm, x0 + numW + gap, y);
+      x.textAlign = "center";
+    });
+    x.fillStyle = g("--fg", "#29261f"); x.font = "700 42px DM Sans, Arial, sans-serif";
+    x.fillText(dataTxt, W / 2, yData);
+    if (notaTxt) { x.fillStyle = g("--muted", "#6f6a5c"); x.font = "400 26px DM Sans, Arial, sans-serif"; x.fillText(notaTxt, W / 2, yNota); }
+    return c;
+  }
+  function copyWin() {
+    var b = $("mCopy"), names = seq.slice();
+    function msgBtn(t) { b.textContent = t; setTimeout(function () { b.textContent = "Copiar imagem"; }, 2200); }
+    function baixa(cv) {
+      var a = document.createElement("a"); a.download = "ganhador.png"; a.href = cv.toDataURL("image/png");
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); msgBtn("Baixada (sem acesso à cópia)");
+    }
+    var fonts = document.fonts && document.fonts.load ? Promise.all([document.fonts.load("400 100px Newsreader"), document.fonts.load("700 30px 'DM Sans'")]).catch(function () {}) : Promise.resolve();
+    fonts.then(function () {
+      var cv = winCanvas(names);
+      if (!(navigator.clipboard && window.ClipboardItem && cv.toBlob)) { baixa(cv); return; }
+      var item = new ClipboardItem({ "image/png": new Promise(function (ok, no) { cv.toBlob(function (bl) { bl ? ok(bl) : no(); }, "image/png"); }) });
+      navigator.clipboard.write([item]).then(function () { msgBtn("Imagem copiada!"); }, function () { baixa(cv); });
+    });
+  }
+  $("mCopy").addEventListener("click", copyWin);
+  $("reset").addEventListener("click", function () { /* zera só os ganhadores; a lista de pessoas continua */
+    if (spinning) return;
+    seq = []; hist = []; done = []; last = ""; msg(""); save(); refresh();
+  });
+  $("show").addEventListener("click", function () { if (seq.length) showWin(); }); /* reabre o modal com os ganhadores */
+  $("mNext").addEventListener("click", function () { modal.hidden = true; spin(); }); /* sorteia mais um e junta no mesmo modal */
   $("mOk").addEventListener("click", closeWin);
   modal.addEventListener("click", function (e) { if (e.target === modal) closeWin(); });
   document.addEventListener("keydown", function (e) {
     if (modal.hidden) return;
-    if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); e.stopImmediatePropagation(); closeWin(); }
+    if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); closeWin(); }
   });
 
   /* ---------- eventos ---------- */
@@ -3309,18 +3445,18 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   }
   $("addBtn").addEventListener("click", addPeople);
   $("name").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addPeople(); } });
-  $("spin").addEventListener("click", spin);
+  $("spin").addEventListener("click", function () { spin(); });
   $("norepeat").checked = norepeat;
   $("norepeat").addEventListener("change", function () { norepeat = this.checked; save(); refresh(); });
   $("def").addEventListener("click", function () {
     if (spinning) return;
     if (people.length && !window.confirm("Trocar a lista atual pelo time padrão?")) return;
-    people = padrao(); done = []; hist = []; last = ""; msg(""); save(); refresh();
+    people = padrao(); done = []; hist = []; seq = []; last = ""; msg(""); save(); refresh();
   });
   $("clear").addEventListener("click", function () {
     if (spinning || !people.length) return;
     if (!window.confirm("Remover todas as pessoas da lista?")) return;
-    people = []; done = []; hist = []; last = ""; save(); refresh();
+    people = []; done = []; hist = []; seq = []; last = ""; save(); refresh();
   });
 
   if (window.ResizeObserver) new ResizeObserver(draw).observe(canvas); else window.addEventListener("resize", draw);
