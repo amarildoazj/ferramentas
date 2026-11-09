@@ -6,9 +6,9 @@
  Tudo roda no navegador, nada é enviado a servidor. Os textos da tela estão em português.
 
  PADRÕES DESTE ARQUIVO (manter sempre)
-   - CONFIGURAÇÕES NO TOPO: tudo que se ajusta (time da roleta, cores, tabelas de INSS e IRRF, fusos,
-     nomes de armazenamento) fica no bloco "var CONFIG" logo abaixo deste comentário. O resto
-     do código só lê CONFIG.
+   - CONFIGURAÇÕES NO TOPO: tudo que se ajusta (time da roleta, paletas dos diagramas, tabelas
+     de INSS e IRRF, fusos, nomes de armazenamento) fica no bloco "var CONFIG" logo abaixo deste
+     comentário. O resto do código só lê CONFIG.
    - LINHAS CURTAS: no máximo ~110 caracteres por linha, para não precisar rolar para o lado.
      Exceções: endereços e dados que não podem ser quebrados (ícone em base64, link das fontes,
      textos de exemplo) e expressões regulares.
@@ -17,15 +17,15 @@
    1. <head>        título, ícone e fontes do Google (Newsreader, DM Sans, DM Mono)
    1b. <script>     bloco CONFIG (configurações) antes do CSS
    2. <style>       todo o CSS, separado por comentários (veja "ONDE FICA CADA PÁGINA")
-   3. <body>        menu lateral (<aside class="side">) e as 5 páginas (<main class="content">)
+   3. <body>        menu lateral (<aside class="side">) e as 6 páginas (<main class="content">)
    4. <script> #1   JavaScript de cada página + menu lateral e tema
    5. <script> #2   recursos extras: cores e numeração do formatador, alças de altura,
                     modo Expandir, divisória arrastável e contador de caracteres
 
  ONDE FICA CADA PÁGINA
-   As "páginas" são 5 <section class="view"> dentro de <main>. Só uma aparece por vez
+   As "páginas" são 6 <section class="view"> dentro de <main>. Só uma aparece por vez
    (as outras ficam com o atributo hidden). O menu lateral troca a página e o endereço
-   (#comparador, #formatador, #horas, #salario, #roleta). Para achar o trecho, use a busca do
+   (#comparador, #formatador, #horas, #salario, #roleta, #diagramas). Para achar o trecho, use a busca do
    editor (Ctrl+F) com o texto indicado.
 
    PÁGINA                  ENDEREÇO     SEÇÃO    IDs  CSS (busque)           JS
@@ -35,6 +35,7 @@
    Calculadora de salário  #salario     viewSal  s-   "/* Calculadora de salário */"
                                                        IIFE "Calculadora de salário"
    Roleta                  #roleta      viewRol  r-   "/* Roleta */"           IIFE com P = "r-"
+   Diagramas               #diagramas   viewDia  d-   "/* Diagramas */"       IIFE com P = "d-"
 
    Os ids dos campos começam com o prefixo da página (ex.: s-bruto, f-inp, c-inpA, h-clocks).
    O CSS de cada página começa sempre com #viewXxx, para uma página não mexer na outra.
@@ -103,6 +104,23 @@
    #r-show ....... "Mostrar ganhadores": reabre o modal depois de fechado.
    #r-reset ...... "Limpar ganhadores": limpa seq, hist e done; a lista de pessoas fica.
 
+ DIAGRAMAS (viewDia)
+   Editor simples de formas e setas. Ajustes (grade, zoom, paletas, exemplo) em CONFIG.diagramas.
+   Modelo: shapes [{id,t,x,y,w,h,tx,fill,stroke,dash}] e links [{id,a,b,arrow,dash}] (a e b
+   são ids de formas); view {x,y,k} é a posição e o zoom da tela. Tudo é desenhado como texto
+   SVG (shapeSvg, linkSvg), por isso limpo() valida cores, ids e tamanhos de qualquer dado
+   que entra (arquivo aberto ou localStorage "ferramentas-diagramas").
+   render() ....... redesenha formas, setas e a camada de seleção (uiSvg: alças e bolinhas).
+   commit() ....... guarda um passo no histórico (Desfazer/Refazer) e salva sozinho.
+   pointerdown/move/up .. um só tratador: mover, redimensionar (alças), ligar (bolinhas),
+                   mover a tela (botão do meio, Espaço ou toque), caixa de seleção (arrastar o fundo) e pinça.
+   startEdit() .... duplo clique/toque (ou Enter): campo #d-edit por cima da forma.
+   svgTexto() ..... gera o SVG usado em "SVG" e "PNG" (PNG = SVG desenhado num canvas, 2x).
+   Pincel ......... strokes [{c,w,p}] (cor, largura, pontos) desenhados por cima de tudo
+                   (strokeSvg); ferramenta ativa em "tool" (sel, pen, erase), trocada por setTool().
+                   O apagador remove o traço inteiro que o círculo encostar (apagar()).
+   Teclas ......... Delete, Ctrl+Z/Y, Ctrl+D, Ctrl+A, setas, Enter, Esc (com o desenho em foco).
+
  DICAS PARA MEXER
    - Para criar uma página nova: copie uma <section class="view" hidden>, ponha um
      prefixo novo nos ids, inclua o nome em VIEWS (JS) e um <a class="mi"> no menu.
@@ -130,7 +148,8 @@ var CONFIG = {
     tema: "ferramentas-tema",         /* modo claro/escuro */
     pagina: "ferramentas-view",       /* última página aberta */
     salario: "ferramentas-salario",   /* dados da calculadora de salário */
-    roleta: "ferramentas-roleta"      /* lista de pessoas da roleta */
+    roleta: "ferramentas-roleta",     /* lista de pessoas da roleta */
+    diagramas: "ferramentas-diagramas" /* último desenho dos diagramas */
   },
 
   /* ROLETA */
@@ -149,6 +168,44 @@ var CONFIG = {
       voltasMin: 5, voltasExtra: 3,   /* voltas completas: de 5 a 7 */
       duracaoMs: 5200, duracaoExtraMs: 1500,   /* duração: de 5,2 a 6,7 segundos */
       reduzido: { voltas: 1, duracaoMs: 700 }  /* para quem pede menos animação no sistema */
+    }
+  },
+
+  /* DIAGRAMAS */
+  diagramas: {
+    grade: 20,                        /* tamanho da grade (as formas "grudam" nela) */
+    zoomMin: 0.25, zoomMax: 3,        /* limites do zoom (25% a 300%) */
+    fonte: 14,                        /* tamanho do texto nas formas */
+    letra: "DM Sans, Arial, sans-serif",   /* fonte usada na imagem exportada */
+    desfazerMax: 100,                 /* quantos passos o Desfazer guarda */
+    tamanhos: {                       /* [largura, altura] de cada forma nova */
+      rect: [140, 64], round: [140, 64], ellipse: [140, 80], diamond: [150, 100], text: [120, 32]
+    },
+    coresFundo: [                     /* paleta de preenchimento */
+      "#fff3b0", "#ffd9c7", "#ffd1dc", "#e3d4f5", "#cfe3f8", "#c9ecd9", "#e5ecb8", "#ffffff"
+    ],
+    coresBorda: ["#5c584c", "#c4623f", "#3b82c4", "#3d9a4d", "#8a63b8"],   /* paleta de borda */
+    ajuda: {                          /* textos dos botões "?" da barra */
+      tracejada: "Deixa a borda da forma ou a linha da seta selecionada tracejada. " +
+        "Sem seleção, vale para as próximas.",
+      seta: "Liga ou desliga a ponta de seta nas ligações selecionadas. " +
+        "Sem seleção, vale para as próximas.",
+      grade: "Com a grade ligada, as formas grudam nos pontinhos do fundo ao mover e " +
+        "redimensionar, ficando alinhadas."
+    },
+    pincel: {
+      cores: ["auto", "#c4623f", "#3b82c4", "#3d9a4d", "#8a63b8", "#e0b000"],   /* auto = cor do tema */
+      espessuras: [["Fina", 2], ["Média", 4], ["Grossa", 8]],   /* [nome, largura do traço] */
+      apagador: 14              /* raio do apagador, em pixels da tela */
+    },
+    corLigacao: "#5c584c",            /* cor das setas e do texto solto na imagem exportada */
+    exemplo: {                        /* desenho que aparece na 1ª vez: [forma, x, y, texto, cor] */
+      formas: [
+        ["round", 260, 20, "Início", 5], ["diamond", 255, 130, "Tem dados?", 0],
+        ["rect", 30, 148, "Pedir dados", 1], ["rect", 540, 148, "Processar", 4],
+        ["round", 540, 280, "Fim", 5], ["text", 440, 144, "Sim", 0], ["text", 140, 144, "Não", 0]
+      ],
+      ligacoes: [[0, 1], [1, 2], [1, 3], [3, 4]]   /* pares de posições da lista acima */
     }
   },
 
@@ -2525,6 +2582,109 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 .byrota:hover svg,.byrota:focus-visible svg{filter:drop-shadow(0 0 1.5px rgba(0,0,0,.45))}
 .byrota .wm{display:inline-flex;align-items:center;font-size:13px;font-weight:800;letter-spacing:-.01em}
 .byrota svg{width:8px;height:10.5px;fill:currentColor;flex:none;margin:0 .5px}
+
+/* Diagramas */
+#viewDia .wrap {
+  max-width: 100rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1rem;
+}
+#viewDia header {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.5rem; row-gap: 0.5rem; align-items: center;
+}
+#viewDia h1 {
+  font-family: var(--font-display); font-weight: 400; margin: 0; letter-spacing: -0.01em;
+  font-size: clamp(2.25rem, 6vw, 3.5rem); line-height: 1.05; text-wrap: balance; grid-column: 1 / -1;
+}
+#viewDia .lede { margin: 0; color: var(--muted); max-width: 44rem; text-wrap: pretty; grid-column: 1; }
+#viewDia .hrs-bar {
+  grid-column: 2; grid-row: 2; display: flex; gap: 0.5rem; align-items: center;
+  justify-content: flex-end;
+}
+@media (max-width: 36rem) {
+  #viewDia .hrs-bar { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; }
+}
+#viewDia .btn {
+  font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.2; color: var(--fg);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 0.625rem;
+  padding: 0.5rem 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+}
+#viewDia .btn:hover:not(:disabled) { border-color: var(--accent); }
+#viewDia .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+#viewDia .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewDia .btn.on { border-color: var(--accent); background: var(--accent-soft); }
+#viewDia .btn svg { width: 1.05rem; height: 1.05rem; flex: none; }
+#viewDia .dia-bar {
+  display: flex; flex-wrap: wrap; gap: 0.6rem 1.1rem; align-items: flex-end;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: 0.8rem 1rem;
+}
+#viewDia .dia-grp { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+#viewDia .dia-grp > b {
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+#viewDia .dia-row { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+#viewDia .dia-sw {
+  width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 2px solid var(--line); cursor: pointer;
+  padding: 0;
+}
+#viewDia .dia-sw:hover { border-color: var(--accent); }
+#viewDia .dia-sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewDia .dia-chk {
+  display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; cursor: pointer;
+}
+#viewDia .dia-chk input { accent-color: var(--accent); }
+#viewDia .dia-help {
+  width: 1.25rem; height: 1.25rem; border-radius: 50%; border: 1px solid var(--line); background: none;
+  color: var(--muted); font: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1; cursor: pointer;
+  padding: 0;
+}
+#viewDia .dia-help:hover,
+#viewDia .dia-help:focus-visible { border-color: var(--accent); color: var(--accent); }
+#viewDia .dia-bar { position: relative; }
+#viewDia .dia-tip {
+  position: absolute; z-index: 20; display: none; width: max-content; max-width: min(18rem, 90%);
+  padding: 0.55rem 0.75rem; border-radius: 0.5rem; background: var(--fg); color: var(--bg);
+  font-size: 0.8125rem; line-height: 1.4; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); pointer-events: none;
+}
+#viewDia .dia-tip.on { display: block; }
+#viewDia .dia-tip::before {
+  content: ""; position: absolute; top: -6px; left: calc(var(--seta, 1rem) - 6px);
+  border: 6px solid transparent; border-top: 0; border-bottom-color: var(--fg);
+}
+#viewDia select.btn { appearance: auto; padding: 0.45rem 0.5rem; }
+#viewDia .dia-sw.cur { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+#viewDia .dia-stage svg.pen { cursor: crosshair; }
+#viewDia .dia-stage svg.erase { cursor: cell; }
+#viewDia .dia-zoom {
+  min-width: 3.2rem; text-align: center; font-size: 0.875rem; font-variant-numeric: tabular-nums;
+}
+#viewDia .dia-stage {
+  position: relative; height: clamp(26rem, 68vh, 50rem); border: 1px solid var(--line); border-radius: 1rem;
+  overflow: hidden; background: var(--surface); touch-action: none;
+}
+#viewDia .dia-stage svg {
+  touch-action: none; width: 100%; height: 100%; display: block; cursor: default; user-select: none;
+  outline: none;
+}
+#viewDia .dia-stage svg.pan { cursor: grabbing; }
+#viewDia .dia-edit {
+  position: absolute; display: none; align-items: center; justify-content: center; text-align: center;
+  color: #29261f; background: #fffdf5; outline: 2px solid var(--accent); border-radius: 4px; padding: 2px;
+  overflow: hidden;
+  font-family: "DM Sans", Arial, sans-serif; line-height: 1.3; white-space: pre-wrap; z-index: 5;
+}
+#viewDia .dia-edit.on { display: flex; }
+#viewDia .dia-hint { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+html.tela-cheia #viewDia > .wrap { max-width: none; margin: 0; width: 100%; gap: 0.6rem; min-height: 0; }
+html.tela-cheia #viewDia header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+html.tela-cheia #viewDia .hrs-bar .theme-btn { margin-left: 0; }
+html.tela-cheia #viewDia .dia-stage { flex: 1 1 auto; height: auto; min-height: 16rem; }
+html.tela-cheia #viewDia .dia-hint { display: none; }
+#viewDia #d-gdot { fill: var(--line); }
+#viewDia #d-bg { fill: url(#d-gp); }
+#viewDia .dia-msg { font-size: 0.8125rem; color: var(--muted); }
+#viewDia .d-h-nw, #viewDia .d-h-se { cursor: nwse-resize; }
+#viewDia .d-h-ne, #viewDia .d-h-sw { cursor: nesw-resize; }
 </style>
 
 <div class="app">
@@ -2574,6 +2734,10 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path
         d="M12 3v7M12 14v7M3 12h7M14 12h7"/></svg>Roleta</a>
+      <a href="#diagramas" class="mi" data-view="diagramas"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><rect x="3" y="3" width="7" height="6" rx="1"/><rect x="14" y="15" width="7"
+        height="6" rx="1"/><path d="M6.5 9v3a2 2 0 0 0 2 2H14"/></svg>Diagramas</a>
     </nav>
   </aside>
   <main class="content">
@@ -3193,6 +3357,107 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       <button type="button" class="btn primary" id="r-mOk">Fechar</button>
     </div>
   </div>
+</div>
+    </section>
+    <!-- ================= PÁGINA: Diagramas · menu #diagramas · ids d- · JS: IIFE com P = "d-"
+         · CSS: "/* Diagramas */" ================= -->
+    <section id="viewDia" class="view" aria-label="Diagramas" hidden>
+<div class="wrap">
+  <header>
+    <h1>Diagramas</h1>
+    <p class="lede">Monte fluxos e esquemas simples: adicione formas, ligue com setas, edite o texto
+      e exporte como imagem. Tudo fica salvo só neste navegador.</p>
+    <div class="hrs-bar">
+    <button type="button" class="btn btn-full" id="d-btnFull" aria-pressed="false"
+      title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
+      height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
+      d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/><path
+      class="i-co" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1
+      2 2v3"/></svg><span class="lbl">Expandir</span></button>
+  </div>
+  </header>
+
+  <div class="dia-bar" id="d-bar" role="toolbar" aria-label="Ferramentas do diagrama">
+    <div class="dia-grp"><b>Formas</b><div class="dia-row">
+      <button type="button" class="btn" data-forma="rect" title="Retângulo"><svg viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12"
+        rx="1"/></svg>Retângulo</button>
+      <button type="button" class="btn" data-forma="round" title="Retângulo arredondado"><svg
+        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6"
+        width="18" height="12" rx="6"/></svg>Arredondado</button>
+      <button type="button" class="btn" data-forma="ellipse" title="Elipse"><svg viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="6"/>
+        </svg>Elipse</button>
+      <button type="button" class="btn" data-forma="diamond" title="Losango (decisão)"><svg
+        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path
+        d="M12 3l9 9-9 9-9-9z"/></svg>Losango</button>
+      <button type="button" class="btn" data-forma="text" title="Texto"><svg viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path
+        d="M5 6V4h14v2M12 4v16M9 20h6"/></svg>Texto</button>
+    </div></div>
+    <div class="dia-grp"><b>Preenchimento</b><div class="dia-row" id="d-fills"></div></div>
+    <div class="dia-grp"><b>Borda</b><div class="dia-row" id="d-strokes"></div></div>
+    <div class="dia-grp"><b>Linha</b><div class="dia-row">
+      <label class="dia-chk"><input type="checkbox" id="d-dash"> Tracejada</label>
+      <button type="button" class="dia-help" data-ajuda="tracejada" aria-label="Ajuda">?</button>
+      <label class="dia-chk"><input type="checkbox" id="d-arrow" checked> Seta</label>
+      <button type="button" class="dia-help" data-ajuda="seta" aria-label="Ajuda">?</button>
+    </div></div>
+    <div class="dia-grp"><b>Ferramenta</b><div class="dia-row">
+      <button type="button" class="btn on" id="d-tsel" title="Selecionar e mover formas">Selecionar</button>
+      <button type="button" class="btn" id="d-tpen" title="Desenhar à mão livre">Pincel</button>
+      <button type="button" class="btn" id="d-terase" title="Apaga os traços do pincel">Apagador</button>
+    </div></div>
+    <div class="dia-grp"><b>Pincel</b><div class="dia-row">
+      <span class="dia-row" id="d-pcolors"></span>
+      <select id="d-pw" class="btn" aria-label="Espessura do pincel"></select>
+      <button type="button" class="btn" id="d-pclear" title="Apaga todos os traços">Limpar desenho</button>
+    </div></div>
+    <div class="dia-grp"><b>Editar</b><div class="dia-row">
+      <button type="button" class="btn" id="d-undo" title="Desfazer (Ctrl+Z)">Desfazer</button>
+      <button type="button" class="btn" id="d-redo" title="Refazer (Ctrl+Y)">Refazer</button>
+      <button type="button" class="btn" id="d-dup" title="Duplicar (Ctrl+D)">Duplicar</button>
+      <button type="button" class="btn" id="d-del" title="Excluir (Delete)">Excluir</button>
+    </div></div>
+    <div class="dia-grp"><b>Tela</b><div class="dia-row">
+      <button type="button" class="btn" id="d-zout" aria-label="Diminuir o zoom">−</button>
+      <span class="dia-zoom" id="d-zoom">100%</span>
+      <button type="button" class="btn" id="d-zin" aria-label="Aumentar o zoom">+</button>
+      <button type="button" class="btn" id="d-fit">Ajustar</button>
+      <label class="dia-chk"><input type="checkbox" id="d-snap" checked> Grade</label>
+      <button type="button" class="dia-help" data-ajuda="grade" aria-label="Ajuda">?</button>
+    </div></div>
+    <div class="dia-grp"><b>Arquivo</b><div class="dia-row">
+      <button type="button" class="btn" id="d-ex" title="Volta ao desenho de exemplo">Exemplo</button>
+      <button type="button" class="btn" id="d-new">Novo</button>
+      <button type="button" class="btn" id="d-open">Abrir</button>
+      <button type="button" class="btn" id="d-save">Salvar</button>
+      <button type="button" class="btn" id="d-png">PNG</button>
+      <button type="button" class="btn" id="d-svgx">SVG</button>
+      <input type="file" id="d-file" accept=".json,application/json" hidden>
+      <span class="dia-msg" id="d-msg" role="status"></span>
+    </div></div>
+  </div>
+
+  <div class="dia-stage" id="d-stage">
+    <svg id="d-svg" tabindex="0" role="application" aria-label="Área de desenho do diagrama">
+      <defs>
+        <pattern id="d-gp" patternUnits="userSpaceOnUse" width="20" height="20">
+          <circle id="d-gdot" cx="1" cy="1" r="1"/>
+        </pattern>
+      </defs>
+      <rect id="d-bg" x="0" y="0" width="100%" height="100%"/>
+      <g id="d-world"><g id="d-links"></g><g id="d-shapes"></g><g id="d-draw" pointer-events="none"></g>
+        <g id="d-ui"></g></g>
+    </svg>
+    <div class="dia-edit" id="d-edit" contenteditable="true" role="textbox" aria-label="Texto"></div>
+  </div>
+  <p class="dia-hint">Dicas: duplo clique edita o texto. Com uma forma selecionada, puxe uma bolinha da
+    borda até outra forma para ligar com seta. Arraste o fundo para selecionar várias formas e
+    arraste-as juntas (Shift soma à seleção). Para mover a tela: botão do meio, ou Espaço +
+    arrastar; no celular, arraste o fundo. A roda do mouse faz zoom. O Pincel desenha
+    à mão livre por cima de tudo e o Apagador remove os traços; Esc volta a Selecionar.</p>
 </div>
     </section>
   </main>
@@ -5447,10 +5712,852 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   refresh();
 })();
 
+/* ===== Diagramas: formas, setas entre elas, zoom, desfazer, salvar e exportar ===== */
+(function () {
+  var P = "d-", CD = CONFIG.diagramas, KEY = CONFIG.chaves.diagramas, NS = "http://www.w3.org/2000/svg";
+  function $(id) { return document.getElementById(P + id); }
+  var svg = $("svg"), world = $("world"), gLinks = $("links"), gShapes = $("shapes"), gUi = $("ui");
+  var gDraw = $("draw");
+  var ed = $("edit"), msgEl = $("msg"), gp = $("gp");
+  gp.setAttribute("width", CD.grade);
+  gp.setAttribute("height", CD.grade);
+  var shapes = [], links = [], view = { x: 40, y: 40, k: 1 }, sel = [], selLink = null, idx = {};
+  var hist = [], hi = -1, seq = 1, mode = null, ptrs = {}, lastTap = { id: "", t: 0 };
+  var def = { fill: CD.coresFundo[0], stroke: CD.coresBorda[0], dash: false, arrow: true };
+  var strokes = [], tool = "sel", pen = { c: CD.pincel.cores[0], w: CD.pincel.espessuras[0][1] };
+  var espaco = false, editing = null, editT = 0, saveT = 0, msgT = 0, fitted = false;
+  var LH = CD.fonte * 1.3, INK = "#29261f";
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function snap(v) { return $("snap").checked ? Math.round(v / CD.grade) * CD.grade : v; }
+  /* balão de ajuda (retângulo com setinha) ao lado do botão "?" */
+  var tip = document.createElement("div"), tipBtn = null;
+  tip.className = "dia-tip";
+  tip.setAttribute("role", "tooltip");
+  $("bar").appendChild(tip);
+  function balao(btn, texto) {
+    if (!btn || tipBtn === btn && tip.classList.contains("on") && !texto) {
+      tip.classList.remove("on");
+      tipBtn = null;
+      return;
+    }
+    var bar = $("bar").getBoundingClientRect(), r = btn.getBoundingClientRect();
+    tip.textContent = texto;
+    tip.classList.add("on");
+    tipBtn = btn;
+    var w = tip.offsetWidth, cx = r.left - bar.left + r.width / 2;
+    var x = clamp(cx - w / 2, 4, Math.max(4, bar.width - w - 4));
+    tip.style.left = x + "px";
+    tip.style.top = r.bottom - bar.top + 10 + "px";
+    tip.style.setProperty("--seta", cx - x + "px");
+  }
+  function msg(t, ms) {
+    msgEl.textContent = t;
+    clearTimeout(msgT);
+    msgT = setTimeout(function () { msgEl.textContent = ""; }, ms || 3000);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#viewDia .dia-help"), function (b) {
+    var t = CD.ajuda[b.getAttribute("data-ajuda")];
+    b.addEventListener("click", function (e) { e.stopPropagation(); balao(b, t); });
+    b.addEventListener("mouseenter", function () { balao(b, t); });
+    b.addEventListener("mouseleave", function () { balao(null); });
+    b.addEventListener("blur", function () { balao(null); });
+  });
+  document.addEventListener("click", function () { balao(null); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") balao(null); });
+
+  /* ---------- texto dentro da forma: quebra em linhas ---------- */
+  function innerW(s) { return s.t === "diamond" || s.t === "ellipse" ? s.w * 0.62 : s.w - 16; }
+  function wrap(txt, w) {
+    var max = Math.max(3, Math.floor(w / (CD.fonte * 0.56))), out = [];
+    String(txt).split("\n").forEach(function (par) {
+      var line = "";
+      par.split(/\s+/).forEach(function (word) {
+        while (word.length > max) {
+          if (line) { out.push(line); line = ""; }
+          out.push(word.slice(0, max));
+          word = word.slice(max);
+        }
+        if (!line) line = word;
+        else if ((line + " " + word).length <= max) line += " " + word;
+        else { out.push(line); line = word; }
+      });
+      out.push(line);
+    });
+    return out;
+  }
+
+  /* ---------- desenho das formas e das setas (texto SVG; dados são validados em limpo()) ---------- */
+  function shapeSvg(s, ex) {
+    var w = s.w, h = s.h, isT = s.t === "text", body, txt = "", lines, i;
+    var ink = ex ? CD.corLigacao : "var(--fg)";
+    var st = 'fill="' + (isT ? "transparent" : s.fill) + '" stroke="' + (isT ? "none" : s.stroke) +
+      '" stroke-width="2"' + (s.dash ? ' stroke-dasharray="7 5"' : "");
+    if (s.t === "ellipse") body = '<ellipse cx="' + w / 2 + '" cy="' + h / 2 + '" rx="' + w / 2 +
+      '" ry="' + h / 2 + '" ' + st + "/>";
+    else if (s.t === "diamond") body = '<polygon points="' + [w / 2, 0, w, h / 2, w / 2, h, 0, h / 2] +
+      '" ' + st + "/>";
+    else body = '<rect width="' + w + '" height="' + h + '" rx="' + (s.t === "round" ? 16 : isT ? 0 : 3) +
+      '" ' + st + "/>";
+    lines = wrap(s.tx, innerW(s));
+    for (i = 0; i < lines.length; i++) {
+      txt += '<tspan x="' + w / 2 + '" y="' + (h / 2 + (i - (lines.length - 1) / 2) * LH + CD.fonte * 0.35) +
+        '">' + esc(lines[i]) + "</tspan>";
+    }
+    return '<g data-id="' + s.id + '" transform="translate(' + s.x + " " + s.y + ')">' + body +
+      '<text text-anchor="middle" font-size="' + CD.fonte + '" style="fill:' + (isT ? ink : INK) +
+      '" pointer-events="none">' + txt + "</text></g>";
+  }
+  function edge(s, tx, ty) {
+    var cx = s.x + s.w / 2, cy = s.y + s.h / 2, dx = tx - cx, dy = ty - cy, t;
+    if (!dx && !dy) return [cx, cy];
+    if (s.t === "ellipse") t = 1 / Math.sqrt(Math.pow(dx / (s.w / 2), 2) + Math.pow(dy / (s.h / 2), 2));
+    else if (s.t === "diamond") t = 1 / (Math.abs(dx) / (s.w / 2) + Math.abs(dy) / (s.h / 2));
+    else t = Math.min(dx ? s.w / 2 / Math.abs(dx) : 1e9, dy ? s.h / 2 / Math.abs(dy) : 1e9);
+    return [cx + dx * t, cy + dy * t];
+  }
+  function geom(l) {
+    var A = idx[l.a], B = idx[l.b];
+    if (!A || !B) return null;
+    var p = edge(A, B.x + B.w / 2, B.y + B.h / 2), q = edge(B, A.x + A.w / 2, A.y + A.h / 2);
+    return [p[0], p[1], q[0], q[1]];
+  }
+  function linkSvg(l, ex) {
+    var g = geom(l), on = !ex && selLink === l.id;
+    var col = ex ? CD.corLigacao : on ? "var(--accent)" : "var(--fg)";
+    if (!g) return "";
+    var a = Math.atan2(g[3] - g[1], g[2] - g[0]), ux = Math.cos(a), uy = Math.sin(a);
+    var ex2 = l.arrow ? g[2] - ux * 9 : g[2], ey2 = l.arrow ? g[3] - uy * 9 : g[3];
+    var ln = 'x1="' + g[0] + '" y1="' + g[1] + '" x2="' + ex2 + '" y2="' + ey2 + '"';
+    var out = '<g data-l="' + l.id + '">';
+    if (!ex) out += "<line " + ln + ' stroke="transparent" stroke-width="16"/>';
+    out += "<line " + ln + ' style="stroke:' + col + '" stroke-width="' + (on ? 3 : 2) + '"' +
+      (l.dash ? ' stroke-dasharray="7 5"' : "") + "/>";
+    if (l.arrow) {
+      out += '<polygon points="' + [g[2], g[3], g[2] - ux * 11 - uy * 5, g[3] - uy * 11 + ux * 5,
+        g[2] - ux * 11 + uy * 5, g[3] - uy * 11 - ux * 5] + '" style="fill:' + col + '"/>';
+    }
+    return out + "</g>";
+  }
+
+  /* ---------- pincel: traços à mão livre ---------- */
+  function strokeSvg(t, ex) {
+    var col = t.c === "auto" ? (ex ? CD.corLigacao : "var(--fg)") : t.c;
+    var d = "M" + t.p[0][0] + " " + t.p[0][1];
+    for (var i = 1; i < t.p.length; i++) d += "L" + t.p[i][0] + " " + t.p[i][1];
+    if (t.p.length === 1) d += "l0.01 0";
+    return '<path d="' + d + '" fill="none" style="stroke:' + col + '" stroke-width="' + t.w +
+      '" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+  function dseg(px, py, a, b) {
+    var dx = b[0] - a[0], dy = b[1] - a[1], l = dx * dx + dy * dy;
+    var u = l ? clamp(((px - a[0]) * dx + (py - a[1]) * dy) / l, 0, 1) : 0;
+    return Math.hypot(px - a[0] - u * dx, py - a[1] - u * dy);
+  }
+  function apagar(p) {
+    var r = CD.pincel.apagador / view.k, n = strokes.length;
+    strokes = strokes.filter(function (t) {
+      for (var i = 0; i < t.p.length; i++) {
+        if (dseg(p.x, p.y, t.p[i], t.p[Math.min(i + 1, t.p.length - 1)]) <= r + t.w / 2) return false;
+      }
+      return true;
+    });
+    return strokes.length !== n;
+  }
+  function setTool(t) {
+    tool = t;
+    ["sel", "pen", "erase"].forEach(function (k) {
+      $("t" + k).classList.toggle("on", k === t);
+      svg.classList.toggle(k, k === t);
+    });
+    if (t !== "sel") { sel = []; selLink = null; }
+    render();
+  }
+
+  /* ---------- camada de seleção: contorno, alças de tamanho e bolinhas para ligar ---------- */
+  function uiSvg() {
+    var r = 1 / view.k, h = "", s, m = mode, hs = 10 * r, i, c, d;
+    sel.forEach(function (id) {
+      s = idx[id];
+      if (s) h += '<rect x="' + (s.x - 3 * r) + '" y="' + (s.y - 3 * r) + '" width="' + (s.w + 6 * r) +
+        '" height="' + (s.h + 6 * r) + '" fill="none" style="stroke:var(--accent)" stroke-width="' + 1.5 * r +
+        '" stroke-dasharray="' + 5 * r + '" pointer-events="none"/>';
+    });
+    s = sel.length === 1 && !editing ? idx[sel[0]] : null;
+    if (s) {
+      c = [["nw", s.x, s.y], ["ne", s.x + s.w, s.y], ["sw", s.x, s.y + s.h], ["se", s.x + s.w, s.y + s.h]];
+      for (i = 0; i < 4; i++) {
+        h += '<rect data-h="' + c[i][0] + '" x="' + (c[i][1] - hs / 2) + '" y="' + (c[i][2] - hs / 2) +
+          '" width="' + hs + '" height="' + hs + '" style="fill:var(--surface);stroke:var(--accent)" ' +
+          'stroke-width="' + 1.5 * r + '" class="d-h-' + c[i][0] + '"/>';
+      }
+      d = 16 * r;
+      c = [[s.x + s.w / 2, s.y - d], [s.x + s.w / 2, s.y + s.h + d], [s.x - d, s.y + s.h / 2],
+        [s.x + s.w + d, s.y + s.h / 2]];
+      for (i = 0; i < 4; i++) {
+        h += '<circle data-c="1" cx="' + c[i][0] + '" cy="' + c[i][1] + '" r="' + 7 * r +
+          '" style="fill:var(--accent);fill-opacity:.85;cursor:crosshair"/>';
+      }
+    }
+    if (m && m.k === "marq" && m.cur) {
+      h += '<rect x="' + Math.min(m.p0.x, m.cur.x) + '" y="' + Math.min(m.p0.y, m.cur.y) + '" width="' +
+        Math.abs(m.cur.x - m.p0.x) + '" height="' + Math.abs(m.cur.y - m.p0.y) +
+        '" style="fill:var(--accent);fill-opacity:.1;stroke:var(--accent)" stroke-width="' + r +
+        '" pointer-events="none"/>';
+    }
+    if (m && m.k === "erase" && m.to) {
+      h += '<circle cx="' + m.to.x + '" cy="' + m.to.y + '" r="' + CD.pincel.apagador * r +
+        '" fill="none" style="stroke:var(--accent)" stroke-width="' + r + '" pointer-events="none"/>';
+    }
+    if (m && m.k === "link" && m.to && idx[m.id]) {
+      c = edge(idx[m.id], m.to.x, m.to.y);
+      h += '<line x1="' + c[0] + '" y1="' + c[1] + '" x2="' + m.to.x + '" y2="' + m.to.y +
+        '" style="stroke:var(--accent)" stroke-width="' + 2 * r + '" stroke-dasharray="' + 6 * r +
+        '" pointer-events="none"/>';
+    }
+    return h;
+  }
+
+  function render() {
+    idx = {};
+    shapes.forEach(function (s) { idx[s.id] = s; });
+    gLinks.innerHTML = links.map(function (l) { return linkSvg(l); }).join("");
+    gShapes.innerHTML = shapes.map(function (s) { return shapeSvg(s); }).join("");
+    gDraw.innerHTML = strokes.map(function (t) { return strokeSvg(t); }).join("");
+    gUi.innerHTML = uiSvg();
+    var tr = "translate(" + view.x + " " + view.y + ") scale(" + view.k + ")";
+    world.setAttribute("transform", tr);
+    gp.setAttribute("patternTransform", tr);
+    $("bg").setAttribute("opacity", CD.grade * view.k < 7 ? 0 : 1);
+    $("zoom").textContent = Math.round(view.k * 100) + "%";
+    var temSel = sel.length > 0 || selLink;
+    $("undo").disabled = hi <= 0;
+    $("redo").disabled = hi >= hist.length - 1;
+    $("del").disabled = !temSel;
+    $("dup").disabled = !sel.length;
+  }
+
+  /* ---------- histórico (desfazer/refazer) e gravação automática ---------- */
+  function snapshot() { return JSON.stringify({ s: shapes, l: links, p: strokes }); }
+  function commit() {
+    var sn = snapshot();
+    if (sn !== hist[hi]) {
+      hist = hist.slice(0, hi + 1);
+      hist.push(sn);
+      if (hist.length > CD.desfazerMax) hist.shift();
+      hi = hist.length - 1;
+    }
+    render();
+    saveLater();
+  }
+  function restore(i) {
+    var d = JSON.parse(hist[i]);
+    shapes = d.s;
+    links = d.l;
+    strokes = d.p || [];
+    hi = i;
+    idx = {};
+    shapes.forEach(function (s) { idx[s.id] = s; });
+    sel = sel.filter(function (id) { return idx[id]; });
+    selLink = null;
+    render();
+    saveLater();
+  }
+  function undo() { if (hi > 0) restore(hi - 1); }
+  function redo() { if (hi < hist.length - 1) restore(hi + 1); }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ shapes: shapes, links: links, strokes: strokes, view: view,
+        snap: $("snap").checked }));
+    } catch (e) {}
+  }
+  function saveLater() { clearTimeout(saveT); saveT = setTimeout(save, 300); }
+
+  /* ---------- dados: valida tudo que vem do arquivo ou do navegador ---------- */
+  var COR = /^(#[0-9a-f]{3,8}|none)$/i, ID = /^[\w-]{1,20}$/;
+  function num(v, d) { return typeof v === "number" && isFinite(v) ? v : d; }
+  function limpo(d) {
+    if (!d || !Array.isArray(d.shapes) || !Array.isArray(d.links)) return null;
+    var ss = [], ll = [], ok = {};
+    d.shapes.slice(0, 2000).forEach(function (s) {
+      if (!s || !CD.tamanhos[s.t] || !ID.test(s.id) || ok[s.id]) return;
+      var z = CD.tamanhos[s.t];
+      ok[s.id] = 1;
+      ss.push({
+        id: s.id, t: s.t, x: num(s.x, 0), y: num(s.y, 0),
+        w: clamp(num(s.w, z[0]), 30, 2000), h: clamp(num(s.h, z[1]), 20, 2000),
+        tx: String(s.tx || "").slice(0, 500),
+        fill: COR.test(s.fill) ? s.fill : def.fill, stroke: COR.test(s.stroke) ? s.stroke : def.stroke,
+        dash: !!s.dash
+      });
+    });
+    d.links.slice(0, 4000).forEach(function (l) {
+      if (l && ID.test(l.id) && ok[l.a] && ok[l.b] && l.a !== l.b) {
+        ll.push({ id: l.id, a: l.a, b: l.b, arrow: l.arrow !== false, dash: !!l.dash });
+      }
+    });
+    var tt = [];
+    (Array.isArray(d.strokes) ? d.strokes : []).slice(0, 3000).forEach(function (t) {
+      if (!t || !/^(#[0-9a-f]{3,8}|auto)$/i.test(t.c) || !Array.isArray(t.p)) return;
+      var pts = t.p.slice(0, 5000).filter(function (q) {
+        return Array.isArray(q) && typeof q[0] === "number" && typeof q[1] === "number" &&
+          isFinite(q[0]) && isFinite(q[1]);
+      }).map(function (q) { return [q[0], q[1]]; });
+      if (pts.length) tt.push({ c: t.c, w: clamp(num(t.w, 2), 1, 40), p: pts });
+    });
+    return { shapes: ss, links: ll, strokes: tt };
+  }
+  function carregar(d, v) {
+    shapes = d.shapes;
+    links = d.links;
+    strokes = d.strokes || [];
+    sel = [];
+    selLink = null;
+    seq = 1;
+    shapes.concat(links).forEach(function (o) {
+      var n = parseInt(String(o.id).replace(/\D/g, ""), 10);
+      if (n >= seq) seq = n + 1;
+    });
+    if (v) view = { x: num(v.x, 40), y: num(v.y, 40), k: clamp(num(v.k, 1), CD.zoomMin, CD.zoomMax) };
+    hist = [];
+    hi = -1;
+    commit();
+  }
+  function exemplo() {
+    var ss = CD.exemplo.formas.map(function (f, i) {
+      var z = CD.tamanhos[f[0]];
+      return { id: "s" + (i + 1), t: f[0], x: f[1], y: f[2], w: z[0], h: z[1], tx: f[3],
+        fill: f[0] === "text" ? "none" : CD.coresFundo[f[4]], stroke: CD.coresBorda[0], dash: false };
+    });
+    var ll = CD.exemplo.ligacoes.map(function (p, i) {
+      return { id: "l" + (i + 1), a: "s" + (p[0] + 1), b: "s" + (p[1] + 1), arrow: true, dash: false };
+    });
+    return { shapes: ss, links: ll };
+  }
+
+  /* ---------- tela: zoom, ajustar, coordenadas ---------- */
+  function pt(e) {
+    var r = svg.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+    return { x: (sx - view.x) / view.k, y: (sy - view.y) / view.k, sx: sx, sy: sy };
+  }
+  function zoomAt(sx, sy, nk) {
+    nk = clamp(nk, CD.zoomMin, CD.zoomMax);
+    view.x = sx - (sx - view.x) / view.k * nk;
+    view.y = sy - (sy - view.y) / view.k * nk;
+    view.k = nk;
+    render();
+    saveLater();
+  }
+  function zoomCentro(f) {
+    var r = svg.getBoundingClientRect();
+    zoomAt(r.width / 2, r.height / 2, view.k * f);
+  }
+  function bounds() {
+    if (!shapes.length && !strokes.length) return null;
+    var x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+    strokes.forEach(function (t) {
+      t.p.forEach(function (q) {
+        x1 = Math.min(x1, q[0] - t.w); y1 = Math.min(y1, q[1] - t.w);
+        x2 = Math.max(x2, q[0] + t.w); y2 = Math.max(y2, q[1] + t.w);
+      });
+    });
+    shapes.forEach(function (s) {
+      x1 = Math.min(x1, s.x); y1 = Math.min(y1, s.y);
+      x2 = Math.max(x2, s.x + s.w); y2 = Math.max(y2, s.y + s.h);
+    });
+    return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+  }
+  function fit() {
+    var b = bounds(), r = svg.getBoundingClientRect();
+    if (!b || !r.width) { view = { x: 40, y: 40, k: 1 }; render(); return; }
+    var k = clamp(Math.min((r.width - 80) / b.w, (r.height - 80) / b.h), CD.zoomMin, 1.25);
+    view = { x: (r.width - b.w * k) / 2 - b.x * k, y: (r.height - b.h * k) / 2 - b.y * k, k: k };
+    render();
+    saveLater();
+  }
+
+  /* ---------- ações sobre formas e ligações ---------- */
+  function place(t, x, y) {
+    var z = CD.tamanhos[t];
+    var s = { id: "s" + (seq++), t: t, x: snap(x), y: snap(y), w: z[0], h: z[1], tx: "Texto",
+      fill: t === "text" ? "none" : def.fill, stroke: def.stroke, dash: def.dash };
+    shapes.push(s);
+    sel = [s.id];
+    selLink = null;
+    commit();
+  }
+  function add(t) {
+    var r = svg.getBoundingClientRect(), z = CD.tamanhos[t], n = (shapes.length % 6) * CD.grade;
+    place(t, (r.width / 2 - view.x) / view.k - z[0] / 2 + n, (r.height / 2 - view.y) / view.k - z[1] / 2 + n);
+  }
+  function remover() {
+    if (selLink) links = links.filter(function (l) { return l.id !== selLink; });
+    links = links.filter(function (l) { return sel.indexOf(l.a) < 0 && sel.indexOf(l.b) < 0; });
+    shapes = shapes.filter(function (s) { return sel.indexOf(s.id) < 0; });
+    sel = [];
+    selLink = null;
+    commit();
+  }
+  function duplicar() {
+    if (!sel.length) return;
+    var map = {}, novos = [];
+    shapes.filter(function (s) { return sel.indexOf(s.id) >= 0; }).forEach(function (s) {
+      var c = JSON.parse(JSON.stringify(s));
+      c.id = "s" + (seq++);
+      c.x += CD.grade;
+      c.y += CD.grade;
+      map[s.id] = c.id;
+      novos.push(c);
+    });
+    links.slice().forEach(function (l) {
+      if (map[l.a] && map[l.b]) links.push({ id: "l" + (seq++), a: map[l.a], b: map[l.b], arrow: l.arrow,
+        dash: l.dash });
+    });
+    shapes = shapes.concat(novos);
+    sel = novos.map(function (s) { return s.id; });
+    commit();
+  }
+  function alvo() {
+    return shapes.filter(function (s) { return sel.indexOf(s.id) >= 0; });
+  }
+  function alvoLinks() {
+    return links.filter(function (l) {
+      return l.id === selLink || sel.indexOf(l.a) >= 0 || sel.indexOf(l.b) >= 0;
+    });
+  }
+  function mover(dx, dy) {
+    alvo().forEach(function (s) { s.x += dx; s.y += dy; });
+    commit();
+  }
+
+  /* ---------- editar o texto (campo por cima da forma) ---------- */
+  function startEdit(id) {
+    var s = idx[id], k = view.k, iw, ih;
+    if (!s) return;
+    iw = innerW(s) + 8;
+    ih = s.t === "diamond" || s.t === "ellipse" ? s.h * 0.7 : s.h;
+    editing = id;
+    editT = Date.now();
+    sel = [id];
+    selLink = null;
+    render();
+    ed.style.left = (s.x + (s.w - iw) / 2) * k + view.x + "px";
+    ed.style.top = (s.y + (s.h - ih) / 2) * k + view.y + "px";
+    ed.style.width = iw * k + "px";
+    ed.style.height = ih * k + "px";
+    ed.style.fontSize = CD.fonte * k + "px";
+    ed.textContent = s.tx;
+    ed.classList.add("on");
+    ed.focus();
+    var rg = document.createRange();
+    rg.selectNodeContents(ed);
+    getSelection().removeAllRanges();
+    getSelection().addRange(rg);
+  }
+  function endEdit(salvar) {
+    if (!editing) return;
+    var s = idx[editing], t = ed.innerText.replace(/\n+$/, "");
+    editing = null;
+    ed.classList.remove("on");
+    if (salvar && s && t !== s.tx) {
+      s.tx = t.slice(0, 500);
+      var precisa = wrap(s.tx, innerW(s)).length * LH + 16;
+      if (precisa > s.h) s.h = Math.ceil(precisa / CD.grade) * CD.grade;
+      commit();
+    } else render();
+    svg.focus({ preventScroll: true });
+  }
+  ed.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); endEdit(true); }
+    else if (e.key === "Escape") { e.preventDefault(); endEdit(false); }
+  });
+  ed.addEventListener("blur", function () {
+    /* o toque que abriu o campo ainda tira o foco por uns instantes: volta o foco */
+    if (editing && Date.now() - editT < 300) setTimeout(function () { ed.focus(); }, 0);
+    else endEdit(true);
+  });
+
+  /* ---------- mouse e toque ---------- */
+  function dist2() {
+    var k = Object.keys(ptrs), a = ptrs[k[0]], b = ptrs[k[1]];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+  }
+  svg.addEventListener("pointerdown", function (e) {
+    if (e.button > 1) return;
+    if (editing) endEdit(true);
+    svg.setPointerCapture(e.pointerId);
+    svg.focus({ preventScroll: true });
+    ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var r = svg.getBoundingClientRect(), p = pt(e), t = e.target, now = Date.now(), el, id;
+    if (Object.keys(ptrs).length === 2) {
+      var d = dist2();
+      mode = { k: "pinch", d: d.d, kk: view.k, wx: (d.mx - r.left - view.x) / view.k,
+        wy: (d.my - r.top - view.y) / view.k };
+      svg.classList.remove("pan");
+      return;
+    }
+    if (tool !== "sel" && e.button === 0 && !espaco) {
+      if (tool === "pen") {
+        var nt = { c: pen.c, w: pen.w, p: [[Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10]] };
+        strokes.push(nt);
+        mode = { k: "pen", t: nt };
+      } else mode = { k: "erase", to: p, ch: apagar(p) };
+      render();
+      return;
+    }
+    if ((el = t.closest("[data-h]"))) {
+      mode = { k: "size", id: sel[0], c: el.getAttribute("data-h"), p0: p,
+        s0: JSON.parse(JSON.stringify(idx[sel[0]])) };
+    } else if (t.closest("[data-c]")) {
+      mode = { k: "link", id: sel[0], to: p };
+    } else if ((el = t.closest("[data-id]"))) {
+      id = el.getAttribute("data-id");
+      if (lastTap.id === id && now - lastTap.t < 350) { lastTap = { id: "", t: 0 }; startEdit(id); return; }
+      lastTap = { id: id, t: now };
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        sel = sel.indexOf(id) >= 0 ? sel.filter(function (v) { return v !== id; }) : sel.concat(id);
+      } else if (sel.indexOf(id) < 0) sel = [id];
+      selLink = null;
+      mode = { k: "move", p0: p, ch: false, orig: alvo().map(function (s) { return [s.id, s.x, s.y]; }) };
+    } else if ((el = t.closest("[data-l]"))) {
+      selLink = el.getAttribute("data-l");
+      sel = [];
+      mode = null;
+    } else {
+      if (lastTap.id === "bg" && now - lastTap.t < 350) {
+        lastTap = { id: "", t: 0 };
+        var z = CD.tamanhos.rect;
+        place("rect", p.x - z[0] / 2, p.y - z[1] / 2);
+        return;
+      }
+      lastTap = { id: "bg", t: now };
+      if (!e.shiftKey) sel = [];
+      selLink = null;
+      /* mouse: arrastar o fundo seleciona; mover a tela = botão do meio ou Espaço + arrastar.
+         toque: arrastar o fundo move a tela */
+      if (e.pointerType === "mouse" && e.button === 0 && !espaco) {
+        mode = { k: "marq", p0: p, cur: p, base: e.shiftKey ? sel.slice() : [] };
+      } else {
+        mode = { k: "pan", sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y };
+        svg.classList.add("pan");
+      }
+    }
+    render();
+  });
+  svg.addEventListener("pointermove", function (e) {
+    if (ptrs[e.pointerId]) ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var m = mode;
+    if (!m) return;
+    var p = pt(e), r = svg.getBoundingClientRect();
+    if (m.k === "pinch" && Object.keys(ptrs).length === 2) {
+      var d = dist2(), nk = clamp(m.kk * d.d / m.d, CD.zoomMin, CD.zoomMax);
+      view.k = nk;
+      view.x = d.mx - r.left - m.wx * nk;
+      view.y = d.my - r.top - m.wy * nk;
+    } else if (m.k === "pan") {
+      view.x = m.vx + e.clientX - m.sx;
+      view.y = m.vy + e.clientY - m.sy;
+    } else if (m.k === "move") {
+      var dx = p.x - m.p0.x, dy = p.y - m.p0.y;
+      if (!m.ch && Math.hypot(dx, dy) * view.k < 3) return;
+      m.ch = true;
+      m.orig.forEach(function (o) { idx[o[0]].x = snap(o[1] + dx); idx[o[0]].y = snap(o[2] + dy); });
+    } else if (m.k === "size") {
+      var s = idx[m.id], c = m.c, o = m.s0;
+      var L = c.indexOf("w") >= 0 ? snap(p.x) : o.x, R = c.indexOf("e") >= 0 ? snap(p.x) : o.x + o.w;
+      var T = c.indexOf("n") >= 0 ? snap(p.y) : o.y, B = c.indexOf("s") >= 0 ? snap(p.y) : o.y + o.h;
+      s.w = Math.max(40, R - L);
+      s.h = Math.max(24, B - T);
+      s.x = c.indexOf("w") >= 0 ? R - s.w : L;
+      s.y = c.indexOf("n") >= 0 ? B - s.h : T;
+      m.ch = true;
+    } else if (m.k === "pen") {
+      var u = m.t.p[m.t.p.length - 1];
+      if (Math.hypot(p.x - u[0], p.y - u[1]) * view.k < 1.5) return;
+      m.t.p.push([Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10]);
+    } else if (m.k === "erase") {
+      m.to = p;
+      if (apagar(p)) m.ch = true;
+    } else if (m.k === "link") m.to = p;
+    else if (m.k === "marq") m.cur = p;
+    render();
+  });
+  function fim(e) {
+    delete ptrs[e.pointerId];
+    if (!editing) svg.focus({ preventScroll: true });
+    var m = mode;
+    if (!m) return;
+    if (m.k === "pinch") { if (Object.keys(ptrs).length < 2) { mode = null; saveLater(); } return; }
+    mode = null;
+    svg.classList.remove("pan");
+    if (m.k === "pen") commit();
+    else if (m.k === "erase") { if (m.ch) commit(); else render(); }
+    else if (m.k === "move" || m.k === "size") { if (m.ch) commit(); else render(); }
+    else if (m.k === "link" && e.type === "pointerup") {
+      var el = document.elementFromPoint(e.clientX, e.clientY), t = el && el.closest("[data-id]");
+      var to = t && t.getAttribute("data-id");
+      if (to && to !== m.id) {
+        links.push({ id: "l" + (seq++), a: m.id, b: to, arrow: def.arrow, dash: def.dash });
+        selLink = links[links.length - 1].id;
+        sel = [];
+        commit();
+      } else render();
+    } else if (m.k === "marq") {
+      var x1 = Math.min(m.p0.x, m.cur.x), x2 = Math.max(m.p0.x, m.cur.x);
+      var y1 = Math.min(m.p0.y, m.cur.y), y2 = Math.max(m.p0.y, m.cur.y);
+      var dentro = shapes.filter(function (s) {
+        return s.x < x2 && s.x + s.w > x1 && s.y < y2 && s.y + s.h > y1;
+      }).map(function (s) { return s.id; });
+      sel = m.base.concat(dentro.filter(function (id) { return m.base.indexOf(id) < 0; }));
+      render();
+    } else { render(); saveLater(); }
+  }
+  svg.addEventListener("pointerup", fim);
+  svg.addEventListener("pointercancel", fim);
+  svg.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    var p = pt(e);
+    zoomAt(p.sx, p.sy, view.k * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)));
+  }, { passive: false });
+
+  svg.addEventListener("keyup", function (e) { if (e.key === " ") espaco = false; });
+  svg.addEventListener("blur", function () { espaco = false; });
+  svg.addEventListener("keydown", function (e) {
+    if (e.key === " ") { e.preventDefault(); espaco = true; return; }
+    var k = e.key, mod = e.ctrlKey || e.metaKey, lk = k.toLowerCase(), st = e.shiftKey ? 1 : CD.grade;
+    if (mod && lk === "z") { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
+    else if (mod && lk === "y") { e.preventDefault(); redo(); }
+    else if (mod && lk === "d") { e.preventDefault(); duplicar(); }
+    else if (mod && lk === "a") {
+      e.preventDefault();
+      sel = shapes.map(function (s) { return s.id; });
+      render();
+    } else if (k === "Delete" || k === "Backspace") { e.preventDefault(); remover(); }
+    else if (k === "Escape") {
+      if (tool !== "sel") setTool("sel");
+      else { sel = []; selLink = null; render(); }
+    }
+    else if (k === "Enter" && sel.length === 1) { e.preventDefault(); startEdit(sel[0]); }
+    else if (k.indexOf("Arrow") === 0 && sel.length) {
+      e.preventDefault();
+      mover(k === "ArrowLeft" ? -st : k === "ArrowRight" ? st : 0,
+        k === "ArrowUp" ? -st : k === "ArrowDown" ? st : 0);
+    }
+  });
+
+  /* ---------- barra de ferramentas ---------- */
+  /* ícones dos botões (traços de 24x24), colocados antes do texto de cada botão */
+  var ICONES = {
+    tsel: "M4 3l7 17 2.5-7.5L21 10z",
+    tpen: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z",
+    terase: "M20 20H9l-5-5a2 2 0 0 1 0-3l9-9a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3L13 20M7 11l6 6",
+    pclear: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM15 9l-6 6M9 9l6 6",
+    undo: "M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3",
+    redo: "M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3",
+    dup: "M9 9h11v11H9zM5 15H4V4h11v1",
+    del: "M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6",
+    fit: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
+    ex: "M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z",
+    new: "M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5",
+    open: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+    save: "M12 3v12M7 10l5 5 5-5M5 21h14",
+    png: "M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M9 9h.01",
+    svgx: "M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"
+  };
+  Object.keys(ICONES).forEach(function (id) {
+    $(id).insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' +
+      ICONES[id] + '"/></svg>');
+  });
+  function swatches(box, cores, tipo) {
+    cores.forEach(function (c) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "dia-sw";
+      b.style.background = c;
+      b.title = (tipo === "fill" ? "Preenchimento " : "Borda ") + c;
+      b.setAttribute("aria-label", b.title);
+      b.addEventListener("click", function () {
+        def[tipo] = c;
+        alvo().forEach(function (s) { if (s.t !== "text" || tipo !== "fill") s[tipo] = c; });
+        commit();
+      });
+      box.appendChild(b);
+    });
+  }
+  swatches($("fills"), CD.coresFundo, "fill");
+  swatches($("strokes"), CD.coresBorda, "stroke");
+  Array.prototype.forEach.call(document.querySelectorAll("#viewDia [data-forma]"), function (b) {
+    b.addEventListener("click", function () { add(b.getAttribute("data-forma")); svg.focus(); });
+  });
+  $("dash").addEventListener("change", function () {
+    def.dash = this.checked;
+    alvo().forEach(function (s) { s.dash = def.dash; });
+    alvoLinks().forEach(function (l) { l.dash = def.dash; });
+    commit();
+  });
+  $("arrow").addEventListener("change", function () {
+    def.arrow = this.checked;
+    alvoLinks().forEach(function (l) { l.arrow = def.arrow; });
+    commit();
+  });
+  $("tsel").addEventListener("click", function () { setTool("sel"); });
+  $("tpen").addEventListener("click", function () { setTool("pen"); });
+  $("terase").addEventListener("click", function () { setTool("erase"); });
+  $("pclear").addEventListener("click", function () { if (strokes.length) { strokes = []; commit(); } });
+  CD.pincel.cores.forEach(function (c, i) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "dia-sw" + (i ? "" : " cur");
+    b.style.background = c === "auto" ? "var(--fg)" : c;
+    b.title = "Cor do pincel";
+    b.setAttribute("aria-label", b.title);
+    b.addEventListener("click", function () {
+      pen.c = c;
+      Array.prototype.forEach.call($("pcolors").children, function (x) {
+        x.classList.toggle("cur", x === b);
+      });
+      setTool("pen");
+    });
+    $("pcolors").appendChild(b);
+  });
+  CD.pincel.espessuras.forEach(function (e, i) {
+    var o = document.createElement("option");
+    o.value = e[1];
+    o.textContent = e[0];
+    $("pw").appendChild(o);
+  });
+  $("pw").addEventListener("change", function () { pen.w = +this.value; });
+  $("undo").addEventListener("click", undo);
+  $("redo").addEventListener("click", redo);
+  $("dup").addEventListener("click", duplicar);
+  $("del").addEventListener("click", remover);
+  $("zin").addEventListener("click", function () { zoomCentro(1.25); });
+  $("zout").addEventListener("click", function () { zoomCentro(0.8); });
+  $("fit").addEventListener("click", fit);
+  $("snap").addEventListener("change", save);
+
+  /* ---------- arquivo: novo, abrir, salvar, exportar ---------- */
+  var novoT = 0, novoBtn = $("new");
+  novoBtn.addEventListener("click", function () {
+    if (!shapes.length) return;
+    if (!novoT) {
+      novoBtn.textContent = "Apagar tudo?";
+      novoT = setTimeout(function () { novoT = 0; novoBtn.textContent = "Novo"; }, 3000);
+      return;
+    }
+    clearTimeout(novoT);
+    novoT = 0;
+    novoBtn.textContent = "Novo";
+    carregar({ shapes: [], links: [] }, { x: 40, y: 40, k: 1 });
+  });
+  var exT = 0, exBtn = $("ex");
+  exBtn.addEventListener("click", function () {
+    if (shapes.length && !exT) {
+      exBtn.textContent = "Trocar pelo exemplo?";
+      exT = setTimeout(function () { exT = 0; exBtn.textContent = "Exemplo"; }, 3000);
+      return;
+    }
+    clearTimeout(exT);
+    exT = 0;
+    exBtn.textContent = "Exemplo";
+    carregar(exemplo(), { x: 40, y: 40, k: 1 });
+    fit();
+  });
+  function baixar(blob, nome) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  function entregar(blob, nome) {
+    var f = window.File ? new File([blob], nome, { type: blob.type }) : null;
+    var toque = window.matchMedia && matchMedia("(pointer: coarse)").matches;
+    if (toque && f && navigator.canShare && navigator.canShare({ files: [f] })) {
+      navigator.share({ files: [f] }).catch(function (er) {
+        if (er && er.name !== "AbortError") baixar(blob, nome);
+      });
+    } else baixar(blob, nome);
+  }
+  function svgTexto() {
+    var b = bounds(), pad = 24;
+    if (!b) return null;
+    idx = {};
+    shapes.forEach(function (s) { idx[s.id] = s; });
+    var w = Math.ceil(b.w + pad * 2), h = Math.ceil(b.h + pad * 2);
+    var vx = Math.floor(b.x - pad), vy = Math.floor(b.y - pad);
+    return { w: w, h: h, txt: '<svg xmlns="' + NS + '" width="' + w + '" height="' + h + '" viewBox="' + vx +
+      " " + vy + " " + w + " " + h + '" font-family="' + CD.letra + '"><rect x="' + vx + '" y="' + vy +
+      '" width="' + w + '" height="' + h + '" fill="#ffffff"/>' +
+      links.map(function (l) { return linkSvg(l, true); }).join("") +
+      shapes.map(function (s) { return shapeSvg(s, true); }).join("") +
+      strokes.map(function (t) { return strokeSvg(t, true); }).join("") + "</svg>" };
+  }
+  $("save").addEventListener("click", function () {
+    var txt = JSON.stringify({ shapes: shapes, links: links, strokes: strokes }, null, 1);
+    baixar(new Blob([txt], { type: "application/json" }), "diagrama.json");
+    msg("Arquivo salvo.");
+  });
+  $("svgx").addEventListener("click", function () {
+    var o = svgTexto();
+    if (!o) { msg("Desenhe algo antes de exportar."); return; }
+    entregar(new Blob([o.txt], { type: "image/svg+xml" }), "diagrama.svg");
+  });
+  $("png").addEventListener("click", function () {
+    var o = svgTexto();
+    if (!o) { msg("Desenhe algo antes de exportar."); return; }
+    var img = new Image(), url = URL.createObjectURL(new Blob([o.txt], { type: "image/svg+xml" }));
+    img.onload = function () {
+      var c = document.createElement("canvas"), esc2 = 2;
+      c.width = o.w * esc2;
+      c.height = o.h * esc2;
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function (bl) {
+        if (bl) entregar(bl, "diagrama.png"); else msg("Não foi possível gerar a imagem.");
+      });
+    };
+    img.onerror = function () { msg("Não foi possível gerar a imagem."); };
+    img.src = url;
+  });
+  $("open").addEventListener("click", function () { $("file").click(); });
+  $("file").addEventListener("change", function () {
+    var f = this.files && this.files[0], inp = this;
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var d = null;
+      try { d = limpo(JSON.parse(rd.result)); } catch (er) {}
+      if (d) { carregar(d); fit(); fitted = true; msg("Diagrama aberto."); } else msg("Arquivo inválido.");
+      inp.value = "";
+    };
+    rd.readAsText(f);
+  });
+
+  /* ---------- início: recupera o último desenho ou mostra o exemplo ---------- */
+  var ini = null, sv = null;
+  try { sv = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (sv) {
+    ini = limpo(sv);
+    if (sv.snap === false) $("snap").checked = false;
+  }
+  if (ini) { carregar(ini, sv.view); fitted = true; } else carregar(exemplo(), view);
+  window.diaOnShow = function () { if (!fitted) { fitted = true; fit(); } else render(); };
+})();
+
 /* ===== Menu lateral e tema: troca de página (VIEWS), endereço #..., modo escuro/claro ===== */
 (function () {
   var VIEWS = {
-    comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal", roleta: "viewRol"
+    comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal", roleta: "viewRol",
+    diagramas: "viewDia"
   };
   var items = document.querySelectorAll(".mi");
   function current() {
@@ -5470,6 +6577,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     if (name === "comparador" && window.cmpOnShow) window.cmpOnShow();
     if (name === "horas" && window.hrsOnShow) window.hrsOnShow();
     if (name === "roleta" && window.rolOnShow) window.rolOnShow();
+    if (name === "diagramas" && window.diaOnShow) window.diaOnShow();
   }
   items.forEach(function (a) {
     a.addEventListener("click", function (e) {
