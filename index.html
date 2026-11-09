@@ -408,6 +408,7 @@ var CONFIG = {
   .ico svg { width: 1rem; height: 1rem; }
   .content { min-width: 0; }
   .topo-btn { display: none; }
+  .menu-nome { display: none; }
   #viewFmt > .wrap, #viewCmp > .wrap, #viewHrs > .wrap { max-width: none; margin: 0; }
 
   @media (max-width: 56rem) {
@@ -422,10 +423,14 @@ var CONFIG = {
     .brand { flex: 0 1 auto; }
     .menu { flex-direction: row; flex-wrap: wrap; flex: 1 1 100%; order: 2; gap: 0.25rem;
       padding-top: 0.75rem; margin-top: -0.25rem; }
-    /* celular: só os ícones; a página aberta mostra o nome ao lado do ícone */
-    .mi { font-size: 0; gap: 0; padding: 0.65rem 0.75rem; flex: 0 0 auto; transition: gap 0.2s; }
-    .mi[aria-current="page"] { font-size: 0.9375rem; gap: 0.5rem; }
+    /* celular: só os ícones; o nome da página aberta aparece centralizado abaixo deles */
+    .menu { justify-content: space-between; }
+    .mi { font-size: 0; gap: 0; padding: 0.65rem 0.85rem; flex: 0 0 auto; }
     .mi svg { width: 1.3rem; height: 1.3rem; }
+    .menu-nome {
+      display: block; order: 3; flex: 1 1 100%; margin: -0.25rem 0 0; text-align: center;
+      font-size: 0.9375rem; font-weight: 600; color: var(--fg);
+    }
     .topo-btn {
       position: fixed; z-index: 30; right: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
       width: 3rem; height: 3rem; border-radius: 50%; border: 1px solid var(--line);
@@ -2767,6 +2772,7 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
         aria-hidden="true"><rect x="3" y="3" width="7" height="6" rx="1"/><rect x="14" y="15" width="7"
         height="6" rx="1"/><path d="M6.5 9v3a2 2 0 0 0 2 2H14"/></svg>Diagramas</a>
     </nav>
+    <div class="menu-nome" id="menuNome" aria-hidden="true"></div>
   </aside>
   <main class="content">
     <!-- ================= PÁGINA: Comparador de texto · menu #comparador · ids c- · JS: IIFE com P = "c-"
@@ -6688,6 +6694,7 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
     diagramas: "viewDia"
   };
   var items = document.querySelectorAll(".mi");
+  var $nome = document.getElementById("menuNome");
   var lado = document.querySelector(".side"), menuEl = document.querySelector(".menu");
   function fixaMenu() {   /* celular: calcula quanto o topo do .side sobe para o menu ficar fixo */
     var cel = window.matchMedia("(max-width: 56rem)").matches;
@@ -6714,6 +6721,7 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
     items.forEach(function (a) {
       if (a.getAttribute("data-view") === name) {
         a.setAttribute("aria-current", "page");
+        $nome.textContent = a.getAttribute("aria-label") || "";
       }
       else a.removeAttribute("aria-current");
     });
