@@ -110,6 +110,8 @@
    são ids de formas); view {x,y,k} é a posição e o zoom da tela. Tudo é desenhado como texto
    SVG (shapeSvg, linkSvg), por isso limpo() valida cores, ids e tamanhos de qualquer dado
    que entra (arquivo aberto ou localStorage "ferramentas-diagramas").
+   geom() ......... pontas da seta: reta (vertical/horizontal) quando as formas se alinham
+                   pelo menos em parte; senão, linha entre os centros.
    render() ....... redesenha formas, setas e a camada de seleção (uiSvg: alças e bolinhas).
    commit() ....... guarda um passo no histórico (Desfazer/Refazer) e salva sozinho.
    pointerdown/move/up .. um só tratador: mover, redimensionar (alças), ligar (bolinhas),
@@ -5821,9 +5823,47 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
     else t = Math.min(dx ? s.w / 2 / Math.abs(dx) : 1e9, dy ? s.h / 2 / Math.abs(dy) : 1e9);
     return [cx + dx * t, cy + dy * t];
   }
+  /* quanto a borda da forma fica para dentro da caixa quando a linha reta cruza em v */
+  function inset(s, v, horiz) {
+    var u = horiz ? (v - s.y - s.h / 2) / (s.h / 2) : (v - s.x - s.w / 2) / (s.w / 2);
+    var meio = horiz ? s.w / 2 : s.h / 2;
+    u = clamp(Math.abs(u), 0, 1);
+    if (s.t === "diamond") return meio * u;
+    if (s.t === "ellipse") return meio * (1 - Math.sqrt(1 - u * u));
+    return 0;
+  }
+  /* linha reta: prefere passar pela ponta (vértice) do losango/elipse; senão, pelo meio da sobreposição */
+  function ponto(A, B, lo, hi, horiz) {
+    var c = [A, B], i, m;
+    for (i = 0; i < 2; i++) {
+      if (c[i].t !== "diamond" && c[i].t !== "ellipse") continue;
+      m = horiz ? c[i].y + c[i].h / 2 : c[i].x + c[i].w / 2;
+      if (m > lo && m < hi) return m;
+    }
+    return (lo + hi) / 2;
+  }
   function geom(l) {
-    var A = idx[l.a], B = idx[l.b];
+    var A = idx[l.a], B = idx[l.b], lo, hi, v, T, U;
     if (!A || !B) return null;
+    /* formas lado a lado ou uma sobre a outra, com algum alinhamento: seta reta (vertical/horizontal) */
+    lo = Math.max(A.x, B.x);
+    hi = Math.min(A.x + A.w, B.x + B.w);
+    if (lo < hi && (A.y + A.h <= B.y || B.y + B.h <= A.y)) {
+      v = ponto(A, B, lo, hi, false);
+      T = A.y < B.y ? A : B;
+      U = T === A ? B : A;
+      var yt = T.y + T.h - inset(T, v, false), yu = U.y + inset(U, v, false);
+      return T === A ? [v, yt, v, yu] : [v, yu, v, yt];
+    }
+    lo = Math.max(A.y, B.y);
+    hi = Math.min(A.y + A.h, B.y + B.h);
+    if (lo < hi && (A.x + A.w <= B.x || B.x + B.w <= A.x)) {
+      v = ponto(A, B, lo, hi, true);
+      T = A.x < B.x ? A : B;
+      U = T === A ? B : A;
+      var xt = T.x + T.w - inset(T, v, true), xu = U.x + inset(U, v, true);
+      return T === A ? [xt, v, xu, v] : [xu, v, xt, v];
+    }
     var p = edge(A, B.x + B.w / 2, B.y + B.h / 2), q = edge(B, A.x + A.w / 2, A.y + A.h / 2);
     return [p[0], p[1], q[0], q[1]];
   }
@@ -5909,6 +5949,32 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
         Math.abs(m.cur.x - m.p0.x) + '" height="' + Math.abs(m.cur.y - m.p0.y) +
         '" style="fill:var(--accent);fill-opacity:.1;stroke:var(--accent)" stroke-width="' + r +
         '" pointer-events="none"/>';
+    }
+    var sl = selLink && !editing ? links.filter(function (l) { return l.id === selLink; })[0] : null;
+    var gg = sl ? geom(sl) : null;
+    if (gg) {
+      [["a", gg[0], gg[1]], ["b", gg[2], gg[3]]].forEach(function (q) {
+        h += '<circle data-e="' + q[0] + '" cx="' + q[1] + '" cy="' + q[2] + '" r="' + 7 * r +
+          '" style="fill:var(--surface);stroke:var(--accent);cursor:move" stroke-width="' + 2 * r + '"/>';
+      });
+    }
+    if (m && m.k === "move" && m.guia) {
+      ["x", "y"].forEach(function (a) {
+        if (m.guia[a] === null) return;
+        h += a === "x" ? '<line x1="' + m.guia.x + '" y1="-9999" x2="' + m.guia.x + '" y2="9999"'
+          : '<line x1="-9999" y1="' + m.guia.y + '" x2="9999" y2="' + m.guia.y + '"';
+        h += ' style="stroke:var(--accent)" stroke-width="' + r + '" stroke-dasharray="' + 4 * r +
+          '" pointer-events="none"/>';
+      });
+    }
+    if (m && m.k === "relink" && m.to) {
+      var fixo = idx[m.end === "a" ? m.l.b : m.l.a];
+      if (fixo) {
+        c = edge(fixo, m.to.x, m.to.y);
+        h += '<line x1="' + c[0] + '" y1="' + c[1] + '" x2="' + m.to.x + '" y2="' + m.to.y +
+          '" style="stroke:var(--accent)" stroke-width="' + 2 * r + '" stroke-dasharray="' + 6 * r +
+          '" pointer-events="none"/>';
+      }
     }
     if (m && m.k === "erase" && m.to) {
       h += '<circle cx="' + m.to.x + '" cy="' + m.to.y + '" r="' + CD.pincel.apagador * r +
@@ -6130,8 +6196,28 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
       return l.id === selLink || sel.indexOf(l.a) >= 0 || sel.indexOf(l.b) >= 0;
     });
   }
+  /* "imã" de alinhamento: o centro do que está sendo movido gruda no centro de outra forma
+     (vertical e horizontal) quando chega perto; guarda as linhas-guia em m.guia */
+  function alinhar(m, th) {
+    var g = alvo(), bx = null, by = null, x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+    if (!g.length) return;
+    g.forEach(function (s) {
+      x1 = Math.min(x1, s.x); x2 = Math.max(x2, s.x + s.w);
+      y1 = Math.min(y1, s.y); y2 = Math.max(y2, s.y + s.h);
+    });
+    var cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+    shapes.forEach(function (o) {
+      if (sel.indexOf(o.id) >= 0) return;
+      var dx = o.x + o.w / 2 - cx, dy = o.y + o.h / 2 - cy;
+      if (Math.abs(dx) < th && (bx === null || Math.abs(dx) < Math.abs(bx))) bx = dx;
+      if (Math.abs(dy) < th && (by === null || Math.abs(dy) < Math.abs(by))) by = dy;
+    });
+    g.forEach(function (s) { s.x += bx || 0; s.y += by || 0; });
+    m.guia = { x: bx === null ? null : cx + bx, y: by === null ? null : cy + by };
+  }
   function mover(dx, dy) {
     alvo().forEach(function (s) { s.x += dx; s.y += dy; });
+    alinhar({}, Math.max(Math.abs(dx), Math.abs(dy)) > 1 ? Math.abs(dx || dy) - 1 : 0.5);
     commit();
   }
 
@@ -6210,7 +6296,11 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
       render();
       return;
     }
-    if ((el = t.closest("[data-h]"))) {
+    if ((el = t.closest("[data-e]"))) {
+      mode = { k: "relink", end: el.getAttribute("data-e"), to: p, l: links.filter(function (l) {
+        return l.id === selLink;
+      })[0] };
+    } else if ((el = t.closest("[data-h]"))) {
       mode = { k: "size", id: sel[0], c: el.getAttribute("data-h"), p0: p,
         s0: JSON.parse(JSON.stringify(idx[sel[0]])) };
     } else if (t.closest("[data-c]")) {
@@ -6267,6 +6357,7 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
       if (!m.ch && Math.hypot(dx, dy) * view.k < 3) return;
       m.ch = true;
       m.orig.forEach(function (o) { idx[o[0]].x = snap(o[1] + dx); idx[o[0]].y = snap(o[2] + dy); });
+      alinhar(m, 8 / view.k);
     } else if (m.k === "size") {
       var s = idx[m.id], c = m.c, o = m.s0;
       var L = c.indexOf("w") >= 0 ? snap(p.x) : o.x, R = c.indexOf("e") >= 0 ? snap(p.x) : o.x + o.w;
@@ -6283,7 +6374,8 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
     } else if (m.k === "erase") {
       m.to = p;
       if (apagar(p)) m.ch = true;
-    } else if (m.k === "link") m.to = p;
+    } else if (m.k === "relink") m.to = p;
+    else if (m.k === "link") m.to = p;
     else if (m.k === "marq") m.cur = p;
     render();
   });
@@ -6297,7 +6389,12 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
     svg.classList.remove("pan");
     if (m.k === "pen") commit();
     else if (m.k === "erase") { if (m.ch) commit(); else render(); }
-    else if (m.k === "move" || m.k === "size") { if (m.ch) commit(); else render(); }
+    else if (m.k === "relink") {
+      var el2 = document.elementFromPoint(e.clientX, e.clientY), t2 = el2 && el2.closest("[data-id]");
+      var nid = t2 && t2.getAttribute("data-id"), outro = m.end === "a" ? m.l.b : m.l.a;
+      if (nid && nid !== outro && e.type === "pointerup") { m.l[m.end] = nid; commit(); }
+      else render();
+    } else if (m.k === "move" || m.k === "size") { if (m.ch) commit(); else render(); }
     else if (m.k === "link" && e.type === "pointerup") {
       var el = document.elementFromPoint(e.clientX, e.clientY), t = el && el.closest("[data-id]");
       var to = t && t.getAttribute("data-id");
