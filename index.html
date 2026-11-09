@@ -8,15 +8,15 @@
  O ARQUIVO, DE CIMA PARA BAIXO
    1. <head>        título, ícone e fontes do Google (Newsreader, DM Sans, DM Mono)
    2. <style>       todo o CSS, separado por comentários (veja "ONDE FICA CADA PÁGINA")
-   3. <body>        menu lateral (<aside class="side">) e as 4 páginas (<main class="content">)
+   3. <body>        menu lateral (<aside class="side">) e as 5 páginas (<main class="content">)
    4. <script> #1   JavaScript de cada página + menu lateral e tema
    5. <script> #2   recursos extras: cores e numeração do formatador, alças de altura,
                     modo Expandir, divisória arrastável e contador de caracteres
 
  ONDE FICA CADA PÁGINA
-   As "páginas" são 4 <section class="view"> dentro de <main>. Só uma aparece por vez
+   As "páginas" são 5 <section class="view"> dentro de <main>. Só uma aparece por vez
    (as outras ficam com o atributo hidden). O menu lateral troca a página e o endereço
-   (#comparador, #formatador, #horas, #salario). Para achar o trecho, use a busca do
+   (#comparador, #formatador, #horas, #salario, #roleta). Para achar o trecho, use a busca do
    editor (Ctrl+F) com o texto indicado.
 
    PÁGINA                  MENU / ENDEREÇO   SEÇÃO HTML (id)  IDs   CSS                       JS
@@ -24,6 +24,7 @@
    Formatador JSON e XML   #formatador       viewFmt          f-    "/* Formatador */"        IIFE com var P = "f-"
    Calendário e horas      #horas            viewHrs          h-    "/* Horas do Brasil */"   IIFE com var P = "h-"
    Calculadora de salário  #salario          viewSal          s-    "/* Calculadora de salário */"   "/* Calculadora de salário */"
+   Roleta         #roleta           viewRol          r-    "/* Roleta */"   IIFE com var P = "r-"
 
    Os ids dos campos começam com o prefixo da página (ex.: s-bruto, f-inp, c-inpA, h-clocks).
    O CSS de cada página começa sempre com #viewXxx, para uma página não mexer na outra.
@@ -73,6 +74,15 @@
    Ordem na tela ... definida por CSS (order e @media) em "Calculadora de salário":
                      celular = dados, resultado, 13º e férias, resumo do ano;
                      computador = resultado, 13º e férias, resumo do ano, dados.
+
+ ROLETA (viewRol)
+   Só people e norepeat ficam salvos em localStorage "ferramentas-roleta"; done e hist (quem já foi)
+   existem só na memória e zeram ao recarregar. Tem modo Expandir (botão #r-btnFull).
+   draw() ........ desenha a roleta num <canvas> (rot = ângulo atual; ponteiro no topo).
+   spin() ........ sorteia o vencedor com rnd() (crypto, sem viés) ANTES de girar e calcula
+                   o ângulo final para ele parar sob o ponteiro; a animação é só visual.
+   showWin() ..... modal "Parabéns" com o nome do sorteado (fecha com botão, clique fora, Esc ou Enter).
+   pool() ........ quem entra na roleta: presentes e, com "Não repetir", quem ainda não foi.
 
  DICAS PARA MEXER
    - Para criar uma página nova: copie uma <section class="view" hidden>, ponha um
@@ -346,6 +356,14 @@
 .contador { flex: none; display: flex; justify-content: flex-end; gap: 0.9rem; padding: 0.3rem 1.25rem; border-top: 1px solid var(--line); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; user-select: none; }
 .btn-full, #c-btnFileA, #c-btnFileB { display: inline-flex; align-items: center; gap: 0.4rem; }
 .btn-full .i-co { display: none; }
+/* Expandir: "Modo escuro" e "Recolher" com o mesmo tamanho; Modo escuro redondo e Recolher retangular, como no normal */
+html.tela-cheia #themeBtn, html.tela-cheia .btn-full {
+  box-sizing: border-box !important; width: 8.75rem !important; height: 2.25rem !important; padding: 0 0.9rem !important; margin: 0 !important;
+  display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 0.45rem !important;
+  font: inherit !important; font-size: 0.875rem !important; font-weight: 600 !important; line-height: 1 !important;
+  border-radius: 0.625rem !important; white-space: nowrap;
+}
+html.tela-cheia #themeBtn { border-radius: 999px !important; } /* Modo escuro continua redondo, como no normal */
 html.tela-cheia .btn-full .i-co { display: inline; }
 html.tela-cheia .btn-full .i-ex { display: none; }
 html.tela-cheia body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding: 1.1rem 0.75rem 0.3rem; overflow: hidden; }
@@ -826,6 +844,69 @@ html.tela-cheia #viewSal .sal-form { order: 1; }
 #viewSal .sal-chk input { width: auto; accent-color: var(--accent); }
 @media (max-width: 30rem) { #viewSal .sal-3 { grid-template-columns: 1fr 1fr; } #viewSal .sal-card { padding: 1.1rem; } #viewSal .sal-2 { grid-template-columns: 1fr; } }
 
+  /* Roleta */
+#viewRol .wrap { max-width: 80rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+#viewRol header { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; row-gap: 0.5rem; align-items: center; }
+#viewRol header h1 { grid-column: 1 / -1; }
+#viewRol header .lede { grid-column: 1; }
+#viewRol .hrs-bar { grid-column: 2; grid-row: 2; display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end; }
+@media (max-width: 36rem) { #viewRol .hrs-bar { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; } }
+html.tela-cheia #viewRol > .wrap { max-width: none; margin: 0; width: 100%; overflow: auto; gap: 1rem; padding-bottom: 0.5rem; padding-right: 2px; }
+html.tela-cheia #viewRol header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+html.tela-cheia #viewRol .hrs-bar .theme-btn { margin-left: 0; }
+html.tela-cheia #viewRol .rol-stage { width: min(100%, max(18rem, calc(100dvh - 25rem))); }
+#viewRol h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2.25rem, 6vw, 3.5rem); line-height: 1.05; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+#viewRol .lede { margin: 0; color: var(--muted); max-width: 40rem; text-wrap: pretty; }
+#viewRol .rol-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: stretch; }
+@media (min-width: 56rem) { #viewRol .rol-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: stretch; } #viewRol .rol-wheel { order: 2; } }
+#viewRol .rol-card { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+#viewRol .rol-card h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; margin: 0; letter-spacing: -0.01em; }
+#viewRol .rol-card h3 { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0; }
+#viewRol .rol-wheel { align-items: center; justify-content: center; }
+#viewRol .rol-stage { width: min(100%, 30rem); aspect-ratio: 1; }
+#viewRol #r-canvas { width: 100%; height: 100%; display: block; }
+#viewRol .rol-result { min-height: 4.5rem; text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 0.2rem; }
+#viewRol .rol-result .sm { font-size: 0.8125rem; color: var(--muted); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+#viewRol .rol-result .big { font-family: var(--font-display); font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.1; color: var(--accent); overflow-wrap: anywhere; }
+#viewRol .btn { font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.2; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 0.625rem; padding: 0.55rem 1rem; cursor: pointer; }
+#viewRol .btn:hover:not(:disabled) { border-color: var(--accent); }
+#viewRol .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#viewRol .btn:focus-visible, #viewRol input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewRol .btn.primary { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
+#viewRol .btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+#viewRol .rol-spin { font-size: 1.125rem; padding: 0.75rem 3rem; border-radius: 999px; }
+#viewRol .rol-add { display: flex; gap: 0.5rem; }
+#viewRol .rol-add input { flex: 1 1 auto; min-width: 0; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.55rem 0.8rem; }
+#viewRol .rol-msg:empty { display: none; }
+#viewRol .rol-msg { margin: 0; font-size: 0.8125rem; color: var(--danger); }
+#viewRol .rol-list, #viewRol .rol-hist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.4rem 0.6rem; }
+#viewRol .rol-list .rol-empty { grid-column: 1 / -1; }
+#viewRol .rol-hist { list-style: decimal inside; }
+#viewRol .rol-add { max-width: 32rem; }
+#viewRol .rol-hist li { padding: 0.3rem 0.6rem; background: var(--bg); border: 1px solid var(--line); border-radius: 0.5rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#viewRol .rol-p { display: flex; align-items: center; gap: 0.6rem; background: var(--bg); border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.4rem 0.6rem; min-width: 0; }
+#viewRol .rol-p .dot { flex: none; width: 0.8rem; height: 0.8rem; border-radius: 50%; }
+#viewRol .rol-p label { flex: 1 1 auto; display: flex; align-items: center; gap: 0.5rem; min-width: 0; cursor: pointer; }
+#viewRol .rol-p .nm { overflow-wrap: anywhere; min-width: 0; }
+#viewRol .rol-p.off .nm { text-decoration: line-through; color: var(--muted); }
+#viewRol .rol-p .tag { flex: none; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0.05rem 0.5rem; }
+#viewRol .rol-p .rm { all: unset; cursor: pointer; flex: none; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 50%; color: var(--muted); font-size: 1.1rem; }
+#viewRol .rol-p .rm:hover { color: var(--danger); background: var(--danger-soft); }
+#viewRol .rol-p .rm:focus-visible { outline: 2px solid var(--accent); }
+#viewRol .rol-opt { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.9375rem; cursor: pointer; }
+#viewRol .rol-opt input { margin-top: 0.25rem; accent-color: var(--accent); }
+#viewRol .rol-opt small { display: block; color: var(--muted); font-size: 0.8125rem; }
+#viewRol .rol-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+#viewRol .rol-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(20, 16, 10, 0.6); }
+#viewRol .rol-box { width: min(100%, 36rem); background: var(--surface); border: 1px solid var(--line); border-radius: 1.25rem; padding: clamp(1.5rem, 5vw, 2.5rem); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.9rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); animation: rolPop 0.35s cubic-bezier(0.2, 1.3, 0.4, 1); }
+#viewRol .rol-box .parab { font-size: 0.875rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+#viewRol .rol-box .quem { font-family: var(--font-display); font-size: clamp(2.75rem, 12vw, 5.5rem); line-height: 1.05; margin: 0; color: var(--fg); overflow-wrap: anywhere; }
+#viewRol .rol-box .vez { margin: 0; font-size: clamp(1rem, 3vw, 1.25rem); color: var(--muted); text-wrap: balance; }
+#viewRol .rol-box .btn { margin-top: 0.6rem; padding: 0.7rem 2.5rem; }
+@keyframes rolPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { #viewRol .rol-box { animation: none; } }
+#viewRol .rol-empty { margin: 0; color: var(--muted); font-size: 0.9375rem; }
+
   /* Horas do Brasil */
 #viewHrs .wrap { max-width: 90rem; margin-inline: auto; display: flex; flex-direction: column; gap: 2rem; }
 #viewHrs header { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -1008,6 +1089,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
       <a href="#formatador" class="mi" data-view="formatador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg><span>Formatador JSON e XML</span></a>
       <a href="#horas" class="mi" data-view="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Calendário e horas</span></a>
       <a href="#salario" class="mi" data-view="salario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h4"/></svg><span>Calculadora de salário</span></a>
+      <a href="#roleta" class="mi" data-view="roleta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7M12 14v7M3 12h7M14 12h7"/></svg>Roleta</a>
     </nav>
   </aside>
   <main class="content">
@@ -1398,6 +1480,53 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     <p>Estimativa para empregado CLT, com a tabela do INSS de 2026 (teto de R$ 8.475,55) e a tabela do IRRF de 2026 com a isenção até R$ 5.000 e o redutor até R$ 7.350 (Lei 15.270/2025). O IRRF usa o desconto simplificado de R$ 607,20 quando ele é maior que o INSS mais os dependentes.</p>
     <p>Não considera adicional noturno, pensão alimentícia nem previdência privada. O valor real pode variar conforme a folha da empresa. Tudo é calculado no seu navegador.</p>
   </footer>
+</div>
+    </section>
+    <!-- ================= PÁGINA: Roleta · menu #roleta · ids r- · JS: IIFE com P = "r-" · CSS: "/* Roleta */" ================= -->
+    <section id="viewRol" class="view" aria-label="Roleta" hidden>
+<div class="wrap">
+  <header>
+    <h1>Roleta</h1>
+    <p class="lede">Coloque o nome do time, gire e veja quem começa. Quem faltou pode ser desmarcado, e quem já foi sorteado sai da roleta até você recarregar a página.</p>
+    <div class="hrs-bar">
+    <button type="button" class="btn btn-full" id="r-btnFull" aria-pressed="false" title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="i-ex" d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/><path class="i-co" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg><span class="lbl">Expandir</span></button>
+  </div>
+  </header>
+
+  <div class="rol-grid">
+    <section class="rol-card rol-wheel" aria-label="Roleta">
+      <div class="rol-stage"><canvas id="r-canvas" aria-hidden="true"></canvas></div>
+      <button type="button" class="btn primary rol-spin" id="r-spin">Girar</button>
+      <div class="rol-result" id="r-result" aria-live="polite"></div>
+    </section>
+
+    <section class="rol-card" aria-label="Participantes">
+      <h2>Participantes</h2>
+      <div class="rol-add" id="r-form">
+        <input type="text" id="r-name" autocomplete="off" placeholder="Nome (ou vários separados por vírgula)" aria-label="Nome do participante">
+        <button type="button" class="btn primary" id="r-addBtn">Adicionar</button>
+      </div>
+      <p class="rol-msg" id="r-msg" role="status"></p>
+      <ul class="rol-list" id="r-list"></ul>
+      <label class="rol-opt"><input type="checkbox" id="r-norepeat" checked><span>Não repetir pessoas<small>Quem já foi sorteado sai da roleta até você recarregar a página.</small></span></label>
+      <div class="rol-actions">
+        <button type="button" class="btn" id="r-clear">Limpar lista</button>
+        <button type="button" class="btn" id="r-def">Time padrão</button>
+      </div>
+      <h3>Ordem</h3>
+      <ol class="rol-hist" id="r-hist"></ol>
+      <p class="rol-empty" id="r-histEmpty">Ninguém foi sorteado ainda.</p>
+      <p class="rol-empty">Só a lista de pessoas fica salva, neste navegador. A ordem sorteada não é salva. O sorteio usa números aleatórios do próprio navegador.</p>
+    </section>
+  </div>
+</div>
+<div class="rol-modal" id="r-modal" role="dialog" aria-modal="true" aria-labelledby="r-mWho" hidden>
+  <div class="rol-box">
+    <span class="parab">Parabéns!</span>
+    <p class="quem" id="r-mWho"></p>
+    <p class="vez">É a sua vez de apresentar a daily.</p>
+    <button type="button" class="btn primary" id="r-mOk">Fechar</button>
+  </div>
 </div>
     </section>
   </main>
@@ -2994,9 +3123,216 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
   calcula();
 })();
 
+/* ===== PÁGINA Roleta: participantes, sorteio, ordem; lista salva em localStorage "ferramentas-roleta" ===== */
+(function () {
+  var P = "r-", KEY = "ferramentas-roleta";
+  var COLORS = ["#c4623f", "#3b82c4", "#3d9a4d", "#8a63b8", "#c28a1c", "#2b918c", "#c0476b", "#6b7a3a", "#5b6fb5", "#a8582e"];
+  var MAX = 40;
+  var PADRAO = ["Amarildo", "Alexandre", "Germano", "Pedro", "Vinicius", "Stefani", "Hugo", "Bruno", "Leandro", "Emi"]; /* time padrão: usado na 1ª vez e no botão "Time padrão" */
+  function padrao() { return PADRAO.map(function (n) { return { n: n, off: false }; }); }
+  function $(id) { return document.getElementById(P + id); }
+  var canvas = $("canvas"), ctx = canvas.getContext("2d");
+  var people = [], done = [], hist = [], norepeat = true, rot = -Math.PI / 2, spinning = false, last = "";
+
+  try {
+    var sv = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (sv) {
+      people = (sv.people || []).filter(function (p) { return p && typeof p.n === "string"; }).slice(0, MAX);
+      norepeat = sv.norepeat !== false; /* quem já foi sorteado (done/hist) não é salvo de propósito */
+    }
+  } catch (e) {}
+  if (!sv) people = padrao(); /* nada salvo ainda: começa com o time padrão */
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ people: people, norepeat: norepeat })); } catch (e) {}
+  }
+  function rnd(n) { // inteiro aleatório 0..n-1 (crypto, sem viés)
+    var c = window.crypto || window.msCrypto;
+    if (!c || !c.getRandomValues) return Math.floor(Math.random() * n);
+    var a = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n;
+    do { c.getRandomValues(a); } while (a[0] >= lim);
+    return a[0] % n;
+  }
+  function colorOf(name) {
+    var i = people.findIndex(function (p) { return p.n === name; });
+    return COLORS[(i < 0 ? 0 : i) % COLORS.length];
+  }
+  function pool() {
+    return people.filter(function (p) { return !p.off && !(norepeat && done.indexOf(p.n) >= 0); });
+  }
+  function msg(t) { $("msg").textContent = t || ""; }
+
+  /* ---------- desenho da roleta ---------- */
+  function draw() {
+    var cs = getComputedStyle(document.documentElement);
+    var line = cs.getPropertyValue("--line").trim() || "#ccc", surf = cs.getPropertyValue("--surface").trim() || "#fff";
+    var accent = cs.getPropertyValue("--accent").trim() || "#c4623f", muted = cs.getPropertyValue("--muted").trim() || "#777";
+    var box = canvas.getBoundingClientRect(), size = Math.round(box.width);
+    if (size < 10) return;
+    var dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== size * dpr) { canvas.width = size * dpr; canvas.height = size * dpr; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    var cx = size / 2, cy = size / 2 + 6, R = size / 2 - 18;
+    var list = pool(), n = list.length;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R + 5, 0, 7); ctx.fillStyle = surf; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = line; ctx.stroke();
+    if (!n) {
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fillStyle = line; ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "600 " + Math.max(14, size * 0.04) + "px DM Sans, sans-serif";
+      ctx.fillText(people.length ? "Ninguém disponível" : "Adicione as pessoas", cx, cy + size * 0.14);
+    } else {
+      var seg = Math.PI * 2 / n, fs = Math.max(11, Math.min(size * 0.06, size * 0.9 / n * 1.1));
+      list.forEach(function (p, i) {
+        var a0 = rot + i * seg, a1 = a0 + seg;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0, a1); ctx.closePath();
+        ctx.fillStyle = colorOf(p.n); ctx.fill();
+        if (n > 1) { ctx.lineWidth = 2; ctx.strokeStyle = surf; ctx.stroke(); }
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(a0 + seg / 2);
+        ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = "#fff";
+        ctx.font = "600 " + fs + "px DM Sans, sans-serif";
+        var t = p.n, maxW = R * 0.72;
+        while (t.length > 1 && ctx.measureText(t).width > maxW) t = t.slice(0, -1);
+        if (t !== p.n) t = t.replace(/\s*$/, "") + "…";
+        ctx.fillText(t, R - 14, 0);
+        ctx.restore();
+      });
+    }
+    ctx.restore();
+    // centro e ponteiro (no topo)
+    ctx.beginPath(); ctx.arc(cx, cy, size * 0.055, 0, 7); ctx.fillStyle = surf; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = line; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 13, cy - R - 16); ctx.lineTo(cx + 13, cy - R - 16); ctx.lineTo(cx, cy - R + 10); ctx.closePath();
+    ctx.fillStyle = accent; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = surf; ctx.stroke();
+  }
+
+  /* ---------- lista, histórico e resultado ---------- */
+  function renderList() {
+    var ul = $("list"); ul.textContent = "";
+    if (!people.length) {
+      var li0 = document.createElement("li"); li0.className = "rol-empty"; li0.textContent = "Nenhuma pessoa ainda. Digite um nome e clique em Adicionar."; ul.appendChild(li0);
+    }
+    people.forEach(function (p, i) {
+      var li = document.createElement("li"); li.className = "rol-p" + (p.off ? " off" : "");
+      var dot = document.createElement("span"); dot.className = "dot"; dot.style.background = COLORS[i % COLORS.length];
+      var lb = document.createElement("label"), cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = !p.off; cb.title = "Presente na daily";
+      cb.addEventListener("change", function () { p.off = !cb.checked; save(); refresh(); });
+      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = p.n;
+      lb.appendChild(cb); lb.appendChild(nm);
+      li.appendChild(dot); li.appendChild(lb);
+      if (norepeat && done.indexOf(p.n) >= 0) { var tg = document.createElement("span"); tg.className = "tag"; tg.textContent = "já foi"; li.appendChild(tg); }
+      var rm = document.createElement("button"); rm.type = "button"; rm.className = "rm"; rm.textContent = "×";
+      rm.setAttribute("aria-label", "Remover " + p.n);
+      rm.addEventListener("click", function () {
+        people.splice(i, 1); done = done.filter(function (d) { return d !== p.n; }); save(); refresh();
+      });
+      li.appendChild(rm); ul.appendChild(li);
+    });
+  }
+  function renderHist() {
+    var ol = $("hist"); ol.textContent = "";
+    hist.forEach(function (h) { var li = document.createElement("li"); li.textContent = h; ol.appendChild(li); });
+    $("histEmpty").hidden = hist.length > 0;
+  }
+  function renderResult() {
+    var r = $("result"); r.textContent = "";
+    var sm = document.createElement("span"), big = document.createElement("span");
+    sm.className = "sm"; big.className = "big";
+    if (last) { sm.textContent = "Ganhador"; big.textContent = last; }
+    else if (!people.length) { sm.textContent = "Comece adicionando as pessoas do time"; }
+    else if (!pool().length) { sm.textContent = norepeat && done.length ? "Todos já foram sorteados" : "Marque quem está presente"; }
+    else { sm.textContent = "Clique em Girar"; }
+    r.appendChild(sm); if (last) r.appendChild(big);
+  }
+  function refresh() {
+    renderList(); renderHist(); renderResult();
+    var n = pool().length;
+    $("spin").disabled = spinning || n < 1;
+    $("clear").disabled = spinning || !people.length;
+    $("def").disabled = spinning;
+    draw();
+  }
+
+  /* ---------- sorteio ---------- */
+  function ease(t) { return 1 - Math.pow(1 - t, 4); }
+  function spin() {
+    var list = pool(), n = list.length;
+    if (spinning || !n) return;
+    msg(""); last = ""; spinning = true;
+    var w = rnd(n), seg = Math.PI * 2 / n, jit = (Math.random() - 0.5) * 0.7;
+    // ponteiro no topo (-90°): o centro do sorteado (com folga) precisa parar ali
+    var final = -Math.PI / 2 - (w + 0.5 + jit) * seg, TAU = Math.PI * 2;
+    var delta = (((final - rot) % TAU) + TAU) % TAU;
+    var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var turns = reduced ? 1 : 5 + rnd(3), dur = reduced ? 700 : 5200 + rnd(1500);
+    var from = rot, total = delta + turns * TAU, t0 = null;
+    refresh(); renderResult();
+    $("result").firstChild.textContent = "Girando…";
+    function step(ts) {
+      if (t0 === null) t0 = ts;
+      var t = Math.min(1, (ts - t0) / dur);
+      rot = from + total * ease(t);
+      draw();
+      if (t < 1) { requestAnimationFrame(step); return; }
+      rot = ((rot % TAU) + TAU) % TAU;
+      spinning = false; last = list[w].n;
+      hist.push(last); if (norepeat && done.indexOf(last) < 0) done.push(last);
+      save(); refresh(); showWin(last);
+    }
+    requestAnimationFrame(step);
+  }
+  /* ---------- aviso do sorteado (modal centralizado) ---------- */
+  var modal = $("modal");
+  function showWin(name) { $("mWho").textContent = name; modal.hidden = false; $("mOk").focus(); }
+  function closeWin() { if (modal.hidden) return; modal.hidden = true; $("spin").focus(); }
+  $("mOk").addEventListener("click", closeWin);
+  modal.addEventListener("click", function (e) { if (e.target === modal) closeWin(); });
+  document.addEventListener("keydown", function (e) {
+    if (modal.hidden) return;
+    if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); e.stopImmediatePropagation(); closeWin(); }
+  });
+
+  /* ---------- eventos ---------- */
+  function addPeople() {
+    var parts = $("name").value.split(/[,;\n]/).map(function (s) { return s.replace(/\s+/g, " ").trim().slice(0, 40); }).filter(Boolean);
+    var dup = [], full = false;
+    parts.forEach(function (nm) {
+      if (people.some(function (p) { return p.n.toLowerCase() === nm.toLowerCase(); })) { dup.push(nm); return; }
+      if (people.length >= MAX) { full = true; return; }
+      people.push({ n: nm, off: false });
+    });
+    $("name").value = "";
+    msg(full ? "Limite de " + MAX + " pessoas." : dup.length ? "Já está na lista: " + dup.join(", ") + "." : "");
+    save(); refresh(); $("name").focus();
+  }
+  $("addBtn").addEventListener("click", addPeople);
+  $("name").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addPeople(); } });
+  $("spin").addEventListener("click", spin);
+  $("norepeat").checked = norepeat;
+  $("norepeat").addEventListener("change", function () { norepeat = this.checked; save(); refresh(); });
+  $("def").addEventListener("click", function () {
+    if (spinning) return;
+    if (people.length && !window.confirm("Trocar a lista atual pelo time padrão?")) return;
+    people = padrao(); done = []; hist = []; last = ""; msg(""); save(); refresh();
+  });
+  $("clear").addEventListener("click", function () {
+    if (spinning || !people.length) return;
+    if (!window.confirm("Remover todas as pessoas da lista?")) return;
+    people = []; done = []; hist = []; last = ""; save(); refresh();
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(draw).observe(canvas); else window.addEventListener("resize", draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  if (window.matchMedia) { var mq = matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", draw); }
+  window.rolOnShow = draw;
+  refresh();
+})();
+
 /* ===== Menu lateral e tema: troca de página (VIEWS), endereço #..., modo escuro/claro ===== */
 (function () {
-  var VIEWS = { comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal" };
+  var VIEWS = { comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal", roleta: "viewRol" };
   var items = document.querySelectorAll(".mi");
   function current() {
     var h = (location.hash || "").replace(/^#/, "");
@@ -3014,6 +3350,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
     try { localStorage.setItem("ferramentas-view", name); } catch (e) {}
     if (name === "comparador" && window.cmpOnShow) window.cmpOnShow();
     if (name === "horas" && window.hrsOnShow) window.hrsOnShow();
+    if (name === "roleta" && window.rolOnShow) window.rolOnShow();
   }
   items.forEach(function (a) {
     a.addEventListener("click", function (e) {
