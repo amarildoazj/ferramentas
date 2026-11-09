@@ -169,7 +169,9 @@ var CONFIG = {
     giro: {
       voltasMin: 5, voltasExtra: 3,   /* voltas completas: de 5 a 7 */
       duracaoMs: 5200, duracaoExtraMs: 1500,   /* duração: de 5,2 a 6,7 segundos */
-      reduzido: { voltas: 1, duracaoMs: 700 }  /* para quem pede menos animação no sistema */
+      respeitarReduzido: false,       /* true = giro curto se o sistema pedir menos animação (Windows:
+                                         "Efeitos de animação" desligado costuma deixar o giro rápido) */
+      reduzido: { voltas: 1, duracaoMs: 700 }  /* giro curto, usado só se respeitarReduzido for true */
     }
   },
 
@@ -263,7 +265,9 @@ var CONFIG = {
 </script>
 <style>
   /* Layout: menu lateral à esquerda (comparador, formatador e horas) e a ferramenta escolhida à direita. */
+  html { scrollbar-gutter: stable; }   /* a largura não "pula" quando aparece a rolagem */
   :root {
+    --largura-pagina: 80rem; /* largura máxima do conteúdo, igual em todas as páginas */
     --menu-topo: 2.5rem;     /* espaço entre o topo da tela e o menu lateral fixado ao rolar */
     --bg: #f5f3ec;
     --surface: #fbfaf6;
@@ -448,7 +452,7 @@ var CONFIG = {
   }
 
   /* Formatador */
-#viewFmt .wrap { max-width: 80rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+#viewFmt .wrap { max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
 #viewFmt header { display: flex; flex-direction: column; gap: 0.5rem; }
 #viewFmt .eyebrow {
     font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
@@ -1084,7 +1088,7 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 #viewFmt footer p { margin: 0; text-wrap: pretty; }
 
   /* Comparador */
-#viewCmp .wrap { max-width: 80rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+#viewCmp .wrap { max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
 #viewCmp header { display: flex; flex-direction: column; gap: 0.5rem; }
 #viewCmp .eyebrow {
   font-size: 0.75rem;
@@ -1347,7 +1351,7 @@ html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
 
 
   /* Calculadora de salário */
-#viewSal .wrap { max-width: 64rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+#viewSal .wrap { max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
 #viewSal header { display: flex; flex-direction: column; gap: 0.5rem; }
 #viewSal h1 {
   font-family: var(--font-display);
@@ -1826,7 +1830,7 @@ html.tela-cheia #viewSal .sal-form { order: 1; }
 #viewSal .sal-form .sal-sec:not(:first-child) { border-top: 0; padding-top: 0; }
 #viewSal .sal-card > .sal-sec:first-child { border-top: 0; padding-top: 0; }
 @media (min-width: 52rem) {
-  #viewSal .wrap { max-width: 90rem; }
+  #viewSal .wrap { max-width: var(--largura-pagina); }
   #viewSal .sal-grid { grid-template-columns: minmax(0, 1fr); }
   #viewSal .sal-res { order: -1; }
   #viewSal .sal-form {
@@ -1987,7 +1991,7 @@ html.tela-cheia #viewSal .sal-form { order: 1; }
 }
 
   /* Roleta */
-#viewRol .wrap { max-width: 80rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+#viewRol .wrap { max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem; }
 #viewRol header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2318,7 +2322,7 @@ html.tela-cheia #viewRol .rol-stage { width: min(100%, max(18rem, calc(100dvh - 
 #viewRol .rol-empty { margin: 0; color: var(--muted); font-size: 0.9375rem; }
 
   /* Horas do Brasil */
-#viewHrs .wrap { max-width: 90rem; margin-inline: auto; display: flex; flex-direction: column; gap: 2rem; }
+#viewHrs .wrap { max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column; gap: 2rem; }
 #viewHrs header { display: flex; flex-direction: column; gap: 0.5rem; }
 #viewHrs .eyebrow {
     font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
@@ -2618,7 +2622,8 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 
 /* Diagramas */
 #viewDia .wrap {
-  max-width: 100rem; margin-inline: auto; display: flex; flex-direction: column; gap: 1rem;
+  max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column;
+  gap: 1rem;
 }
 #viewDia header {
   display: grid; grid-template-columns: minmax(0, 1fr) auto;
@@ -5463,8 +5468,9 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
     // ponteiro no topo (-90°): o centro do sorteado (com folga) precisa parar ali
     var final = -Math.PI / 2 - (w + 0.5 + jit) * seg, TAU = Math.PI * 2;
     var delta = (((final - rot) % TAU) + TAU) % TAU;
-    var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     var G = CR.giro;
+    var reduced = G.respeitarReduzido && window.matchMedia &&
+      matchMedia("(prefers-reduced-motion: reduce)").matches;
     var turns = reduced ? G.reduzido.voltas : G.voltasMin + rnd(G.voltasExtra);
     var dur = reduced ? G.reduzido.duracaoMs : G.duracaoMs + rnd(G.duracaoExtraMs);
     var from = rot, total = delta + turns * TAU, t0 = null;
