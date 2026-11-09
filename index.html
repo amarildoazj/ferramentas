@@ -251,7 +251,7 @@ var CONFIG = {
     diasPorMes: 30,                   /* dias por mês, só para escolher a faixa do IR */
     ir: [[180, 22.5], [360, 20], [720, 17.5], [99999, 15]],   /* [até X dias, alíquota %] regressiva */
     padrao: {                         /* valores que aparecem na primeira vez */
-      tipo: "cdb", idx: "cdi", taxa: 100, v0: 10000, ap: 500, prazo: 24, un: "m"
+      tipo: "cdb", idx: "cdi", taxa: 100, v0: 10000, ap: 500, prazo: 24, un: "m", vis: "a"
     },
     aviso: "É uma estimativa: não considera taxas de custódia, feriados nem mudanças nas regras."
   },
@@ -2844,6 +2844,22 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
   vertical-align: middle;
 }
 #viewInv .inv-nota { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+#viewInv .inv-tabhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+#viewInv .inv-tabhead .inv-f { min-width: 10rem; }
+#viewInv .inv-tabwrap {
+  overflow: auto; max-height: 26rem; border: 1px solid var(--line); border-radius: 0.6rem;
+}
+#viewInv .inv-tab { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+#viewInv .inv-tab th, #viewInv .inv-tab td {
+  padding: 0.55rem 0.8rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line);
+}
+#viewInv .inv-tab th:first-child, #viewInv .inv-tab td:first-child { text-align: left; }
+#viewInv .inv-tab thead th {
+  position: sticky; top: 0; background: var(--surface); font-size: 0.75rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); z-index: 1;
+}
+#viewInv .inv-tab tbody tr:last-child td { border-bottom: 0; font-weight: 700; }
+#viewInv .inv-tab td.neg { color: var(--accent); }
 html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; overflow: auto; gap: 1rem; }
 </style>
 
@@ -3604,6 +3620,22 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
           <span><i style="border-color:var(--accent)"></i>Líquido (após IR)</span>
         </div>
       </div>
+    </div>
+  </div>
+  <div class="inv-card">
+    <div class="inv-tabhead">
+      <h2 id="i-tabTit">Ano a ano</h2>
+      <label class="inv-f">Mostrar
+        <select id="i-vis">
+          <option value="a">Ano a ano</option><option value="m">Mês a mês</option>
+        </select></label>
+    </div>
+    <div class="inv-tabwrap">
+      <table class="inv-tab">
+        <thead><tr><th>Período</th><th>Investido</th><th>Bruto</th><th>IR</th><th>Líquido</th>
+          <th>Rendimento líquido</th></tr></thead>
+        <tbody id="i-tbody"></tbody>
+      </table>
     </div>
   </div>
   <p class="inv-nota" id="i-nota"></p>
@@ -6917,7 +6949,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function $(id) { return document.getElementById(P + id); }
   var brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
   var pct = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  var campos = ["tipo", "idx", "taxa", "v0", "ap", "prazo", "un", "cdi", "ipca"];
+  var campos = ["tipo", "idx", "taxa", "v0", "ap", "prazo", "un", "cdi", "ipca", "vis"];
   var ROT = { cdi: "% do CDI", pre: "Taxa pré-fixada (% ao ano)", ipca: "Taxa real (IPCA + % ao ano)" };
 
   function n(id, min, max) {
@@ -6991,6 +7023,23 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     $("nota").textContent = "Simulação com " + N + " " + (N === 1 ? "mês" : "meses") +
       ", rentabilidade bruta de " + pct.format(ra * 100) + "% ao ano e capitalização mensal. " + CI.aviso;
     grafico(dep, rm, N, isento);
+    tabela(dep, rm, N, isento);
+  }
+
+  /* ---------- tabela: ano a ano ou mês a mês ---------- */
+  function tabela(dep, rm, N, isento) {
+    var anual = $("vis").value === "a", meses = [], m, h = "";
+    for (m = anual ? 12 : 1; m < N; m += anual ? 12 : 1) meses.push(m);
+    meses.push(N);
+    meses.forEach(function (t) {
+      var v = noMes(dep, rm, t, isento), rot;
+      rot = anual ? (t % 12 === 0 ? t / 12 + (t === 12 ? " ano" : " anos") : t + " meses") : "Mês " + t;
+      h += "<tr><td>" + rot + "</td><td>" + brl.format(v.inv) + "</td><td>" + brl.format(v.bru) +
+        '</td><td class="neg">' + (isento ? "Isento" : "− " + brl.format(v.ir)) + "</td><td>" +
+        brl.format(v.liq) + "</td><td>" + brl.format(v.liq - v.inv) + "</td></tr>";
+    });
+    $("tbody").innerHTML = h;
+    $("tabTit").textContent = anual ? "Ano a ano" : "Mês a mês";
   }
 
   /* ---------- gráfico: investido, bruto e líquido mês a mês ---------- */
