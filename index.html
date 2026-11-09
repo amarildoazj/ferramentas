@@ -17,16 +17,16 @@
    1. <head>        título, ícone e fontes do Google (Newsreader, DM Sans, DM Mono)
    1b. <script>     bloco CONFIG (configurações) antes do CSS
    2. <style>       todo o CSS, separado por comentários (veja "ONDE FICA CADA PÁGINA")
-   3. <body>        menu lateral (<aside class="side">) e as 6 páginas (<main class="content">)
+   3. <body>        menu lateral (<aside class="side">) e as 7 páginas (<main class="content">)
    4. <script> #1   JavaScript de cada página + menu lateral e tema
    5. <script> #2   recursos extras: cores e numeração do formatador, alças de altura,
                     modo Expandir, divisória arrastável e contador de caracteres
 
  ONDE FICA CADA PÁGINA
-   As "páginas" são 6 <section class="view"> dentro de <main>. Só uma aparece por vez
+   As "páginas" são 7 <section class="view"> dentro de <main>. Só uma aparece por vez
    (as outras ficam com o atributo hidden). O menu lateral troca a página e o endereço
-   (#comparador, #formatador, #horas, #salario, #roleta, #diagramas). Para achar o trecho, use a busca do
-   editor (Ctrl+F) com o texto indicado.
+   (#comparador, #formatador, #horas, #salario, #roleta, #diagramas, #investimento). Para achar o
+   trecho, use a busca do editor (Ctrl+F) com o texto indicado.
 
    PÁGINA                  ENDEREÇO     SEÇÃO    IDs  CSS (busque)           JS
    Comparador de texto     #comparador  viewCmp  c-   "/* Comparador */"     IIFE com P = "c-"
@@ -36,6 +36,7 @@
                                                        IIFE "Calculadora de salário"
    Roleta                  #roleta      viewRol  r-   "/* Roleta */"           IIFE com P = "r-"
    Diagramas               #diagramas   viewDia  d-   "/* Diagramas */"       IIFE com P = "d-"
+   Investimento            #investimento viewInv i-   "/* Investimento */"   IIFE com P = "i-"
 
    Os ids dos campos começam com o prefixo da página (ex.: s-bruto, f-inp, c-inpA, h-clocks).
    O CSS de cada página começa sempre com #viewXxx, para uma página não mexer na outra.
@@ -104,6 +105,14 @@
    #r-show ....... "Mostrar ganhadores": reabre o modal depois de fechado.
    #r-reset ...... "Limpar ganhadores": limpa seq, hist e done; a lista de pessoas fica.
 
+ INVESTIMENTO (viewInv)
+   Calculadora de renda fixa. Premissas (CDI, IPCA, tabela do IR, valores iniciais) em
+   CONFIG.investimento. calcula() faz a conta: taxaAno() converte a rentabilidade escolhida (% do
+   CDI, pré ou IPCA+) em taxa ao ano; depositos() lista o valor inicial e os aportes; noMes() soma
+   investido, bruto e IR de cada depósito pela faixa da tabela regressiva (aliquota()), pois cada
+   aporte tem prazo diferente; irrMensal() acha a rentabilidade líquida (bisseção); grafico()
+   desenha a evolução. LCI/LCA não pagam IR. Os campos ficam salvos no navegador.
+
  DIAGRAMAS (viewDia)
    Editor simples de formas e setas. Ajustes (grade, zoom, paletas, exemplo) em CONFIG.diagramas.
    Modelo: shapes [{id,t,x,y,w,h,tx,fill,stroke,dash}] e links [{id,a,b,arrow,dash}] (a e b
@@ -151,7 +160,8 @@ var CONFIG = {
     pagina: "ferramentas-view",       /* última página aberta */
     salario: "ferramentas-salario",   /* dados da calculadora de salário */
     roleta: "ferramentas-roleta",     /* lista de pessoas da roleta */
-    diagramas: "ferramentas-diagramas" /* último desenho dos diagramas */
+    diagramas: "ferramentas-diagramas", /* último desenho dos diagramas */
+    investimento: "ferramentas-investimento" /* dados da calculadora de renda fixa */
   },
 
   /* ROLETA */
@@ -231,6 +241,19 @@ var CONFIG = {
       isencaoAte: 5000, reducaoAte: 7350,
       a: 978.62, b: 0.133145, maximo: 312.89   /* redutor = a - b x renda; limitado ao máximo */
     }
+  },
+
+  /* INVESTIMENTO (renda fixa) */
+  investimento: {
+    cdi: 13.65,                       /* CDI em % ao ano (consulta de 09/11/2026; atualize quando mudar) */
+    ipca: 4.5,                        /* IPCA esperado em % ao ano (estimativa, não é dado oficial) */
+    maxMeses: 600,                    /* prazo máximo da simulação (50 anos) */
+    diasPorMes: 30,                   /* dias por mês, só para escolher a faixa do IR */
+    ir: [[180, 22.5], [360, 20], [720, 17.5], [99999, 15]],   /* [até X dias, alíquota %] regressiva */
+    padrao: {                         /* valores que aparecem na primeira vez */
+      tipo: "cdb", idx: "cdi", taxa: 100, v0: 10000, ap: 500, prazo: 24, un: "m"
+    },
+    aviso: "É uma estimativa: não considera taxas de custódia, feriados nem mudanças nas regras."
   },
 
   /* BOTÃO "VOLTAR AO TOPO" (só no celular) */
@@ -1007,11 +1030,11 @@ html.tela-cheia #viewFmt .panes, html.tela-cheia #viewCmp .panes {
 html.tela-cheia .view .pane { min-height: 0; }
 .split { display: none; }
 @media (min-width: 36.01rem) {
-html.tela-cheia #viewFmt .panes, html.tela-cheia #viewCmp .panes {
+section#viewFmt .panes, section#viewCmp .panes {
   position: relative;
   grid-template-columns: minmax(0, var(--ca, 1fr)) minmax(0, var(--cb, 1fr));
 }
-html.tela-cheia .panes > .split {
+.panes > .split {
   display: block;
   position: absolute;
   top: 0;
@@ -1021,7 +1044,7 @@ html.tela-cheia .panes > .split {
   touch-action: none;
   outline: none;
 }
-html.tela-cheia .panes > .split::after {
+.panes > .split::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -1033,9 +1056,9 @@ html.tela-cheia .panes > .split::after {
   background: var(--line);
   transition: background 0.15s, height 0.15s, margin 0.15s;
 }
-html.tela-cheia .panes > .split:hover::after,
-html.tela-cheia .panes > .split.on::after,
-html.tela-cheia .panes > .split:focus-visible::after {
+.panes > .split:hover::after,
+.panes > .split.on::after,
+.panes > .split:focus-visible::after {
   background: var(--accent);
   height: 5rem;
   margin-top: -2.5rem;
@@ -2737,6 +2760,91 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
 #viewDia .dia-msg { font-size: 0.8125rem; color: var(--muted); }
 #viewDia .d-h-nw, #viewDia .d-h-se { cursor: nwse-resize; }
 #viewDia .d-h-ne, #viewDia .d-h-sw { cursor: nesw-resize; }
+
+/* Investimento */
+#viewInv .wrap {
+  max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column; gap: 1.5rem;
+}
+#viewInv header {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.5rem; row-gap: 0.5rem; align-items: center;
+}
+#viewInv h1 {
+  font-family: var(--font-display); font-weight: 400; margin: 0; letter-spacing: -0.01em;
+  font-size: clamp(2.25rem, 6vw, 3.5rem); line-height: 1.05; text-wrap: balance; grid-column: 1 / -1;
+}
+#viewInv .lede { margin: 0; color: var(--muted); max-width: 44rem; text-wrap: pretty; grid-column: 1; }
+#viewInv .hrs-bar {
+  grid-column: 2; grid-row: 2; display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end;
+}
+@media (max-width: 36rem) {
+  #viewInv .hrs-bar { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; }
+}
+#viewInv .btn {
+  font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.2; color: var(--fg);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 0.625rem;
+  padding: 0.5rem 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+}
+#viewInv .btn:hover { border-color: var(--accent); }
+#viewInv .inv-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: stretch; }
+@media (min-width: 60rem) { #viewInv .inv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+#viewInv .inv-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 1.1rem; min-width: 0;
+}
+#viewInv h2 {
+  font-family: var(--font-display); font-weight: 400; font-size: 1.6rem; margin: 0; line-height: 1.1;
+}
+#viewInv h3 {
+  font-size: 0.8125rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0;
+}
+#viewInv .inv-f {
+  display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.8125rem; font-weight: 600;
+  color: var(--muted); min-width: 0;
+}
+#viewInv .inv-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+#viewInv input, #viewInv select {
+  font: inherit; font-size: 1rem; font-weight: 400; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 0.6rem; padding: 0.55rem 0.7rem; min-width: 0; width: 100%;
+  box-sizing: border-box;
+}
+#viewInv input:focus-visible, #viewInv select:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+#viewInv .inv-hint { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+#viewInv .inv-big {
+  background: var(--accent-soft); border-radius: 0.9rem; padding: 1rem 1.25rem; display: flex;
+  flex-direction: column; gap: 0.25rem;
+}
+#viewInv .inv-big span {
+  font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+#viewInv .inv-big strong {
+  font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 5vw, 2.75rem); line-height: 1.1;
+}
+#viewInv .inv-rows { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0; }
+#viewInv .inv-rows dt, #viewInv .inv-rows dd {
+  margin: 0; padding: 0.55rem 0; border-bottom: 1px solid var(--line);
+}
+#viewInv .inv-rows dd { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+#viewInv .inv-rows dt small { color: var(--muted); font-weight: 400; }
+#viewInv .inv-rows .neg { color: var(--accent); }
+#viewInv .inv-rows .tot, #viewInv .inv-rows .tot + dd { font-weight: 700; }
+#viewInv .inv-chart svg { width: 100%; height: auto; display: block; }
+#viewInv .inv-chart .ax { stroke: var(--line); stroke-width: 1; }
+#viewInv .inv-chart text { fill: var(--muted); font-size: 15px; font-family: inherit; }
+#viewInv .inv-chart .l-inv { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; }
+#viewInv .inv-chart .l-bru { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0.45; }
+#viewInv .inv-chart .l-liq { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+#viewInv .inv-leg {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.8125rem; color: var(--muted);
+}
+#viewInv .inv-leg i {
+  display: inline-block; width: 1.2rem; height: 0; border-top: 3px solid; margin-right: 0.35rem;
+  vertical-align: middle;
+}
+#viewInv .inv-nota { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; overflow: auto; gap: 1rem; }
 </style>
 
 <div class="app">
@@ -2766,21 +2874,23 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true"><path
         d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12
-        2v20"/></svg><span>Comparador de texto</span></a>
+        2v20"/></svg><span>Comparador</span></a>
       <a href="#formatador" class="mi" data-view="formatador"><svg viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true"><path
         d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0
-        0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg><span>Formatador JSON e XML</span></a>
+        0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg><span>Formatador</span></a>
       <a href="#horas" class="mi" data-view="horas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4"
-        width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Calendário e
-        horas</span></a>
+        width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Data e hora</span></a>
       <a href="#salario" class="mi" data-view="salario"><svg viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-        aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path
-        d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h4"/></svg><span>Calculadora
-        de salário</span></a>
+        aria-hidden="true"><circle cx="12" cy="12" r="9"/><path
+        d="M14.8 9.3c-.4-.9-1.6-1.4-2.8-1.3-1.4.1-2.4.8-2.4 1.9 0 1.2 1.1 1.6 2.4 1.9 1.3.3 2.4.7 2.4
+        1.9 0 1.1-1 1.8-2.4 1.9-1.2.1-2.4-.4-2.8-1.3M12 6v2M12 16v2"/></svg><span>Salário</span></a>
+      <a href="#investimento" class="mi" data-view="investimento"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Investimento</a>
       <a href="#roleta" class="mi" data-view="roleta"><svg viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path
@@ -2788,7 +2898,7 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
       <a href="#diagramas" class="mi" data-view="diagramas"><svg viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true"><rect x="3" y="3" width="7" height="6" rx="1"/><rect x="14" y="15" width="7"
-        height="6" rx="1"/><path d="M6.5 9v3a2 2 0 0 0 2 2H14"/></svg>Diagramas</a>
+        height="6" rx="1"/><path d="M6.5 9v3a2 2 0 0 0 2 2H14"/></svg>Diagrama</a>
     </nav>
     <div class="menu-nome" id="menuNome" aria-hidden="true"></div>
   </aside>
@@ -3409,6 +3519,94 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
       <button type="button" class="btn primary" id="r-mOk">Fechar</button>
     </div>
   </div>
+</div>
+    </section>
+    <!-- ================= PÁGINA: Investimento · menu #investimento · ids i- · JS: IIFE com P = "i-"
+         · CSS: "/* Investimento */" ================= -->
+    <section id="viewInv" class="view" aria-label="Investimento" hidden>
+<div class="wrap">
+  <header>
+    <h1>Quanto rende na renda fixa?</h1>
+    <p class="lede">Simule CDB, LCI/LCA e Tesouro com valor inicial e aportes mensais. O Imposto de Renda
+      é calculado pela tabela regressiva, aporte por aporte.</p>
+    <div class="hrs-bar">
+    <button type="button" class="btn btn-full" id="i-btnFull" aria-pressed="false"
+      title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
+      height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
+      d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/><path
+      class="i-co" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1
+      2 2v3"/></svg><span class="lbl">Expandir</span></button>
+  </div>
+  </header>
+
+  <div class="inv-grid">
+    <div class="inv-card">
+      <h2>Investimento</h2>
+      <label class="inv-f">Tipo de título
+        <select id="i-tipo">
+          <option value="cdb">CDB, RDB ou LC (IR regressivo)</option>
+          <option value="lci">LCI ou LCA (isento de IR)</option>
+          <option value="td">Tesouro Direto (IR regressivo)</option>
+        </select></label>
+      <div class="inv-2">
+        <label class="inv-f">Rentabilidade
+          <select id="i-idx">
+            <option value="cdi">% do CDI</option>
+            <option value="pre">Pré-fixada</option>
+            <option value="ipca">IPCA +</option>
+          </select></label>
+        <label class="inv-f"><span id="i-taxaRot">% do CDI</span>
+          <input id="i-taxa" type="number" min="0" max="1000" step="0.01" inputmode="decimal"></label>
+      </div>
+      <div class="inv-2">
+        <label class="inv-f">Valor inicial (R$)
+          <input id="i-v0" type="number" min="0" step="100" inputmode="decimal"></label>
+        <label class="inv-f">Aporte mensal (R$)
+          <input id="i-ap" type="number" min="0" step="50" inputmode="decimal"></label>
+      </div>
+      <div class="inv-2">
+        <label class="inv-f">Prazo
+          <input id="i-prazo" type="number" min="1" step="1" inputmode="numeric"></label>
+        <label class="inv-f">Unidade
+          <select id="i-un"><option value="m">meses</option><option value="a">anos</option></select></label>
+      </div>
+      <h3>Premissas</h3>
+      <div class="inv-2">
+        <label class="inv-f">CDI (% ao ano)
+          <input id="i-cdi" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        <label class="inv-f">IPCA (% ao ano)
+          <input id="i-ipca" type="number" min="0" step="0.01" inputmode="decimal"></label>
+      </div>
+      <p class="inv-hint">CDI e IPCA são estimativas: troque pelos valores que você espera. O CDI usado
+        no início é o da última consulta (veja CONFIG.investimento).</p>
+    </div>
+
+    <div class="inv-card" aria-live="polite">
+      <h2>Resultado</h2>
+      <div class="inv-big"><span>Valor líquido no final</span><strong id="i-liq">R$ 0,00</strong></div>
+      <dl class="inv-rows">
+        <dt>Total investido</dt><dd id="i-inv"></dd>
+        <dt>Rendimento bruto</dt><dd id="i-rb"></dd>
+        <dt id="i-irRot">Imposto de Renda</dt><dd id="i-ir" class="neg"></dd>
+        <dt class="tot">Rendimento líquido</dt><dd id="i-rl"></dd>
+        <dt>Valor bruto no final</dt><dd id="i-bru"></dd>
+        <dt>Rentabilidade líquida <small>(ao ano)</small></dt><dd id="i-ra"></dd>
+        <dt>Equivale a <small>(% do CDI, já sem IR)</small></dt><dd id="i-eq"></dd>
+      </dl>
+      <div class="inv-chart">
+        <h3>Evolução</h3>
+        <svg id="i-chart" viewBox="0 0 640 260" role="img"
+          aria-label="Gráfico da evolução do investimento"></svg>
+        <div class="inv-leg">
+          <span><i style="border-color:var(--muted);border-top-style:dashed"></i>Investido</span>
+          <span><i style="border-color:var(--accent);opacity:.45"></i>Bruto</span>
+          <span><i style="border-color:var(--accent)"></i>Líquido (após IR)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="inv-nota" id="i-nota"></p>
 </div>
     </section>
     <!-- ================= PÁGINA: Diagramas · menu #diagramas · ids d- · JS: IIFE com P = "d-"
@@ -6713,11 +6911,148 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
   window.diaOnShow = function () { if (!fitted) { fitted = true; fit(); } else render(); };
 })();
 
+/* ===== Investimento: calculadora de renda fixa (CDB, LCI/LCA, Tesouro) ===== */
+(function () {
+  var P = "i-", CI = CONFIG.investimento, KEY = CONFIG.chaves.investimento;
+  function $(id) { return document.getElementById(P + id); }
+  var brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  var pct = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var campos = ["tipo", "idx", "taxa", "v0", "ap", "prazo", "un", "cdi", "ipca"];
+  var ROT = { cdi: "% do CDI", pre: "Taxa pré-fixada (% ao ano)", ipca: "Taxa real (IPCA + % ao ano)" };
+
+  function n(id, min, max) {
+    var v = parseFloat($(id).value);
+    return isFinite(v) ? Math.min(max, Math.max(min, v)) : min;
+  }
+  /* alíquota do IR (%) para um dinheiro que ficou "dias" dias aplicado */
+  function aliquota(dias) {
+    for (var i = 0; i < CI.ir.length; i++) if (dias <= CI.ir[i][0]) return CI.ir[i][1];
+    return CI.ir[CI.ir.length - 1][1];
+  }
+  /* taxa efetiva ao ano da aplicação, a partir da rentabilidade escolhida */
+  function taxaAno(idx, taxa, cdi, ipca) {
+    if (idx === "pre") return taxa / 100;
+    if (idx === "ipca") return (1 + ipca / 100) * (1 + taxa / 100) - 1;
+    var d = Math.pow(1 + cdi / 100, 1 / 252) - 1;       /* CDI diário (252 dias úteis) */
+    return Math.pow(1 + d * taxa / 100, 252) - 1;
+  }
+  /* depósitos: [mês, valor]; o inicial entra no mês 0 e cada aporte no começo dos meses seguintes */
+  function depositos(v0, ap, N) {
+    var d = [[0, v0]];
+    for (var k = 1; k < N; k++) d.push([k, ap]);
+    return d;
+  }
+  /* valores no mês t: investido, bruto e líquido (IR de quem resgatasse naquele mês) */
+  function noMes(dep, rm, t, isento) {
+    var inv = 0, bru = 0, ir = 0;
+    dep.forEach(function (q) {
+      if (q[0] > t || !q[1]) return;
+      var h = t - q[0], g = q[1] * Math.pow(1 + rm, h), y = g - q[1];
+      inv += q[1];
+      bru += g;
+      if (!isento) ir += y * aliquota(h * CI.diasPorMes) / 100;
+    });
+    return { inv: inv, bru: bru, ir: ir, liq: bru - ir };
+  }
+  /* taxa mensal que iguala os pagamentos ao valor final (bisseção) */
+  function irrMensal(dep, N, vf) {
+    var lo = -0.5, hi = 1, i;
+    function f(r) {
+      var s = 0;
+      dep.forEach(function (q) { s += q[1] * Math.pow(1 + r, N - q[0]); });
+      return s - vf;
+    }
+    for (i = 0; i < 80; i++) { var m = (lo + hi) / 2; if (f(m) > 0) hi = m; else lo = m; }
+    return (lo + hi) / 2;
+  }
+
+  function calcula() {
+    var tipo = $("tipo").value, idx = $("idx").value, isento = tipo === "lci";
+    var v0 = n("v0", 0, 1e12), ap = n("ap", 0, 1e12);
+    var cdi = n("cdi", 0, 1000), ipca = n("ipca", 0, 1000);
+    var taxa = n("taxa", 0, 1000), un = $("un").value;
+    var N = Math.round(n("prazo", 1, un === "a" ? CI.maxMeses / 12 : CI.maxMeses) * (un === "a" ? 12 : 1));
+    var ra = taxaAno(idx, taxa, cdi, ipca), rm = Math.pow(1 + ra, 1 / 12) - 1;
+    var dep = depositos(v0, ap, N), r = noMes(dep, rm, N, isento);
+    var rb = r.bru - r.inv, rl = r.liq - r.inv;
+    var rLiqAno = r.inv > 0 ? Math.pow(1 + irrMensal(dep, N, r.liq), 12) - 1 : 0;
+    var dCdi = Math.pow(1 + cdi / 100, 1 / 252) - 1;
+    var eq = dCdi > 0 && r.inv > 0 ? (Math.pow(1 + rLiqAno, 1 / 252) - 1) / dCdi * 100 : 0;
+    $("liq").textContent = brl.format(r.liq);
+    $("inv").textContent = brl.format(r.inv);
+    $("rb").textContent = brl.format(rb);
+    $("ir").textContent = isento ? "Isento" : "− " + brl.format(r.ir);
+    $("irRot").innerHTML = "Imposto de Renda" + (isento || rb <= 0 ? "" :
+      " <small>(média de " + pct.format(r.ir / rb * 100) + "%)</small>");
+    $("rl").textContent = brl.format(rl);
+    $("bru").textContent = brl.format(r.bru);
+    $("ra").textContent = pct.format(rLiqAno * 100) + "%";
+    $("eq").textContent = pct.format(eq) + "% do CDI";
+    $("nota").textContent = "Simulação com " + N + " " + (N === 1 ? "mês" : "meses") +
+      ", rentabilidade bruta de " + pct.format(ra * 100) + "% ao ano e capitalização mensal. " + CI.aviso;
+    grafico(dep, rm, N, isento);
+  }
+
+  /* ---------- gráfico: investido, bruto e líquido mês a mês ---------- */
+  function grafico(dep, rm, N, isento) {
+    var W = 640, H = 260, L = 84, R = 12, T = 12, B = 30, pts = [], t, max = 1;
+    var passo = Math.max(1, Math.ceil(N / 120));
+    for (t = 0; t <= N; t += passo) pts.push([t, noMes(dep, rm, t, isento)]);
+    if (pts[pts.length - 1][0] !== N) pts.push([N, noMes(dep, rm, N, isento)]);
+    pts.forEach(function (q) { max = Math.max(max, q[1].bru); });
+    function X(m) { return L + (W - L - R) * (N ? m / N : 0); }
+    function Y(v) { return T + (H - T - B) * (1 - v / max); }
+    function linha(k) {
+      return pts.map(function (q, i) {
+        return (i ? "L" : "M") + X(q[0]).toFixed(1) + " " + Y(q[1][k]).toFixed(1);
+      }).join("");
+    }
+    var out = "", i;
+    for (i = 0; i <= 4; i++) {
+      var yv = max * i / 4, yy = Y(yv);
+      out += '<line class="ax" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '"/>' +
+        '<text x="' + (L - 6) + '" y="' + (yy + 4) + '" text-anchor="end">' + compacto(yv) + "</text>";
+    }
+    var fim = N >= 24 ? (N / 12).toFixed(N % 12 ? 1 : 0).replace(".", ",") + " anos" : N + " meses";
+    out += '<text x="' + L + '" y="' + (H - 8) + '">0</text><text x="' + (W - R) + '" y="' + (H - 8) +
+      '" text-anchor="end">' + fim + "</text>";
+    out += '<path class="l-inv" d="' + linha("inv") + '"/><path class="l-bru" d="' + linha("bru") + '"/>' +
+      '<path class="l-liq" d="' + linha("liq") + '"/>';
+    $("chart").innerHTML = out;
+  }
+  function compacto(v) {
+    if (v >= 1e6) return "R$ " + (v / 1e6).toFixed(1).replace(".", ",") + " mi";
+    if (v >= 1e3) return "R$ " + Math.round(v / 1e3) + " mil";
+    return "R$ " + Math.round(v);
+  }
+
+  /* ---------- tela: rótulo da taxa, gravação e eventos ---------- */
+  function rotulo() {
+    $("taxaRot").textContent = ROT[$("idx").value];
+    $("taxa").step = $("idx").value === "cdi" ? "1" : "0.01";
+  }
+  function salva() {
+    var o = {};
+    campos.forEach(function (c) { o[c] = $(c).value; });
+    try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {}
+  }
+  var ini = Object.assign({}, CI.padrao, { cdi: CI.cdi, ipca: CI.ipca });
+  try { Object.assign(ini, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+  campos.forEach(function (c) {
+    $(c).value = ini[c];
+    $(c).addEventListener("input", function () { rotulo(); calcula(); salva(); });
+    $(c).addEventListener("change", function () { rotulo(); calcula(); salva(); });
+  });
+  rotulo();
+  calcula();
+})();
+
 /* ===== Menu lateral e tema: troca de página (VIEWS), endereço #..., modo escuro/claro ===== */
 (function () {
   var VIEWS = {
     comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal", roleta: "viewRol",
-    diagramas: "viewDia"
+    diagramas: "viewDia",
+    investimento: "viewInv"
   };
   var items = document.querySelectorAll(".mi");
   var $nome = document.getElementById("menuNome");
@@ -7124,7 +7459,8 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
   });
 })();
 
-/* Expandido: divisória entre as duas caixas. Arraste para mudar a largura, duplo clique volta ao padrão */
+/* Divisória entre as duas caixas (também fora do Expandir). Arraste para mudar a largura, duplo clique
+   volta ao padrão */
 (function () {
   ["#viewFmt", "#viewCmp"].forEach(function (raiz) {
     var lista = Array.prototype.slice.call(document.querySelectorAll(raiz + " .panes"));
