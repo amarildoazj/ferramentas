@@ -266,6 +266,8 @@ var CONFIG = {
     mundo: { largura: 2600, altura: 1800, bloco: 96, props: 70 },   /* mapa em pixels; bloco do chão */
     /* zoom: aproximar/afastar (botões, roda, pinça); telaCheia = zoom ao entrar em tela cheia no desktop */
     zoom: { min: 0.6, max: 2, padrao: 0.7, telaCheia: 1, passo: 0.1 },
+    umaMaoSobe: 44,                   /* modo uma mão (celular em pé): sobe espada e poderes, em px */
+    umaMaoEsq: 46,                    /* idem: afasta da coluna de botões da direita, em px */
     som: { volume: 0.5 },             /* volume geral dos sons (0 a 1) */
     musica: {                         /* trilha de aventura (sintetizada, só toca jogando e com som ligado) */
       volume: 0.5, bpm: 104, tom: 440,          /* tom: nota base da melodia (Hz) */
@@ -8188,6 +8190,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     if (bMao.hidden === emPe) bMao.hidden = !emPe;       /* o botão de mão só existe com o celular em pé */
     var big = comb ? clamp(W * 0.11, 34, 46) : clamp(W * 0.09, 30, 38), sm = big * 0.72, d = big + sm + 16;
     var R = comb ? big * 1.8 : big, cx = Math.min(W - 26 - big, W - 8 - sm - 0.87 * d), cy = H - 18 - big;
+    if (comb) { cy -= C.umaMaoSobe; cx -= C.umaMaoEsq; }
     var sx = cx, sy = cy, ax = cx, ay = cy, a0 = 195, pa = 45;   /* espada, centro da roda, ângulos da roda */
     var bx = comb ? sx : 14 + R, by = comb ? sy : cy;    /* analógico: canto esquerdo, na altura da espada */
     tc.base = { x: bx, y: by }; tc.R = R; tc.bots = []; tc.comb = comb;
