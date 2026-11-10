@@ -2996,6 +2996,7 @@ html.tela-cheia #viewJogo .jg-exp .i-ex, #viewJogo .jg-col.em-tela .jg-exp .i-ex
 #viewJogo .jg-stage:-webkit-full-screen { position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
   border-radius: 0; }
 html:has(.jg-stage:fullscreen) { overflow: hidden; scrollbar-gutter: auto; }
+#viewJogo #g-btnFull { display: none !important; }   /* o Expandir fica dentro do jogo (#g-btnRecolher) */
 #viewJogo .jg-ajuda { font: inherit; font-size: 1.1rem; font-weight: 700; }
 #viewJogo .jg-modal { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center;
   background: rgba(0, 0, 0, 0.62); padding: 0.75rem; }
@@ -4025,7 +4026,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     <p class="lede">Um espadachim contra ondas de demônios. Clique para andar e atacar, use golpes em
       área e golpes únicos e sobreviva o máximo que puder.</p>
     <div class="hrs-bar">
-    <button type="button" class="btn btn-full" id="g-btnFull" aria-pressed="false"
+    <button type="button" class="btn btn-full" id="g-btnFull" aria-pressed="false" hidden
       title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
       height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
       stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
