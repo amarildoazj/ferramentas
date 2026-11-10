@@ -263,7 +263,8 @@ var CONFIG = {
   /* JOGO "Lâmina do Sol": ARPG 2D de cima. Todos os números do jogo ficam aqui */
   jogo: {
     mundo: { largura: 2600, altura: 1800, bloco: 96, props: 70 },   /* mapa em pixels; bloco do chão */
-    zoom: { min: 0.6, max: 2, padrao: 0.7, passo: 0.1 },   /* aproximar/afastar (botões, roda, pinça) */
+    /* zoom: aproximar/afastar (botões, roda, pinça); telaCheia = zoom ao entrar em tela cheia no desktop */
+    zoom: { min: 0.6, max: 2, padrao: 0.7, telaCheia: 1, passo: 0.1 },
     som: { volume: 0.5 },             /* volume geral dos sons (0 a 1) */
     musica: {                         /* trilha de aventura (sintetizada, só toca jogando e com som ligado) */
       volume: 0.5, bpm: 104, tom: 440,          /* tom: nota base da melodia (Hz) */
@@ -7912,6 +7913,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function desenhaChao() {
     var tl = C.mundo.bloco, x0 = Math.floor(cam.x / tl), y0 = Math.floor(cam.y / tl);
     ctx.fillStyle = cor.chao; ctx.fillRect(-30, -30, VW + 60, VH + 60);
+    ctx.save(); ctx.beginPath(); ctx.rect(-cam.x, -cam.y, T.largura, T.altura);
+    ctx.clip();                      /* nada de quadrados fora do mapa */
     for (var y = y0; y <= y0 + VH / tl + 1; y++) for (var x = x0; x <= x0 + VW / tl + 1; x++) {
       if (x < 0 || y < 0 || x * tl >= T.largura || y * tl >= T.altura) continue;
       var h = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; h -= Math.floor(h);
@@ -7924,6 +7927,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         ctx.fill();
       }
     }
+    ctx.restore();
     ctx.strokeStyle = cor.acc; ctx.lineWidth = 6; ctx.globalAlpha = 0.5;
     ctx.strokeRect(-cam.x, -cam.y, T.largura, T.altura); ctx.globalAlpha = 1;
   }
@@ -8339,8 +8343,13 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     if (telaAtual()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
     else { var r = pedeTela.call(palco); if (r && r.catch) r.catch(function () {}); }
   });
+  var zoomAntes = null;
   function mudouTela() {
     var t = !!telaAtual(), ex = raizEl.classList.contains("tela-cheia");
+    if (!toque) {                    /* desktop: tela cheia abre em 100%; ao sair volta ao zoom anterior */
+      if (t && zoomAntes === null) { zoomAntes = zoom; setZoom(C.zoom.telaCheia); }
+      else if (!t && zoomAntes !== null) { setZoom(zoomAntes); zoomAntes = null; }
+    }
     bTela.classList.toggle("em-tela", t); bTela.parentNode.classList.toggle("em-tela", t);
     bExp.title = t || ex ? "Recolher (Esc)" : "Expandir (Esc recolhe)";
     setTimeout(ajusta, 60); }
@@ -8502,7 +8511,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     c.appendChild(document.querySelector(".brand-logo").cloneNode(true));
     c.insertAdjacentHTML("beforeend", "<b>Utilidades</b><span>Escolha uma ferramenta</span>");
     anel.appendChild(c);
-    c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); c.setAttribute("aria-pressed", "false");
+    c.setAttribute("role", "button"); c.setAttribute("tabindex", "0");
+    c.setAttribute("aria-pressed", "false");
     function giraTodas() {          /* clicar no centro: todas as engrenagens giram; clicar de novo, param */
       c.setAttribute("aria-pressed", anel.classList.toggle("todas") ? "true" : "false");
     }
