@@ -319,6 +319,7 @@ var CONFIG = {
   /* PÁGINA INICIAL: bolhas com as ferramentas ao redor do logo. giroSeg = volta da engrenagem no hover */
   inicio: {
     giroSeg: 4,
+    tracoSeg: 40,                     /* segundos por volta do pontilhado laranja (maior = mais lento) */
     descricoes: {
       comparador: "Compara dois textos e mostra as diferenças",
       formatador: "Formata e valida texto, JSON e XML",
@@ -2882,7 +2883,8 @@ html.inicio { scrollbar-gutter: auto; }
 #viewIni .wrap { max-width: var(--largura-pagina); margin-inline: auto; width: 100%; }
 .home-anel { container-type: inline-size; position: relative; width: min(100%, 46rem); aspect-ratio: 1; margin: 0 auto; }
 .home-anel::before { content: ""; position: absolute; inset: 13%; border: 2px dashed var(--accent);
-  border-radius: 50%; opacity: 0.55; }
+  border-radius: 50%; opacity: 0.55; animation: home-giro var(--home-traco, 40s) linear infinite; }
+@media (prefers-reduced-motion: reduce) { .home-anel::before { animation: none; } }
 .home-anel > * { --bolha: clamp(4.6rem, 17cqw, 8.2rem); --raio: 37cqw; }
 .home-centro {
   position: absolute; inset: 0; margin: auto; width: 34cqw; height: 34cqw; display: grid; place-content: center;
@@ -2909,8 +2911,10 @@ html.inicio { scrollbar-gutter: auto; }
 .home-in span { font-size: clamp(0.6rem, 2.1cqw, 0.9rem); font-weight: 600; line-height: 1.1; }
 .home-g { position: absolute; inset: -11%; opacity: 0; transition: opacity 0.2s; pointer-events: none; color: var(--accent); }
 .home-g svg { display: block; width: 100%; height: 100%; animation: home-giro var(--home-giro, 4s) linear infinite paused; }
-.home-b:hover .home-g, .home-b:focus-visible .home-g { opacity: 1; }
-.home-b:hover .home-g svg, .home-b:focus-visible .home-g svg { animation-play-state: running; }
+.home-b:hover .home-g, .home-b:focus-visible .home-g, .home-anel.todas .home-g { opacity: 1; }
+.home-b:hover .home-g svg, .home-b:focus-visible .home-g svg, .home-anel.todas .home-g svg {
+  animation-play-state: running; }
+.home-centro { cursor: pointer; }
 .home-b:hover .home-in, .home-b:focus-visible .home-in { transform: scale(1.04); border-color: var(--accent); }
 .home-b:focus-visible { outline: none; }
 @keyframes home-giro { to { transform: rotate(360deg); } }
@@ -8493,10 +8497,18 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   (function () {                 /* monta as bolhas a partir do próprio menu */
     var anel = document.getElementById("i0-anel"), C = CONFIG.inicio, n = items.length;
     anel.style.setProperty("--home-giro", C.giroSeg + "s");
+    anel.style.setProperty("--home-traco", C.tracoSeg + "s");
     var c = document.createElement("div"); c.className = "home-centro";
     c.appendChild(document.querySelector(".brand-logo").cloneNode(true));
     c.insertAdjacentHTML("beforeend", "<b>Utilidades</b><span>Escolha uma ferramenta</span>");
     anel.appendChild(c);
+    c.setAttribute("role", "button"); c.setAttribute("tabindex", "0"); c.setAttribute("aria-pressed", "false");
+    function giraTodas() {          /* clicar no centro: todas as engrenagens giram; clicar de novo, param */
+      c.setAttribute("aria-pressed", anel.classList.toggle("todas") ? "true" : "false");
+    }
+    c.addEventListener("click", giraTodas);
+    c.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); giraTodas(); } });
     items.forEach(function (a, i) {
       var nome = a.getAttribute("aria-label"), v = a.getAttribute("data-view"), b = document.createElement("a");
       b.className = "home-b"; b.href = "#" + v; b.title = C.descricoes[v] || nome; b.setAttribute("aria-label", nome);
