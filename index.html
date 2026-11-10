@@ -280,17 +280,17 @@ var CONFIG = {
       critico: 0.15,                    /* chance de golpe crítico (dano dobrado) */
       invulneravel: 0.5                 /* segundos sem tomar dano depois de levar um golpe */
     },
-    ordemBarra: ["a", "w", "e", "q", "r"],   /* ícones: ataque livre, espada, fogo, sol, eclipse */
+    ordemBarra: ["a", "w", "q", "e", "r"],   /* ícones: ataque livre, espada, sol, fogo, eclipse */
     habilidades: {
       a: { nome: "Ataque livre", tecla: "7", teclas: ["7", " "], icone: "🗡", custo: 0, recarga: 0.35,
            dano: 1, alcance: 95, arco: 1.7 },                        /* golpe básico na direção do mouse */
-      q: { nome: "Dança do Sol", tecla: "0·F", teclas: ["f", "0"],
+      q: { nome: "Dança do Sol", tecla: "9·E", teclas: ["e", "9"],
            icone: "☀", custo: 25, recarga: 2.2, dano: 2.4,
            raio: 150, empurra: 380 },                                /* em área, ao redor */
       w: { nome: "Corte Solar", tecla: "8·Q", teclas: ["q", "8"],
            icone: "⚔", custo: 0, recarga: 1.1, dano: 5,
            alcance: 380, empurra: 300, atordoa: 1.2 },               /* golpe único (investida) */
-      e: { nome: "Onda de Chamas", tecla: "9·E", teclas: ["e", "9"],
+      e: { nome: "Onda de Chamas", tecla: "0·F", teclas: ["f", "0"],
            icone: "🔥", custo: 28, recarga: 2.8, dano: 2.8,
            comprimento: 460, largura: 110, empurra: 260 },           /* em área, em linha */
       r: { nome: "Eclipse", tecla: "-·R", teclas: ["r", "-"],
@@ -4067,8 +4067,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   </div>
   <p class="jg-hint">Controles: W A S D andam (ou clique no chão; segure para seguir o mouse) e clicar num
     demônio ataca. Habilidades, na ordem da barra: 7 ou Espaço, ataque livre em leque na direção do mouse;
-    8 ou Q (ou botão direito), Espada: golpe único no demônio sob o mouse; 9 ou E, Fogo: área em linha;
-    0 ou F, Sol: área ao redor; - ou R, Eclipse, quando a barra de abates enche. P ou o botão Pausar
+    8 ou Q (ou botão direito), Espada: golpe único no demônio sob o mouse; 9 ou E, Sol: área ao redor;
+    0 ou F, Fogo: área em linha; - ou R, Eclipse, quando a barra de abates enche. P ou o botão Pausar
     pausam. No celular: analógico à esquerda para andar e roda de botões à direita (o
     botão grande é o ataque livre; segure para repetir).</p>
 </div>
@@ -8149,7 +8149,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     ctx.fillStyle = joy.id != null ? "rgba(255,180,84,.9)" : "rgba(255,255,255,.55)";
     ctx.beginPath(); ctx.arc(kx, ky, R * 0.42, 0, PI2); ctx.fill();
     var lista = [{ k: "a", x: cx, y: cy, r: big }];
-    ["w", "e", "q", "r"].forEach(function (k, i) {
+    ["w", "q", "e", "r"].forEach(function (k, i) {
       var ang = (195 + i * 45) * Math.PI / 180;
       lista.push({ k: k, x: cx + Math.cos(ang) * d, y: cy + Math.sin(ang) * d, r: sm });
     });
@@ -8214,7 +8214,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     desenhaHud();
     if (estado === "inicio") tela("Lâmina do Sol",
         ["WASD ou clique no chão para andar; clique num demônio para atacar.",
-      "7 ataque livre; 8 ou Q espada (golpe único); 9 ou E fogo e 0 ou F sol (em área).",
+      "7 ataque livre; 8 ou Q espada (golpe único); 9 ou E sol e 0 ou F fogo (em área).",
       "- ou R: Eclipse, quando a barra de abates enche. P ou o botão Pausar pausam."],
       "Clique para começar");
     else if (estado === "pausa") tela("Pausado", [], "Clique ou aperte P para continuar");
@@ -8415,10 +8415,10 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         + " segure para repetir.")
       + hb("w", "investida e golpe único forte (dano x" + h.w.dano + ", atordoa " + h.w.atordoa + " s),"
         + " recarga " + h.w.recarga + " s.")
-      + hb("e", "faixa de fogo que atravessa todos à frente (" + h.e.comprimento + " de comprimento),"
-        + " fôlego " + h.e.custo + ", recarga " + h.e.recarga + " s.")
       + hb("q", "giro em área ao redor (raio " + h.q.raio + "), fôlego " + h.q.custo + ", recarga "
         + h.q.recarga + " s.")
+      + hb("e", "faixa de fogo que atravessa todos à frente (" + h.e.comprimento + " de comprimento),"
+        + " fôlego " + h.e.custo + ", recarga " + h.e.recarga + " s.")
       + hb("r", "explosão enorme (raio " + h.r.raio + "); a barra enche com " + h.r.cargaPorAbate
         + " por abate, ou seja, a cada " + Math.ceil(100 / h.r.cargaPorAbate) + " abates.")
       + "<li><b>Zoom:</b> botões + e −, roda do mouse ou pinça com dois dedos ("
