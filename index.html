@@ -267,6 +267,7 @@ var CONFIG = {
     /* zoom: aproximar/afastar (botões, roda, pinça); telaCheia = zoom ao entrar em tela cheia no desktop */
     zoom: { min: 0.6, max: 2, padrao: 0.7, telaCheia: 1, passo: 0.1 },
     umaMaoSobe: 44,                   /* modo uma mão (celular em pé): sobe espada e poderes, em px */
+    umaMaoRaio: 1.25,                 /* idem: abertura do arco de poderes (1 = junto da espada) */
     umaMaoBorda: 56,                  /* idem: distância do botão da espada à borda direita, em px */
     som: { volume: 0.5 },             /* volume geral dos sons (0 a 1) */
     musica: {                         /* trilha de aventura (sintetizada, só toca jogando e com som ligado) */
@@ -8210,7 +8211,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       fixo: { x: sx, y: sy } } : { k: "a", x: cx, y: cy, r: big }];
     ["w", "q", "e", "r"].forEach(function (k, i) {
       var ang = (a0 + i * pa) * Math.PI / 180;
-      lista.push({ k: k, x: ax + Math.cos(ang) * d, y: ay + Math.sin(ang) * d, r: sm });
+      var dd = comb ? d * C.umaMaoRaio : d;       /* modo uma mão: arco mais aberto, bolinhas separadas */
+      lista.push({ k: k, x: ax + Math.cos(ang) * dd, y: ay + Math.sin(ang) * dd, r: sm });
     });
     lista.forEach(function (b) {
       var h = HAB[b.k], pr = b.k === "r" ? hero.ult >= 100 : hero.fol >= h.custo && cd[b.k] <= 0;
