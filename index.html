@@ -8209,18 +8209,20 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     return out;
   }
   function tela(titulo, linhas, rodape) {
+    /* palco estreito: os botões ficam em coluna à direita (56 px); o texto usa só o espaço à esquerda deles */
+    var res = W < 864 ? 56 : 0, mx = (W - res) / 2, larg = W - res - 28;
     ctx.fillStyle = "rgba(10,8,6,.66)"; ctx.fillRect(0, 0, W, H);
     ctx.textAlign = "center"; ctx.fillStyle = "#ffb454";
-    ctx.font = "bold " + clamp(W / 14, 26, 46) + "px 'DM Serif Display', Georgia, serif";
-    ctx.fillText(titulo, W / 2, H / 2 - 70);
+    ctx.font = "bold " + clamp(larg / 12, 26, 46) + "px 'DM Serif Display', Georgia, serif";
+    ctx.fillText(titulo, mx, H / 2 - 70);
     ctx.fillStyle = "#f4ead8"; ctx.font = "15px 'DM Sans', sans-serif";
     var y = H / 2 - 28;
     linhas.forEach(function (l) {
-      quebra(l, W - 40).forEach(function (q) { ctx.fillText(q, W / 2, y); y += 22; });
+      quebra(l, larg).forEach(function (q) { ctx.fillText(q, mx, y); y += 22; });
       y += 4;
     });
     ctx.fillStyle = "#ffb454"; ctx.font = "bold 16px 'DM Sans', sans-serif";
-    ctx.fillText(rodape, W / 2, y + 16);
+    ctx.fillText(rodape, mx, y + 16);
   }
   function desenha() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
