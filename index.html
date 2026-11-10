@@ -2870,16 +2870,19 @@ html.inicio .side { border: 0 !important; padding: 0; min-height: 0; position: s
 html.inicio .side > .theme-btn { position: fixed !important; top: 0.75rem; right: 0.75rem; left: auto;
   margin: 0; z-index: 6; }
 @media (min-width: 56.01rem) { html.inicio .side > .theme-btn { top: 1rem; right: 1rem; } }
-#viewIni .wrap { min-height: calc(100dvh - 5rem); display: flex; align-items: center;
+#viewIni .wrap { min-height: calc(100dvh - 6rem); display: flex; align-items: center;
   justify-content: center; }
 #viewIni .home-anel { width: min(100%, 46rem, calc(100dvh - 7rem)); }
 /* início: "by Rota" sempre no rodapé da tela */
 html.inicio .byrota { position: fixed; left: 50%; bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%); margin: 0; z-index: 5; }
 html.inicio body { padding-bottom: 2.5rem; }
+html.inicio, html.inicio body { overflow: hidden; }
+html.inicio { scrollbar-gutter: auto; }
 #viewIni .wrap { max-width: var(--largura-pagina); margin-inline: auto; width: 100%; }
 .home-anel { container-type: inline-size; position: relative; width: min(100%, 46rem); aspect-ratio: 1; margin: 0 auto; }
-.home-anel::before { content: ""; position: absolute; inset: 13%; border: 1px dashed var(--line); border-radius: 50%; }
+.home-anel::before { content: ""; position: absolute; inset: 13%; border: 2px dashed var(--accent);
+  border-radius: 50%; opacity: 0.55; }
 .home-anel > * { --bolha: clamp(4.6rem, 17cqw, 8.2rem); --raio: 37cqw; }
 .home-centro {
   position: absolute; inset: 0; margin: auto; width: 34cqw; height: 34cqw; display: grid; place-content: center;
