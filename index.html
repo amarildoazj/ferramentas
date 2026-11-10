@@ -38,6 +38,7 @@
    Diagramas               #diagramas   viewDia  d-   "/* Diagramas */"       IIFE com P = "d-"
    Investimento            #investimento viewInv i-   "/* Investimento */"   IIFE com P = "i-"
    Jogo (Lâmina do Sol)    #jogo        viewJogo g-   "/* Jogo */"          IIFE "Jogo: Lâmina do Sol"
+   Início (bolhas)         #inicio      viewIni  --   "/* Início */"         IIFE "Página inicial"
 
    Os ids dos campos começam com o prefixo da página (ex.: s-bruto, f-inp, c-inpA, h-clocks).
    O CSS de cada página começa sempre com #viewXxx, para uma página não mexer na outra.
@@ -163,7 +164,8 @@ var CONFIG = {
     roleta: "ferramentas-roleta",     /* lista de pessoas da roleta */
     diagramas: "ferramentas-diagramas", /* último desenho dos diagramas */
     investimento: "ferramentas-investimento", /* dados da calculadora de renda fixa */
-    jogo: "ferramentas-jogo"          /* recorde do jogo */
+    jogo: "ferramentas-jogo",         /* recorde do jogo */
+    jogoSom: "ferramentas-jogo-som"   /* som ligado ou mudo */
   },
 
   /* ROLETA */
@@ -261,6 +263,8 @@ var CONFIG = {
   /* JOGO "Lâmina do Sol": ARPG 2D de cima. Todos os números do jogo ficam aqui */
   jogo: {
     mundo: { largura: 2600, altura: 1800, bloco: 96, props: 70 },   /* mapa em pixels; bloco do chão */
+    zoom: { min: 0.6, max: 2, padrao: 0.7, passo: 0.1 },   /* aproximar/afastar (botões, roda, pinça) */
+    som: { volume: 0.5 },             /* volume geral dos sons (0 a 1) */
     maxEfeitos: 500,                  /* limite de partículas/textos ao mesmo tempo */
     heroi: {
       vida: 120, folego: 100, folegoPorSeg: 12,   /* fôlego é gasto pelas habilidades */
@@ -302,6 +306,21 @@ var CONFIG = {
     },
     cores: { chaoClaro: "#d9d0b8", chao2Claro: "#d1c7ac", chaoEscuro: "#2a2620", chao2Escuro: "#262219",
              brasa: "#ff9a3c", critico: "#ffd24a" }
+  },
+
+  /* PÁGINA INICIAL: bolhas com as ferramentas ao redor do logo. giroSeg = volta da engrenagem no hover */
+  inicio: {
+    giroSeg: 4,
+    descricoes: {
+      comparador: "Compara dois textos e mostra as diferenças",
+      formatador: "Formata e valida texto, JSON e XML",
+      horas: "Data, hora e horas extras",
+      salario: "Calculadora de salário líquido",
+      investimento: "Calculadora de renda fixa",
+      roleta: "Sorteio com roleta",
+      diagramas: "Editor simples de formas e setas",
+      jogo: "Lâmina do Sol: um joguinho de ação"
+    }
   },
 
   /* BOTÃO "VOLTAR AO TOPO" (só no celular) */
@@ -651,7 +670,6 @@ var CONFIG = {
 @media (max-width: 36rem) { #viewFmt .gut { font-size: 16px; } }
 #viewFmt > .wrap { gap: 1.1rem; }
 #viewFmt header { gap: 0.4rem; }
-#viewFmt h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); }
 #viewFmt .tabs { gap: 1.25rem; }
 @media (min-width: 56.01rem) { #viewFmt { margin-top: 0.6rem; } }
 #viewFmt {
@@ -2802,6 +2820,7 @@ html:not(.tela-cheia) #viewHrs > .wrap > .layout { grid-column: 1 / -1; margin-t
 #viewDia .dia-stage svg.pen { cursor: crosshair; }
 #viewDia .dia-stage svg.erase { cursor: cell; }
 #viewDia .dia-stage svg.hand { cursor: grab; }
+#viewDia .dia-zbar { width: 8rem; accent-color: var(--accent); cursor: pointer; }
 #viewDia .dia-zoom {
   min-width: 3.2rem; text-align: center; font-size: 0.875rem; font-variant-numeric: tabular-nums;
 }
@@ -2832,6 +2851,56 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
 #viewDia .dia-msg { font-size: 0.8125rem; color: var(--muted); }
 #viewDia .d-h-nw, #viewDia .d-h-se { cursor: nwse-resize; }
 #viewDia .d-h-ne, #viewDia .d-h-sw { cursor: nesw-resize; }
+
+/* Início */
+/* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
+html.inicio .menu, html.inicio .menu-nome { display: none !important; }
+/* início: o logo do centro basta; sem o logo do topo nem a linha */
+html.inicio .brand { display: none !important; }
+html.inicio .app { grid-template-columns: minmax(0, 1fr); gap: 0; }
+html.inicio .side { border: 0 !important; padding: 0; min-height: 0; position: static; }
+html.inicio .side > .theme-btn { position: fixed !important; top: 0.75rem; right: 0.75rem; left: auto; margin: 0; z-index: 6; }
+@media (min-width: 56.01rem) { html.inicio .side > .theme-btn { top: 1rem; right: 1rem; } }
+#viewIni .wrap { min-height: calc(100dvh - 5rem); display: flex; align-items: center; justify-content: center; }
+#viewIni .home-anel { width: min(100%, 46rem, calc(100dvh - 7rem)); }
+/* início: "by Rota" sempre no rodapé da tela */
+html.inicio .byrota { position: fixed; left: 50%; bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%); margin: 0; z-index: 5; }
+html.inicio body { padding-bottom: 2.5rem; }
+#viewIni .wrap { max-width: var(--largura-pagina); margin-inline: auto; width: 100%; }
+.home-anel { container-type: inline-size; position: relative; width: min(100%, 46rem); aspect-ratio: 1; margin: 0 auto; }
+.home-anel::before { content: ""; position: absolute; inset: 13%; border: 1px dashed var(--line); border-radius: 50%; }
+.home-anel > * { --bolha: clamp(4.6rem, 17cqw, 8.2rem); --raio: 37cqw; }
+.home-centro {
+  position: absolute; inset: 0; margin: auto; width: 34cqw; height: 34cqw; display: grid; place-content: center;
+  justify-items: center; gap: 0.6rem; text-align: center;
+}
+.home-centro .brand-logo { width: clamp(4rem, 14cqw, 6.5rem); height: clamp(4rem, 14cqw, 6.5rem); border-radius: 22%; }
+.home-centro .brand-logo svg { width: 56%; height: 56%; }
+.home-centro b {
+  font-family: var(--font-display); font-weight: 400; font-size: clamp(1.5rem, 6.6cqw, 3rem); line-height: 1;
+  color: var(--accent); letter-spacing: -0.01em;
+}
+.home-centro span { font-size: clamp(0.65rem, 2cqw, 0.85rem); color: var(--muted); }
+.home-b {
+  position: absolute; left: 50%; top: 50%; width: var(--bolha); height: var(--bolha);
+  margin: calc(var(--bolha) / -2) 0 0 calc(var(--bolha) / -2); color: var(--fg); text-decoration: none;
+  transform: rotate(var(--a)) translateY(calc(var(--raio) * -1)) rotate(calc(var(--a) * -1));
+}
+.home-in {
+  position: absolute; inset: 0; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.08); display: grid; place-content: center; justify-items: center;
+  gap: 0.25rem; padding: 0.4rem; text-align: center; transition: transform 0.2s, border-color 0.2s;
+}
+.home-in svg { width: clamp(1.4rem, 5.4cqw, 2.4rem); height: clamp(1.4rem, 5.4cqw, 2.4rem); color: var(--accent); }
+.home-in span { font-size: clamp(0.6rem, 2.1cqw, 0.9rem); font-weight: 600; line-height: 1.1; }
+.home-g { position: absolute; inset: -11%; opacity: 0; transition: opacity 0.2s; pointer-events: none; color: var(--accent); }
+.home-g svg { display: block; width: 100%; height: 100%; animation: home-giro var(--home-giro, 4s) linear infinite paused; }
+.home-b:hover .home-g, .home-b:focus-visible .home-g { opacity: 1; }
+.home-b:hover .home-g svg, .home-b:focus-visible .home-g svg { animation-play-state: running; }
+.home-b:hover .home-in, .home-b:focus-visible .home-in { transform: scale(1.04); border-color: var(--accent); }
+.home-b:focus-visible { outline: none; }
+@keyframes home-giro { to { transform: rotate(360deg); } }
 
 /* Jogo */
 #viewJogo .wrap {
@@ -2865,21 +2934,63 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
   overflow: hidden; background: #000; touch-action: none;
 }
 #viewJogo canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
-#viewJogo .jg-pausa {
-  position: absolute; right: 0.6rem; bottom: 0.6rem; z-index: 2; background: rgba(20, 16, 12, 0.78);
-  color: #f4ead8; border-color: rgba(255, 255, 255, 0.25);
+#viewJogo .jg-col {
+  position: absolute; right: 0.6rem; top: 3.9rem; z-index: 2; display: flex; flex-direction: column;
+  align-items: center; gap: 0.35rem;
 }
-#viewJogo .jg-pausa:hover:not(:disabled) { border-color: #ffb454; }
-#viewJogo .jg-pausa:disabled { opacity: 0.45; cursor: default; }
-@media (max-width: 36rem) { #viewJogo .jg-pausa .lbl { display: none; } }
-#viewJogo .jg-stage.toque .jg-pausa { bottom: auto; top: 3.4rem; }
-#viewJogo .jg-stage.toque .jg-pausa .lbl { display: none; }
+#viewJogo .jg-col > button, #viewJogo .jg-ferr {
+  background: rgba(20, 16, 12, 0.78); color: #f4ead8; border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.7rem;
+}
+#viewJogo .jg-col > button {
+  width: 2.25rem; height: 2.25rem; padding: 0; display: inline-flex; align-items: center;
+  justify-content: center; cursor: pointer;
+}
+#viewJogo .jg-col > button:hover:not(:disabled) { border-color: #ffb454; }
+#viewJogo .jg-col > button:disabled { opacity: 0.45; cursor: default; }
+#viewJogo .jg-col .lbl { display: none; }
+#viewJogo .jg-ferr {
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.15rem;
+}
+#viewJogo .jg-ferr button {
+  font: inherit; color: inherit; background: transparent; border: 0; border-radius: 0.5rem; cursor: pointer;
+  width: 2rem; min-height: 2rem; display: inline-flex; flex-direction: column; align-items: center;
+  justify-content: center; font-size: 1.15rem; font-weight: 700; line-height: 1; padding: 0;
+}
+#viewJogo .jg-ferr .jg-zn { font-size: 0.62rem; font-weight: 600; gap: 0.1rem; padding: 0.2rem 0;
+  font-variant-numeric: tabular-nums; }
+#viewJogo .jg-ferr button:hover { background: rgba(255, 255, 255, 0.14); }
+#viewJogo .jg-ferr .off, #viewJogo .jg-pausa .pl, #viewJogo .jg-exp .i-co { display: none; }
+#viewJogo .jg-ferr .mudo .on { display: none; }
+#viewJogo .jg-ferr .mudo .off { display: inline; }
+#viewJogo .jg-pausa.em-pausa .pl { display: inline; }
+#viewJogo .jg-pausa.em-pausa .pa { display: none; }
+html.tela-cheia #viewJogo .jg-exp .i-co, #viewJogo .jg-col.em-tela .jg-exp .i-co { display: inline; }
+html.tela-cheia #viewJogo .jg-exp .i-ex, #viewJogo .jg-col.em-tela .jg-exp .i-ex { display: none; }
+#viewJogo .jg-col > .jg-exp { display: inline-flex !important; visibility: visible !important; }
+#viewJogo .jg-tema .sol, #viewJogo .jg-tema.escuro .lua { display: none; }
+#viewJogo .jg-tema.escuro .sol { display: inline; }
+#viewJogo .jg-tela .mn { display: none; }
+#viewJogo .jg-tela.em-tela .mn { display: inline; }
+#viewJogo .jg-tela.em-tela .mx { display: none; }
+#viewJogo .jg-stage:fullscreen { width: 100vw; height: 100vh; border: 0; border-radius: 0; }
+#viewJogo .jg-stage:-webkit-full-screen { width: 100vw; height: 100vh; border: 0; border-radius: 0; }
+#viewJogo .jg-como {
+  border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.75rem 1rem; background: var(--surface);
+  font-size: 0.875rem; line-height: 1.55; max-width: 60rem;
+}
+#viewJogo .jg-como summary { cursor: pointer; font-weight: 600; }
+#viewJogo .jg-como h3 { font-size: 0.95rem; margin: 1rem 0 0.35rem; }
+#viewJogo .jg-como ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
 #viewJogo .jg-hint { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
 html.tela-cheia #viewJogo > .wrap { max-width: none; margin: 0; width: 100%; gap: 0.6rem; min-height: 0; }
 html.tela-cheia #viewJogo header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
 html.tela-cheia #viewJogo .hrs-bar .theme-btn { margin-left: 0; }
 html.tela-cheia #viewJogo .jg-stage { flex: 1 1 auto; height: auto; min-height: 16rem; }
-html.tela-cheia #viewJogo .jg-hint { display: none; }
+html.tela-cheia #viewJogo .jg-hint, html.tela-cheia #viewJogo .jg-como,
+html.tela-cheia #viewJogo header { display: none; }
+html.tela-cheia #viewJogo > .wrap { gap: 0; }
+html.tela-cheia #viewJogo .jg-stage { border-radius: 0; border: 0; height: 100%; }
 
 /* Investimento */
 #viewInv .wrap {
@@ -3829,8 +3940,10 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     </div></div>
     <div class="dia-grp"><b>Tela</b><div class="dia-row">
       <button type="button" class="btn" id="d-zout" aria-label="Diminuir o zoom">−</button>
-      <span class="dia-zoom" id="d-zoom">100%</span>
+      <input type="range" class="dia-zbar" id="d-zbar" min="0" max="100" step="1"
+        aria-label="Nível de zoom" title="Arraste para aproximar ou afastar">
       <button type="button" class="btn" id="d-zin" aria-label="Aumentar o zoom">+</button>
+      <span class="dia-zoom" id="d-zoom">100%</span>
       <button type="button" class="btn" id="d-fit">Ajustar</button>
       <label class="dia-chk"><input type="checkbox" id="d-snap" checked> Grade</label>
       <button type="button" class="dia-help" data-ajuda="grade" aria-label="Ajuda">?</button>
@@ -3885,11 +3998,53 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       2 2v3"/></svg><span class="lbl">Expandir</span></button>
   </div>
   </header>
+  <details class="jg-como"><summary>Como funciona o jogo: regras e possibilidades</summary
+    ><div id="g-regras"></div></details>
   <div class="jg-stage"><canvas id="g-cv" aria-label="Área do jogo"></canvas>
-  <button type="button" class="btn jg-pausa" id="g-btnPausa" title="Pausar ou continuar (tecla P)"><svg
-      viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span
-      class="lbl">Pausar</span></button></div>
+    <div class="jg-col" role="group" aria-label="Controles do jogo">
+      <button type="button" class="jg-exp" id="g-btnRecolher" title="Expandir (Esc recolhe)"
+        aria-label="Expandir ou recolher"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><path class="i-ex"
+        d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3
+        M3 16v3a2 2 0 0 0 2 2h3"/><path
+        class="i-co" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3
+        M3 16h3a2 2 0 0 1 2 2v3"/></svg></button>
+      <button type="button" class="jg-tela" id="g-btnTela" title="Tela cheia do aparelho"
+        aria-label="Tela cheia"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><path class="mx" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/><path
+        class="mn" d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+      <button type="button" class="jg-pausa" id="g-btnPausa" title="Pausar (tecla P)"
+        aria-label="Pausar ou continuar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><path class="pa" d="M8 5v14M16 5v14"/><path class="pl"
+        d="M7 4v16l13-8z"/></svg><span
+        class="lbl">Pausar</span></button>
+      <div class="jg-ferr" role="group" aria-label="Zoom e som">
+        <button type="button" class="jg-b" id="g-zin" aria-label="Aumentar o zoom"
+          title="Aproximar">+</button>
+        <button type="button" class="jg-zn" id="g-zoomN" title="Zoom (clique para voltar a 100%)"><svg
+          viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path
+          d="m20 20-3.5-3.5"/></svg><span>100%</span></button>
+        <button type="button" class="jg-b" id="g-zout" aria-label="Diminuir o zoom" title="Afastar">−</button>
+        <button type="button" class="jg-b" id="g-som" aria-pressed="true" title="Desligar o som"><svg
+          viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path
+          d="M11 5 6 9H3v6h3l5 4z"/><path class="on"
+          d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path
+          class="off" d="m16 9 5 6m0-6-5 6"/></svg></button>
+      </div>
+      <button type="button" class="jg-tema" id="g-tema" title="Modo escuro / claro"
+        aria-label="Alternar modo escuro e claro"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><path class="lua" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/><g
+        class="sol"><circle cx="12" cy="12" r="4"/><path
+        d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7
+        6.3l1.4-1.4"/></g></svg></button>
+    </div>
+  </div>
   <p class="jg-hint">Controles: W A S D andam (ou clique no chão; segure para seguir o mouse) e clicar num
     demônio ataca. Habilidades, na ordem da barra: 7 ou Espaço, ataque livre em leque na direção do mouse;
     8 ou Q (ou botão direito), Espada: golpe único no demônio sob o mouse; 9 ou E, Fogo: área em linha;
@@ -3897,6 +4052,24 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     pausam. No celular: analógico à esquerda para andar e roda de botões à direita (o
     botão grande é o ataque livre; segure para repetir).</p>
 </div>
+    </section>
+
+    <!-- ================= PÁGINA: Início · menu #inicio (ao abrir o site sem endereço) · JS: "Página inicial"
+         · CSS: "/* Início */" · textos e giro: CONFIG.inicio ================= -->
+    <section id="viewIni" class="view" aria-label="Início" hidden>
+<div class="wrap">
+  <div class="home-anel" id="i0-anel"></div>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="home-gear"
+  viewBox="-50 -50 100 100"><path fill="currentColor" fill-rule="evenodd"
+  d="M45.0 0.0 L49.9 3.1 L49.3 8.0 L43.9 10.0 L40.5 19.5 L43.6 24.5 L41.0 28.7 L35.2 28.1 L28.1 35.2
+  L28.7 41.0 L24.5 43.6 L19.5 40.5 L10.0 43.9 L8.0 49.3 L3.1 49.9 L0.0 45.0 L-10.0 43.9 L-14.2 48.0
+  L-18.8 46.3 L-19.5 40.5 L-28.1 35.2 L-33.6 37.1 L-37.1 33.6 L-35.2 28.1 L-40.5 19.5 L-46.3 18.8
+  L-48.0 14.2 L-43.9 10.0 L-45.0 0.0 L-49.9 -3.1 L-49.3 -8.0 L-43.9 -10.0 L-40.5 -19.5 L-43.6 -24.5
+  L-41.0 -28.7 L-35.2 -28.1 L-28.1 -35.2 L-28.7 -41.0 L-24.5 -43.6 L-19.5 -40.5 L-10.0 -43.9
+  L-8.0 -49.3 L-3.1 -49.9 L-0.0 -45.0 L10.0 -43.9 L14.2 -48.0 L18.8 -46.3 L19.5 -40.5 L28.1 -35.2
+  L33.6 -37.1 L37.1 -33.6 L35.2 -28.1 L40.5 -19.5 L46.3 -18.8 L48.0 -14.2
+  L43.9 -10.0Z M39 0A39 39 0 1 0-39 0A39 39 0 1 0 39 0Z"/></symbol></svg>
     </section>
   </main>
 </div>
@@ -6443,6 +6616,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     gp.setAttribute("patternTransform", tr);
     $("bg").setAttribute("opacity", CD.grade * view.k < 7 ? 0 : 1);
     $("zoom").textContent = Math.round(view.k * 100) + "%";
+    $("zbar").value = Math.round(Math.log(view.k / CD.zoomMin) / Math.log(CD.zoomMax / CD.zoomMin) * 100);
     var temSel = sel.length > 0 || selLink;
     $("undo").disabled = hi <= 0;
     $("redo").disabled = hi >= hist.length - 1;
@@ -6982,6 +7156,10 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   $("redo").addEventListener("click", redo);
   $("dup").addEventListener("click", duplicar);
   $("del").addEventListener("click", remover);
+  $("zbar").addEventListener("input", function () {   /* barra: escala logarítmica entre zoomMin e zoomMax */
+    var r = svg.getBoundingClientRect();
+    zoomAt(r.width / 2, r.height / 2, CD.zoomMin * Math.pow(CD.zoomMax / CD.zoomMin, this.value / 100));
+  });
   $("zin").addEventListener("click", function () { zoomCentro(1.25); });
   $("zout").addEventListener("click", function () { zoomCentro(0.8); });
   $("fit").addEventListener("click", fit);
@@ -7263,6 +7441,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function ri(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
 
+  var zoom = C.zoom.padrao, VW = 800, VH = 500, livres = {}, pinch = null;
   var hero, dem, fx, orbs, proj, cd, cam, mouse, estado, onda, fila, pausaOnda, pontos, abates, melhor, tempo;
   var toque = window.matchMedia("(pointer: coarse)").matches, joy = { id: null, x: 0, y: 0 }, seg = {};
   var tc = { base: null, R: 50, bots: [] };   /* controles de toque: analógico (esquerda) e roda (direita) */
@@ -7285,8 +7464,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       xpProx: C.xp.base, alvo: null, dest: null, dir: 1, atk: 0, golpe: 0, ang: 0, t: 0, inv: 0, r: 15,
       stun: 0, dano: H0.ataque };
     dem = []; fx = []; orbs = []; proj = []; cd = { q: 0, w: 0, e: 0, r: 0 };
-    cam = { x: hero.x - W / 2, y: hero.y - H / 2 };
-    mouse = { x: W / 2, y: H / 2, wx: hero.x, wy: hero.y };
+    cam = { x: hero.x - VW / 2, y: hero.y - VH / 2 };
+    mouse = { x: W / 2, y: H / 2, wx: hero.x, wy: hero.y, t: 0 };
     onda = 0; fila = []; pausaOnda = 1.2; pontos = 0; abates = 0; tempo = 0; hero.ult = 0;
     props = [];
     for (var i = 0; i < C.mundo.props; i++) {
@@ -7295,6 +7474,62 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     }
   }
 
+  /* ---------- sons (sintetizados, sem arquivos) ---------- */
+  var au = null, mudo = false, ruido = null, ultSom = {};
+  try { mudo = localStorage.getItem(CONFIG.chaves.jogoSom) === "0"; } catch (e) {}
+  function somInicia() {
+    if (au) { if (au.state === "suspended") au.resume(); return; }
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    au = new AC(); var n = au.sampleRate;
+    ruido = au.createBuffer(1, n, n); var d = ruido.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = rnd() * 2 - 1;
+  }
+  function tom(f0, f1, dur, tipo, vol, atraso) {
+    var t = au.currentTime + (atraso || 0), o = au.createOscillator(), g = au.createGain();
+    o.type = tipo; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(vol * C.som.volume, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(au.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function chiado(dur, vol, tipo, f0, f1, atraso) {
+    var t = au.currentTime + (atraso || 0), o = au.createBufferSource(), f = au.createBiquadFilter();
+    var g = au.createGain(); o.buffer = ruido; f.type = tipo; f.frequency.setValueAtTime(f0, t);
+    f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(vol * C.som.volume, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f); f.connect(g); g.connect(au.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  var SONS = {
+    golpe: function () {          /* espada cortando o ar: vento rápido + brilho metálico */
+      chiado(0.16, 0.5, "bandpass", 900, 5200); chiado(0.1, 0.25, "highpass", 3000, 7000, 0.04);
+      tom(2400, 1500, 0.14, "triangle", 0.06, 0.05); },
+    espada: function () {
+      chiado(0.22, 0.55, "bandpass", 5000, 600); tom(1800, 500, 0.2, "sawtooth", 0.1);
+      tom(2600, 2000, 0.3, "triangle", 0.07, 0.08); },
+    fogo: function () { chiado(0.55, 0.45, "lowpass", 600, 2600); tom(130, 55, 0.5, "sawtooth", 0.2); },
+    sol: function () { tom(300, 900, 0.4, "sine", 0.25); chiado(0.35, 0.3, "bandpass", 1200, 4000);
+      tom(900, 1350, 0.35, "triangle", 0.12, 0.08); },
+    eclipse: function () { tom(90, 35, 1.1, "sawtooth", 0.5); chiado(1.1, 0.6, "lowpass", 2500, 120);
+      tom(700, 90, 0.9, "triangle", 0.25); },
+    hit: function () {            /* corte no demônio: pancada grave + carne + faísca de metal */
+      tom(170, 45, 0.16, "sine", 0.35); chiado(0.12, 0.45, "lowpass", 1800, 250);
+      tom(1500, 900, 0.06, "square", 0.06); },
+    crit: function () {
+      tom(200, 40, 0.22, "sine", 0.45); chiado(0.18, 0.6, "lowpass", 2500, 200);
+      tom(1400, 2000, 0.14, "sine", 0.14); tom(900, 700, 0.1, "square", 0.08); },
+    garra: function () { chiado(0.14, 0.3, "bandpass", 700, 2200); tom(260, 120, 0.12, "sawtooth", 0.1); },
+    cuspe: function () { tom(500, 180, 0.2, "sawtooth", 0.12); chiado(0.18, 0.25, "bandpass", 1800, 500); },
+    morte: function () { chiado(0.25, 0.35, "lowpass", 900, 150); tom(170, 45, 0.28, "sawtooth", 0.14); },
+    dano: function () { tom(170, 55, 0.22, "sawtooth", 0.28); chiado(0.12, 0.25, "lowpass", 900, 300); },
+    nivel: function () { [523, 659, 784, 1047].forEach(function (f, i) { tom(f, f, 0.22, "sine", 0.2,
+        i * 0.09); }); },
+    onda: function () { tom(110, 70, 0.45, "triangle", 0.35); tom(165, 100, 0.4, "triangle", 0.2, 0.15); },
+    orbe: function () { tom(600, 1100, 0.14, "sine", 0.2); },
+    fim: function () { tom(320, 50, 1.2, "sawtooth", 0.3); tom(160, 40, 1.3, "triangle", 0.25, 0.1); }
+  };
+  function som(nome) {
+    if (mudo || !au) return;
+    var t = performance.now(); if (t - (ultSom[nome] || 0) < 45) return; ultSom[nome] = t;
+    try { SONS[nome](); } catch (e) {}
+  }
   /* ---------- efeitos ---------- */
   function particulas(x, y, n, c, vel, vida, tam) {
     for (var i = 0; i < n && fx.length < C.maxEfeitos; i++) {
@@ -7315,7 +7550,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       r: d.raio, atk: rnd(), stun: 0, kx: 0, ky: 0, flash: 0, t: rnd() * 10, dir: 1 });
   }
   function proximaOnda() {
-    onda++;
+    onda++; som("onda");
     var n = C.ondas.base + C.ondas.cresce * (onda - 1), tipos = [];
     fila = [];
     for (var i = 0; i < n; i++) {
@@ -7332,7 +7567,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   var spawnT = 0;
   function nasce() {
-    var a = rnd() * PI2, d = Math.max(W, H) * 0.62 + 40;
+    var a = rnd() * PI2, d = Math.max(VW, VH) * 0.62 + 40;
     var x = clamp(hero.x + Math.cos(a) * d, 30, T.largura - 30), y = clamp(hero.y + Math.sin(a) * d, 30,
         T.altura - 30);
     cria(fila.shift(), x, y);
@@ -7341,7 +7576,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   /* ---------- dano ---------- */
   function fere(d, v, kb, ox, oy, crit) {
     if (d.hp <= 0) return;
-    d.hp -= v; d.flash = 0.12;
+    d.hp -= v; d.flash = 0.12; som(crit ? "crit" : "hit");
     var a = Math.atan2(d.y - oy, d.x - ox);
     d.kx += Math.cos(a) * kb; d.ky += Math.sin(a) * kb;
     texto(d.x, d.y - d.r - 14, Math.round(v), crit ? C.cores.critico : "#fff", crit);
@@ -7349,6 +7584,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     if (d.hp <= 0) morre(d);
   }
   function morre(d) {
+    som("morte");
     particulas(d.x, d.y, 22, d.d.sangue, 260, 0.8, 4);
     particulas(d.x, d.y, 8, C.cores.brasa, 200, 0.7, 3);
     pontos += d.d.pontos; abates++; ganhaXp(d.d.xp);
@@ -7359,7 +7595,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function ganhaXp(v) {
     hero.xp += v;
     while (hero.xp >= hero.xpProx) {
-      hero.xp -= hero.xpProx; hero.lvl++; hero.xpProx = Math.round(hero.xpProx * C.xp.cresce);
+      som("nivel"); hero.xp -= hero.xpProx; hero.lvl++; hero.xpProx = Math.round(hero.xpProx * C.xp.cresce);
       hero.hpMax += C.xp.vida; hero.hp = hero.hpMax; hero.dano += C.xp.dano; hero.fol = H0.folego;
       texto(hero.x, hero.y - 60, "Nível " + hero.lvl + "!", C.cores.critico, true);
       anel(hero.x, hero.y, 120, C.cores.critico, 0.6);
@@ -7367,10 +7603,10 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function ferido(v, de) {
     if (hero.inv > 0 || estado !== "jogando") return;
-    hero.hp -= v; hero.inv = H0.invulneravel; shake = Math.max(shake, 0.18); flash = 0.25;
+    som("dano"); hero.hp -= v; hero.inv = H0.invulneravel; shake = Math.max(shake, 0.18); flash = 0.25;
     texto(hero.x, hero.y - 36, "-" + Math.round(v), "#ff6b5b", false);
     particulas(hero.x, hero.y, 8, "#b3261e", 150, 0.5, 3);
-    if (hero.hp <= 0) { hero.hp = 0; estado = "fim"; salva(); }
+    if (hero.hp <= 0) { hero.hp = 0; estado = "fim"; salva(); som("fim"); }
   }
   function salva() {
     if (pontos > melhor) { melhor = pontos; try { localStorage.setItem(CONFIG.chaves.jogo, melhor);
@@ -7397,7 +7633,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
 
   function dancaSol() {          /* Q: giro em área ao redor */
     if (!pode("q")) return;
-    gasta("q"); var h = HAB.q;
+    gasta("q"); som("sol"); var h = HAB.q;
     dem.forEach(function (d) {
       if (dist(d, hero) <= h.raio + d.r) { var x = dmg(h.dano); fere(d, x.v, h.empurra, hero.x, hero.y,
           x.c); }
@@ -7421,7 +7657,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function corteSolar() {        /* W: investida e golpe único forte (botão direito) */
     var h = HAB.w, d = alvoNoMouse(h.alcance);
     if (!d || !pode("w")) return;
-    gasta("w");
+    gasta("w"); som("espada");
     var a = Math.atan2(d.y - hero.y, d.x - hero.x), x0 = hero.x, y0 = hero.y;
     hero.x = d.x - Math.cos(a) * (d.r + hero.r + 4); hero.y = d.y - Math.sin(a) * (d.r + hero.r + 4);
     hero.dir = Math.cos(a) >= 0 ? 1 : -1; hero.dest = null; hero.alvo = null; hero.inv = 0.35;
@@ -7434,8 +7670,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function ondaChamas() {        /* E: faixa de fogo atravessando todos à frente */
     if (!pode("e")) return;
-    gasta("e"); var h = HAB.e;
-    var a = Math.atan2(mouse.wy - hero.y, mouse.wx - hero.x), c = Math.cos(a), s = Math.sin(a);
+    gasta("e"); som("fogo"); var h = HAB.e;
+    var a = mira(), c = Math.cos(a), s = Math.sin(a);
     hero.dir = c >= 0 ? 1 : -1;
     dem.forEach(function (d) {
       var dx = d.x - hero.x, dy = d.y - hero.y, u = dx * c + dy * s, v = -dx * s + dy * c;
@@ -7453,7 +7689,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function eclipse() {           /* R: explosão enorme em tudo ao redor */
     if (!pode("r")) return;
-    gasta("r"); var h = HAB.r;
+    gasta("r"); som("eclipse"); var h = HAB.r;
     dem.forEach(function (d) {
       if (dist(d, hero) <= h.raio + d.r) { var x = dmg(h.dano); fere(d, x.v, h.empurra, hero.x, hero.y,
           true); }
@@ -7465,7 +7701,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function ataqueLivre() {       /* 7: golpe básico em leque, na direção do mouse; sem custo */
     if (!pode("a")) return;
-    gasta("a"); var h = HAB.a, a = Math.atan2(mouse.wy - hero.y, mouse.wx - hero.x);
+    gasta("a"); som("golpe"); var h = HAB.a, a = mira();
     hero.dir = Math.cos(a) >= 0 ? 1 : -1; hero.ang = a; hero.golpe = 0.2; hero.dest = null; hero.alvo = null;
     dem.forEach(function (d) {
       var da = Math.atan2(d.y - hero.y, d.x - hero.x);
@@ -7476,10 +7712,19 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     });
     fx.push({ k: "leque", x: hero.x, y: hero.y, a: a, r: h.alcance, w: h.arco, t: 0, vida: 0.18 });
   }
-  function miraAuto() {          /* toque nos ícones: mira no demônio mais perto (ou à frente) */
-    var m = null, md = 1e9;
+  function mira(semMouse) {      /* direção do golpe: mouse (se em uso), demônio mais perto ou onde anda */
+    if (!semMouse && !toque && performance.now() - mouse.t < 2500
+        && Math.hypot(mouse.wx - hero.x, mouse.wy - hero.y) > 24) {
+      return Math.atan2(mouse.wy - hero.y, mouse.wx - hero.x);
+    }
+    var m = null, md = 480;
     dem.forEach(function (d) { var q = dist(d, hero); if (q < md) { md = q; m = d; } });
-    mouse.wx = m ? m.x : hero.x + hero.dir * 100; mouse.wy = m ? m.y : hero.y;
+    if (m) return Math.atan2(m.y - hero.y, m.x - hero.x);
+    return hero.vang != null ? hero.vang : (hero.dir > 0 ? 0 : Math.PI);
+  }
+  function miraAuto() {          /* toque nos ícones: mira no demônio mais perto (ou à frente) */
+    var a = mira(true);
+    mouse.wx = hero.x + Math.cos(a) * 100; mouse.wy = hero.y + Math.sin(a) * 100;
   }
   var CASTA = { a: ataqueLivre, q: dancaSol, w: corteSolar, e: ondaChamas, r: eclipse };
 
@@ -7490,7 +7735,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     for (var k in cd) if (cd[k] > 0) cd[k] -= dt;
     hero.fol = Math.min(H0.folego, hero.fol + H0.folegoPorSeg * dt);
     hero.t += dt; hero.inv -= dt; hero.atk -= dt; hero.golpe -= dt; flash -= dt;
-    mouse.wx = mouse.x + cam.x; mouse.wy = mouse.y + cam.y;
+    mouse.wx = mouse.x / zoom + cam.x; mouse.wy = mouse.y / zoom + cam.y;
     if (down && !hero.alvo) hero.dest = { x: mouse.wx, y: mouse.wy };
     /* herói anda ou ataca */
     var alvo = hero.alvo && hero.alvo.hp > 0 ? hero.alvo : (hero.alvo = null);
@@ -7501,7 +7746,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     if (km > 0.01) {                 /* W A S D ou analógico: andar direto, cancela o clique */
       hero.alvo = alvo = null; hero.dest = null;
       var vk = H0.velocidade * dt * Math.min(1, km) / km;
-      hero.x += kx * vk; hero.y += ky * vk;
+      hero.x += kx * vk; hero.y += ky * vk; hero.vang = Math.atan2(ky, kx);
       if (kx) hero.dir = kx > 0 ? 1 : -1;
       hero.mexe = 0.1;
     }
@@ -7511,14 +7756,14 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       var dx = meta.x - hero.x, dy = meta.y - hero.y, dd = Math.hypot(dx, dy);
       var alc = alvo ? H0.alcance + alvo.r : 4;
       if (dd > alc) {
-        var v = H0.velocidade * dt;
+        var v = H0.velocidade * dt; hero.vang = Math.atan2(dy, dx);
         hero.x += dx / dd * Math.min(v, dd); hero.y += dy / dd * Math.min(v, dd);
         if (Math.abs(dx) > 2) hero.dir = dx > 0 ? 1 : -1;
       } else if (alvo) {
         hero.dir = dx >= 0 ? 1 : -1;
         if (hero.atk <= 0) {
           hero.atk = H0.recarga; hero.golpe = 0.2; hero.ang = Math.atan2(dy, dx);
-          var x = dmg(1); fere(alvo, x.v, 60, hero.x, hero.y, x.c);
+          som("golpe"); var x = dmg(1); fere(alvo, x.v, 60, hero.x, hero.y, x.c);
           fx.push({ k: "corte", x: alvo.x, y: alvo.y, a: hero.ang, t: 0, vida: 0.18 });
         }
       } else hero.dest = null;
@@ -7541,6 +7786,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       else if (dd > alc) { d.x += dx / dd * d.d.vel * dt; d.y += dy / dd * d.d.vel * dt; }
       if (d.atk <= 0 && dd <= alc + 6) {
         d.atk = d.d.recarga;
+        som(d.d.distancia ? "cuspe" : "garra");
         if (d.d.distancia) proj.push({ x: d.x, y: d.y, vx: dx / dd * 320, vy: dy / dd * 320, dano: d.dano,
             t: 0 });
         else ferido(d.dano, d);
@@ -7560,7 +7806,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     proj = proj.filter(function (p) { return p.t < 3; });
     orbs.forEach(function (o) {
       o.t += dt;
-      if (dist(o, hero) < 28) { o.t = -1; hero.hp = Math.min(hero.hpMax, hero.hp + C.orbe.cura);
+      if (dist(o, hero) < 28) { o.t = -1; som("orbe"); hero.hp = Math.min(hero.hpMax, hero.hp + C.orbe.cura);
         texto(hero.x, hero.y - 40, "+" + C.orbe.cura, "#7bd88f", false); }
     });
     orbs = orbs.filter(function (o) { return o.t >= 0; });
@@ -7574,8 +7820,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     });
     fx = fx.filter(function (f) { return f.t < f.vida; });
     shake = Math.max(0, shake - dt);
-    var cx = clamp(hero.x - W / 2, 0, Math.max(0, T.largura - W)), cy = clamp(hero.y - H / 2, 0,
-        Math.max(0, T.altura - H));
+    var cx = clamp(hero.x - VW / 2, 0, Math.max(0, T.largura - VW)), cy = clamp(hero.y - VH / 2, 0,
+        Math.max(0, T.altura - VH));
     cam.x += (cx - cam.x) * Math.min(1, dt * 8); cam.y += (cy - cam.y) * Math.min(1, dt * 8);
   }
 
@@ -7585,8 +7831,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function desenhaChao() {
     var tl = C.mundo.bloco, x0 = Math.floor(cam.x / tl), y0 = Math.floor(cam.y / tl);
-    ctx.fillStyle = cor.chao; ctx.fillRect(0, 0, W, H);
-    for (var y = y0; y <= y0 + H / tl + 1; y++) for (var x = x0; x <= x0 + W / tl + 1; x++) {
+    ctx.fillStyle = cor.chao; ctx.fillRect(-30, -30, VW + 60, VH + 60);
+    for (var y = y0; y <= y0 + VH / tl + 1; y++) for (var x = x0; x <= x0 + VW / tl + 1; x++) {
       if (x < 0 || y < 0 || x * tl >= T.largura || y * tl >= T.altura) continue;
       var h = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; h -= Math.floor(h);
       if ((x + y) % 2 === 0) { ctx.fillStyle = cor.chao2; ctx.fillRect(x * tl - cam.x, y * tl - cam.y, tl,
@@ -7603,7 +7849,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function desenhaProp(p) {
     var x = p.x - cam.x, y = p.y - cam.y;
-    if (x < -80 || y < -120 || x > W + 80 || y > H + 80) return;
+    if (x < -80 || y < -120 || x > VW + 80 || y > VH + 80) return;
     sombra(x, y, 22 * p.s, 8 * p.s);
     ctx.save(); ctx.translate(x, y); ctx.scale(p.s, p.s);
     if (p.k === 0) {            /* pedra */
@@ -7632,24 +7878,25 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     var g = ctx.createRadialGradient(0, -18, 4, 0, -18, 46);
     g.addColorStop(0, "rgba(255,170,60,.35)"); g.addColorStop(1, "rgba(255,120,30,0)");
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -18, 46, 0, PI2); ctx.fill();
-    /* pernas */
-    var l = mv ? Math.sin(hero.t * 14) * 5 : 0;
-    ctx.fillStyle = "#1d1b22"; ctx.fillRect(-8 + l, -8, 6, 10); ctx.fillRect(2 - l, -8, 6, 10);
-    /* haori (casaco) preto com barra de chamas */
-    ctx.fillStyle = "#26222b"; ctx.beginPath();
-    ctx.moveTo(-12, -34); ctx.lineTo(12, -34); ctx.lineTo(15, -6); ctx.lineTo(-15, -6); ctx.closePath();
-        ctx.fill();
-    ctx.fillStyle = "#e8742f"; ctx.beginPath(); ctx.moveTo(-15, -6);
-    for (var i = 0; i < 6; i++) { ctx.lineTo(-15 + i * 5 + 2.5, -17 + (i % 2) * 5); ctx.lineTo(-15 + (i
-        + 1) * 5, -6); }
+    /* hakama e haori pretos com bordas vermelhas e emblema do sol */
+    var l = mv ? Math.sin(hero.t * 14) * 4 : 0;
+    ctx.fillStyle = "#0f0e13"; ctx.beginPath(); ctx.moveTo(-11, -14); ctx.lineTo(11, -14);
+    ctx.lineTo(14 + l * 0.3, 2); ctx.lineTo(1, 2); ctx.lineTo(0, -6); ctx.lineTo(-1, 2);
+        ctx.lineTo(-14 - l * 0.3, 2);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#e8742f"; ctx.fillRect(-12, -21, 24, 4);   /* faixa */
+    ctx.fillStyle = "#1c1b22"; ctx.beginPath();
+    ctx.moveTo(-12, -35); ctx.lineTo(12, -35); ctx.lineTo(16, -10); ctx.lineTo(-16, -10); ctx.closePath();
+        ctx.fill();
+    ctx.strokeStyle = "#c4311f"; ctx.lineWidth = 2.2; ctx.beginPath();
+    ctx.moveTo(-16, -10); ctx.lineTo(-12, -35); ctx.moveTo(16, -10); ctx.lineTo(12, -35); ctx.stroke();
+    ctx.fillStyle = "#d9a441"; ctx.fillRect(-13, -22, 26, 4);                       /* faixa dourada */
+    ctx.fillStyle = "#e8742f"; ctx.beginPath(); ctx.arc(0, -29, 3.4, 0, PI2); ctx.fill();   /* sol */
     /* cabeça */
     ctx.fillStyle = "#f1c9a5"; ctx.beginPath(); ctx.arc(1, -43, 8.5, 0, PI2); ctx.fill();
     ctx.fillStyle = "#3a1f1c"; ctx.beginPath(); ctx.arc(0, -46, 9.5, Math.PI, PI2); ctx.fill();
     ctx.beginPath(); ctx.moveTo(-8, -46); ctx.quadraticCurveTo(-24, -44 + Math.sin(hero.t * 8) * 3, -22, -30);
     ctx.quadraticCurveTo(-14, -38, -6, -40); ctx.fill();               /* rabo de cabelo */
-    ctx.fillStyle = "#c4311f"; ctx.fillRect(-9, -47, 19, 3);             /* faixa na testa */
+    ctx.fillStyle = "#050507"; ctx.fillRect(-9, -47, 19, 3);             /* faixa preta na testa */
     ctx.fillStyle = "#1d1b22"; ctx.fillRect(5, -43, 2.5, 3);             /* olho */
     /* espada: balança ao golpear */
     var sw = hero.golpe > 0 ? -1.9 + (0.3 - Math.min(0.3, hero.golpe)) * 12 : -0.6
@@ -7663,7 +7910,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function desenhaDemonio(d) {
     var x = d.x - cam.x, y = d.y - cam.y, s = d.r / 16;
-    if (x < -90 || y < -110 || x > W + 90 || y > H + 90) return;
+    if (x < -90 || y < -110 || x > VW + 90 || y > VH + 90) return;
     sombra(x, y + 2, d.r * 0.95, d.r * 0.35);
     ctx.save(); ctx.translate(x, y + Math.sin(d.t * 6) * 2); ctx.scale(d.dir * s, s);
     if (d.flash > 0) ctx.globalAlpha = 0.65;
@@ -7761,11 +8008,15 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     ctx.fillStyle = "#fff"; ctx.font = "bold 12px 'DM Sans', sans-serif"; ctx.textAlign = "left";
     ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 3;
     ctx.strokeText("Nível " + hero.lvl, 12, 72); ctx.fillText("Nível " + hero.lvl, 12, 72);
-    ctx.textAlign = "right";
-    var t = "Onda " + onda + "  ·  " + pontos + " pts" + (W > 520 ? "  ·  recorde " + melhor : "");
-    ctx.strokeText(t, W - 12, 24); ctx.fillText(t, W - 12, 24);
-    if (dem.length + fila.length) { var t2 = (dem.length + fila.length) + " demônios"; ctx.strokeText(t2,
-        W - 12, 42); ctx.fillText(t2, W - 12, 42); }
+    var linhas = ["Onda " + onda + "  ·  " + pontos + " pts" + (W > 520 ? "  ·  recorde " + melhor : "")];
+    if (dem.length + fila.length) linhas.push((dem.length + fila.length) + " demônios");
+    var lw = 0, lh = 17;           /* quadrado escuro com borda, igual ao dos botões */
+    linhas.forEach(function (l) { lw = Math.max(lw, ctx.measureText(l).width); });
+    var qw = lw + 20, qh = linhas.length * lh + 10, qx = W - 10 - qw, qy = 10;
+    ctx.fillStyle = "rgba(20,16,12,.78)"; ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(qx, qy, qw, qh, 11); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#f4ead8"; ctx.textAlign = "right";
+    linhas.forEach(function (l, i) { ctx.fillText(l, qx + qw - 10, qy + 5 + (i + 1) * lh - 4); });
     /* habilidades */
     if (toque) { slots = []; desenhaToque(); }
     var ks = toque ? [] : C.ordemBarra, sz = clamp(W / 9, 44, 62), gap = 8, tot = ks.length * sz
@@ -7778,9 +8029,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       ctx.fillStyle = "rgba(20,16,12,.78)"; ctx.fillRect(x, y0, sz, sz);
       ctx.strokeStyle = pr ? "#ffb454" : "rgba(255,255,255,.25)"; ctx.lineWidth = pr ? 2.5 : 1.5;
           ctx.strokeRect(x, y0, sz, sz);
-      ctx.fillStyle = pr ? "#ffd9a0" : "#8a8070"; ctx.font = (sz * 0.5) + "px sans-serif";
-          ctx.textAlign = "center";
-      ctx.fillText(h.icone, x + sz / 2, y0 + sz * 0.62);
+      icone(k, h, x + sz / 2, y0 + sz / 2, sz * 0.5, pr);
       if (cd[k] > 0) { ctx.fillStyle = "rgba(0,0,0,.6)"; var f = cd[k] / h.recarga; ctx.fillRect(x, y0
           + sz * (1 - f), sz, sz * f);
         ctx.fillStyle = "#fff"; ctx.font = "bold 13px sans-serif"; ctx.fillText(cd[k].toFixed(1), x
@@ -7792,6 +8041,22 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     });
     if (flash > 0) { ctx.fillStyle = "rgba(255,255,255," + Math.min(0.5, flash) + ")"; ctx.fillRect(0, 0,
         W, H); }
+  }
+  function icone(k, h, x, y, tam, pr) {   /* sol desenhado (o símbolo da fonte sai descentralizado) */
+    var c = pr ? "#ffd9a0" : "#8a8070";
+    ctx.fillStyle = c; ctx.strokeStyle = c;
+    if (k === "q") {
+      var r = tam * 0.21; ctx.lineWidth = Math.max(1.6, tam * 0.075); ctx.lineCap = "round";
+      ctx.beginPath(); ctx.arc(x, y, r, 0, PI2); ctx.fill();
+      for (var i = 0; i < 8; i++) {
+        var an = i * Math.PI / 4; ctx.beginPath();
+        ctx.moveTo(x + Math.cos(an) * r * 1.55, y + Math.sin(an) * r * 1.55);
+        ctx.lineTo(x + Math.cos(an) * r * 2.25, y + Math.sin(an) * r * 2.25); ctx.stroke();
+      }
+      return;
+    }
+    ctx.font = tam + "px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(h.icone, x, y + tam * 0.04); ctx.textBaseline = "alphabetic";
   }
   function desenhaToque() {      /* analógico à esquerda e roda de ataques à direita */
     var R = clamp(W * 0.15, 42, 60), big = clamp(W * 0.09, 30, 38), sm = big * 0.72, d = big + sm + 16;
@@ -7813,8 +8078,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       tc.bots.push(b);
       ctx.fillStyle = "rgba(20,16,12,.72)"; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, PI2); ctx.fill();
       ctx.strokeStyle = pr ? "#ffb454" : "rgba(255,255,255,.3)"; ctx.lineWidth = pr ? 3 : 1.5; ctx.stroke();
-      ctx.fillStyle = pr ? "#ffd9a0" : "#8a8070"; ctx.font = (b.r * 0.95) + "px sans-serif";
-      ctx.textAlign = "center"; ctx.fillText(h.icone, b.x, b.y + b.r * 0.33);
+      icone(b.k, h, b.x, b.y, b.r * 0.95, pr);
       if (cd[b.k] > 0) { ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.beginPath(); ctx.moveTo(b.x, b.y);
         ctx.arc(b.x, b.y, b.r, -Math.PI / 2, -Math.PI / 2 + PI2 * cd[b.k] / h.recarga); ctx.closePath();
             ctx.fill(); }
@@ -7849,7 +8113,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function desenha() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     var sx = shake > 0 ? (rnd() - 0.5) * 14 * shake : 0, sy = shake > 0 ? (rnd() - 0.5) * 14 * shake : 0;
-    ctx.save(); ctx.translate(sx, sy);
+    ctx.save(); ctx.translate(sx, sy); ctx.scale(zoom, zoom);
     desenhaChao();
     orbs.forEach(function (o) { var x = o.x - cam.x, y = o.y - cam.y - 6 + Math.sin(o.t * 5) * 3;
       ctx.fillStyle = "rgba(255,70,70,.25)"; ctx.beginPath(); ctx.arc(x, y, 16, 0, PI2); ctx.fill();
@@ -7891,11 +8155,12 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function ajusta() {
     var r = cv.getBoundingClientRect(); if (!r.width) return;
     dpr = Math.min(2, window.devicePixelRatio || 1); W = Math.round(r.width); H = Math.round(r.height);
-    cv.width = W * dpr; cv.height = H * dpr;
+    cv.width = W * dpr; cv.height = H * dpr; vista();
   }
-  function pos(e) { var r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left;
+  function pos(e) { var r = cv.getBoundingClientRect(); mouse.t = performance.now();
+      mouse.x = e.clientX - r.left;
       mouse.y = e.clientY - r.top;
-    mouse.wx = mouse.x + cam.x; mouse.wy = mouse.y + cam.y; }
+    mouse.wx = mouse.x / zoom + cam.x; mouse.wy = mouse.y / zoom + cam.y; }
   function comeca() { novo(); estado = "jogando"; }
   cv.addEventListener("contextmenu", function (e) { e.preventDefault(); });
   function toqueNaTela(e) {      /* analógico e roda: cada dedo por vez (pointerId) */
@@ -7914,12 +8179,17 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     joy.x = dx / m * f; joy.y = dy / m * f;
   }
   cv.addEventListener("pointerdown", function (e) {
+    somInicia();
     if (e.pointerType === "touch") { toque = true; sec.querySelector(".jg-stage").classList.add("toque"); }
     else if (e.pointerType === "mouse") { toque = false;
         sec.querySelector(".jg-stage").classList.remove("toque"); }
     if (estado === "inicio" || estado === "fim") { comeca(); return; }
     if (estado === "pausa") { estado = "jogando"; return; }
     if (toque && toqueNaTela(e)) return;
+    if (e.pointerType === "touch") {   /* dois dedos livres: pinça para zoom */
+      livres[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (Object.keys(livres).length === 2) { pinch = { d0: distLivres(), z0: zoom }; down = false; return; }
+    }
     pos(e);
     if (e.button === 2) { corteSolar(); return; }
     for (var i = 0; i < slots.length; i++) { var s = slots[i];
@@ -7932,11 +8202,73 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     down = !alvo; try { cv.setPointerCapture(e.pointerId); } catch (x) {}
   });
   cv.addEventListener("pointermove", function (e) {
+    if (e.pointerId in livres) {
+      livres[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (pinch) { setZoom(pinch.z0 * distLivres() / pinch.d0); return; }
+    }
     if (e.pointerId === joy.id) {
       var r = cv.getBoundingClientRect(); moveJoy(e.clientX - r.left, e.clientY - r.top);
     } else if (!(e.pointerId in seg)) pos(e);
   });
+  function vista() { VW = W / zoom; VH = H / zoom; }
+  var nZoom = $("zoomN");
+  function setZoom(z) {
+    zoom = Math.round(clamp(z, C.zoom.min, C.zoom.max) * 100) / 100; vista();
+    nZoom.textContent = Math.round(zoom * 100) + "%";
+  }
+  $("zin").addEventListener("click", function () { setZoom(zoom + C.zoom.passo); });
+  $("zout").addEventListener("click", function () { setZoom(zoom - C.zoom.passo); });
+  nZoom.addEventListener("click", function () { setZoom(C.zoom.padrao); });
+  cv.addEventListener("wheel", function (e) {
+    e.preventDefault(); setZoom(zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+  }, { passive: false });
+  function distLivres() {
+    var k = Object.keys(livres); if (k.length < 2) return 1;
+    return Math.hypot(livres[k[0]].x - livres[k[1]].x, livres[k[0]].y - livres[k[1]].y) || 1;
+  }
+  var bSom = $("som");
+  function rotuloSom() {
+    bSom.setAttribute("aria-pressed", mudo ? "false" : "true");
+    bSom.title = mudo ? "Ligar o som" : "Desligar o som";
+    bSom.classList.toggle("mudo", mudo);
+  }
+  bSom.addEventListener("click", function () {
+    mudo = !mudo; rotuloSom(); somInicia();
+    try { localStorage.setItem(CONFIG.chaves.jogoSom, mudo ? "0" : "1"); } catch (e) {}
+    if (!mudo) som("orbe");
+  });
+  rotuloSom(); setZoom(zoom);
+  var bTema = $("tema"), temaOrig = document.getElementById("themeBtn");   /* mesmo botão do menu */
+  bTema.addEventListener("click", function () { temaOrig.click(); });
+  function temaUi() { bTema.classList.toggle("escuro", temaOrig.getAttribute("aria-pressed") === "true"); }
+  new MutationObserver(temaUi).observe(temaOrig, { attributes: true, attributeFilter: ["aria-pressed"] });
+  temaUi();
+  var bExp = $("btnRecolher"), raizEl = document.documentElement;
+  bExp.addEventListener("click", function () {   /* em tela cheia do aparelho, Recolher sai dela primeiro */
+    if (telaAtual()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else $("btnFull").click();
+  });
+  new MutationObserver(function () {   /* o título acompanha o estado (inclusive ao sair com Esc) */
+    bExp.title = raizEl.classList.contains("tela-cheia") ? "Recolher (Esc)" : "Expandir (Esc recolhe)";
+  }).observe(raizEl, { attributes: true, attributeFilter: ["class"] });
+  var palco = cv.parentNode, bTela = $("btnTela");   /* tela cheia do aparelho (Fullscreen API) */
+  var pedeTela = palco.requestFullscreen || palco.webkitRequestFullscreen;
+  function telaAtual() { return document.fullscreenElement || document.webkitFullscreenElement; }
+  if (!pedeTela) bTela.hidden = true;
+  bTela.addEventListener("click", function () {
+    if (telaAtual()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else { var r = pedeTela.call(palco); if (r && r.catch) r.catch(function () {}); }
+  });
+  function mudouTela() {
+    var t = !!telaAtual(), ex = raizEl.classList.contains("tela-cheia");
+    bTela.classList.toggle("em-tela", t); bTela.parentNode.classList.toggle("em-tela", t);
+    bExp.title = t || ex ? "Recolher (Esc)" : "Expandir (Esc recolhe)";
+    setTimeout(ajusta, 60); }
+  document.addEventListener("fullscreenchange", mudouTela);
+  document.addEventListener("webkitfullscreenchange", mudouTela);
   function solta(e) {
+    if (e && e.pointerId in livres) { delete livres[e.pointerId];
+        if (Object.keys(livres).length < 2) pinch = null; }
     if (e && e.pointerId === joy.id) { joy.id = null; joy.x = 0; joy.y = 0; return; }
     if (e && e.pointerId in seg) { delete seg[e.pointerId]; return; }
     down = false;
@@ -7947,7 +8279,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   document.addEventListener("keydown", function (e) {
     if (sec.hidden || e.ctrlKey || e.metaKey || e.altKey) return;
     var tg = e.target && e.target.tagName; if (tg === "INPUT" || tg === "TEXTAREA" || tg === "SELECT") return;
-    var k = e.key.toLowerCase();
+    var k = e.key.toLowerCase(); somInicia();
     if ((k === "enter" || k === " ") && (estado === "inicio" || estado === "fim")) {
       comeca(); e.preventDefault();
     }
@@ -7970,9 +8302,52 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   bPausa.addEventListener("click", alterna);
   function rotuloPausa() {
     var r = estado === "pausa" ? "Continuar" : "Pausar";
-    if (r !== ultRot) { rPausa.textContent = r; ultRot = r; }
+    if (r !== ultRot) {
+      rPausa.textContent = r; ultRot = r; bPausa.title = r + " (tecla P)";
+      bPausa.classList.toggle("em-pausa", estado === "pausa");
+    }
     bPausa.disabled = estado === "inicio" || estado === "fim";
   }
+  function regras() {           /* "Como funciona": montado a partir do CONFIG, nunca desatualiza */
+    var el = $("regras"), O = C.ondas, X = C.xp, h = HAB, tipos = Object.keys(C.demonios).map(function (k) {
+      var d = C.demonios[k]; return k + " (vida " + d.vida + ", dano " + d.dano + ")"; }).join("; ");
+    function hb(k, txt) { return "<li><b>" + h[k].nome + "</b> (" + h[k].tecla + "): " + txt + "</li>"; }
+    el.innerHTML = "<h3>Regras</h3><ul>"
+      + "<li><b>Objetivo:</b> sobreviver. O jogo é <b>infinito</b>: não existe última onda. Ele só termina"
+      + " quando a vida chega a zero, e o recorde (pontos) fica salvo neste navegador.</li>"
+      + "<li><b>Ondas:</b> começam com " + O.base + " demônios e ganham +" + O.cresce + " a cada onda."
+      + " Demônios ficam " + Math.round(O.escala * 100) + "% mais fortes por onda (a vida cresce sem"
+      + " limite). A cada " + O.chefeA + " ondas aparece um chefe. Entre as ondas você recupera "
+      + Math.round(O.curaEntre * 100) + "% da vida.</li>"
+      + "<li><b>Nível:</b> cada demônio dá XP. A cada nível: +" + X.vida + " de vida máxima, +" + X.dano
+      + " de dano, vida e fôlego cheios. Também não há nível máximo.</li>"
+      + "<li><b>Fôlego:</b> as habilidades gastam fôlego (recupera " + H0.folegoPorSeg + " por segundo)."
+      + " Ataque livre e Espada não gastam. Cada habilidade tem sua recarga.</li>"
+      + "<li><b>Vida:</b> demônios soltam orbes de vida (" + Math.round(C.orbe.chance * 100) + "% de chance,"
+      + " cura " + C.orbe.cura + "; o chefe sempre solta). Depois de levar um golpe você fica "
+      + H0.invulneravel + " s protegido.</li>"
+      + "<li><b>Crítico:</b> " + Math.round(H0.critico * 100) + "% de chance de dano dobrado.</li>"
+      + "<li><b>Demônios:</b> " + tipos + ". O Arqueiro atira de longe e o Rastejante é rápido.</li></ul>"
+      + "<h3>O que você pode fazer</h3><ul>"
+      + "<li><b>Andar:</b> W A S D, analógico (celular) ou clique no chão.</li>"
+      + hb("a", "golpe em leque (alcance " + h.a.alcance
+          + "), sem custo, mira no mouse ou no demônio mais perto;"
+        + " segure para repetir.")
+      + hb("w", "investida e golpe único forte (dano x" + h.w.dano + ", atordoa " + h.w.atordoa + " s),"
+        + " recarga " + h.w.recarga + " s.")
+      + hb("e", "faixa de fogo que atravessa todos à frente (" + h.e.comprimento + " de comprimento),"
+        + " fôlego " + h.e.custo + ", recarga " + h.e.recarga + " s.")
+      + hb("q", "giro em área ao redor (raio " + h.q.raio + "), fôlego " + h.q.custo + ", recarga "
+        + h.q.recarga + " s.")
+      + hb("r", "explosão enorme (raio " + h.r.raio + "); a barra enche com " + h.r.cargaPorAbate
+        + " por abate, ou seja, a cada " + Math.ceil(100 / h.r.cargaPorAbate) + " abates.")
+      + "<li><b>Zoom:</b> botões + e −, roda do mouse ou pinça com dois dedos ("
+          + Math.round(C.zoom.min * 100)
+      + "% a " + Math.round(C.zoom.max * 100) + "%). <b>Pausa:</b> P. <b>Som:</b> botão de alto-falante."
+      + " <b>Expandir:</b> ocupa a janela do site; <b>Tela cheia:</b> ocupa a tela do aparelho."
+      + " Esc sai.</li></ul>";
+  }
+  regras();
   window.jogoOnShow = function () { ajusta(); };
   if (toque) sec.querySelector(".jg-stage").classList.add("toque");
   novo(); estado = "inicio"; lerCores(); ajusta(); requestAnimationFrame(laco);
@@ -7983,14 +8358,15 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   var VIEWS = {
     comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal", roleta: "viewRol",
     diagramas: "viewDia",
-    investimento: "viewInv", jogo: "viewJogo"
+    investimento: "viewInv", jogo: "viewJogo", inicio: "viewIni"
   };
   var items = document.querySelectorAll(".mi");
   var $nome = document.getElementById("menuNome");
   var lado = document.querySelector(".side"), menuEl = document.querySelector(".menu");
   function fixaMenu() {   /* celular: calcula quanto o topo do .side sobe para o menu ficar fixo */
     var cel = window.matchMedia("(max-width: 56rem)").matches;
-    if (cel) lado.style.setProperty("--side-top", -menuEl.offsetTop + "px");
+    var oculto = !menuEl.offsetParent;   /* menu escondido (página inicial): nada para fixar */
+    if (cel && !oculto) lado.style.setProperty("--side-top", -menuEl.offsetTop + "px");
     else lado.style.removeProperty("--side-top");
   }
   window.addEventListener("resize", fixaMenu);
@@ -8003,13 +8379,13 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   });
   function current() {
     var h = (location.hash || "").replace(/^#/, "");
-    if (VIEWS[h]) return h;
-    var s = null;
-    try { s = localStorage.getItem(CONFIG.chaves.pagina); } catch (e) {}
-    return VIEWS[s] ? s : "comparador";
+    return VIEWS[h] ? h : "inicio";   /* sem endereço: página inicial */
   }
   function show(name) {
     Object.keys(VIEWS).forEach(function (k) { document.getElementById(VIEWS[k]).hidden = k !== name; });
+    document.documentElement.classList.toggle("inicio", name === "inicio");
+    fixaMenu();
+    if (name === "inicio") $nome.textContent = "Utilidades";
     items.forEach(function (a) {
       if (a.getAttribute("data-view") === name) {
         a.setAttribute("aria-current", "page");
@@ -8033,6 +8409,27 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     });
   });
   window.addEventListener("hashchange", function () { show(current()); });
+  var marca = document.querySelector(".brand");   /* clicar na marca volta para o início */
+  marca.setAttribute("role", "link"); marca.setAttribute("tabindex", "0"); marca.style.cursor = "pointer";
+  function irInicio() { location.hash = "#inicio"; window.scrollTo(0, 0); }
+  marca.addEventListener("click", irInicio);
+  marca.addEventListener("keydown", function (e) { if (e.key === "Enter") irInicio(); });
+  (function () {                 /* monta as bolhas a partir do próprio menu */
+    var anel = document.getElementById("i0-anel"), C = CONFIG.inicio, n = items.length;
+    anel.style.setProperty("--home-giro", C.giroSeg + "s");
+    var c = document.createElement("div"); c.className = "home-centro";
+    c.appendChild(document.querySelector(".brand-logo").cloneNode(true));
+    c.insertAdjacentHTML("beforeend", "<b>Utilidades</b><span>Escolha uma ferramenta</span>");
+    anel.appendChild(c);
+    items.forEach(function (a, i) {
+      var nome = a.getAttribute("aria-label"), v = a.getAttribute("data-view"), b = document.createElement("a");
+      b.className = "home-b"; b.href = "#" + v; b.title = C.descricoes[v] || nome; b.setAttribute("aria-label", nome);
+      b.style.setProperty("--a", (i * 360 / n - 90 + 90) + "deg");
+      b.innerHTML = '<span class="home-g"><svg viewBox="-50 -50 100 100"><use href="#home-gear" x="-50" y="-50" width="100" height="100"/></svg></span>'
+        + '<span class="home-in">' + a.querySelector("svg").outerHTML + "<span>" + nome + "</span></span>";
+      anel.appendChild(b);
+    });
+  })();
   show(current());
 
   var rootEl = document.documentElement;
