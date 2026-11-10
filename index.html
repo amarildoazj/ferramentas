@@ -2996,6 +2996,21 @@ html.tela-cheia #viewJogo .jg-exp .i-ex, #viewJogo .jg-col.em-tela .jg-exp .i-ex
 #viewJogo .jg-stage:-webkit-full-screen { position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
   border-radius: 0; }
 html:has(.jg-stage:fullscreen) { overflow: hidden; scrollbar-gutter: auto; }
+#viewJogo .jg-ajuda { font: inherit; font-size: 1.1rem; font-weight: 700; }
+#viewJogo .jg-modal { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center;
+  background: rgba(0, 0, 0, 0.62); padding: 0.75rem; }
+#viewJogo .jg-modal[hidden] { display: none; }
+#viewJogo .jg-painel { background: rgba(26, 20, 15, 0.98); color: #f4ead8;
+  border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 1rem; width: min(42rem, 100%); max-height: 100%; overflow: auto; padding: 1rem 1.2rem;
+  font-size: 0.875rem; line-height: 1.55; }
+#viewJogo .jg-pt { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  position: sticky; top: -1rem; background: inherit; padding: 0.2rem 0 0.4rem; }
+#viewJogo .jg-pt h2 { margin: 0; font-size: 1.15rem; color: #ffb454; }
+#viewJogo .jg-pt button { font: inherit; font-size: 1.5rem; line-height: 1; width: 2.25rem; height: 2.25rem;
+  border-radius: 0.6rem; border: 1px solid rgba(255, 255, 255, 0.25); background: transparent; color: inherit;
+  cursor: pointer; }
+#viewJogo .jg-painel h3 { font-size: 0.95rem; margin: 1rem 0 0.35rem; color: #ffd9a0; }
+#viewJogo .jg-painel ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
 #viewJogo .jg-como {
   border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.75rem 1rem; background: var(--surface);
   font-size: 0.875rem; line-height: 1.55; max-width: 60rem;
@@ -3008,7 +3023,7 @@ html.tela-cheia #viewJogo > .wrap { max-width: none; margin: 0; width: 100%; gap
 html.tela-cheia #viewJogo header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
 html.tela-cheia #viewJogo .hrs-bar .theme-btn { margin-left: 0; }
 html.tela-cheia #viewJogo .jg-stage { flex: 1 1 auto; height: auto; min-height: 16rem; }
-html.tela-cheia #viewJogo .jg-hint, html.tela-cheia #viewJogo .jg-como,
+html.tela-cheia #viewJogo .jg-hint,
 html.tela-cheia #viewJogo header { display: none; }
 html.tela-cheia #viewJogo > .wrap { gap: 0; }
 html.tela-cheia #viewJogo .jg-stage { border-radius: 0; border: 0; height: 100%; }
@@ -4019,9 +4034,11 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       2 2v3"/></svg><span class="lbl">Expandir</span></button>
   </div>
   </header>
-  <details class="jg-como"><summary>Como funciona o jogo: regras e possibilidades</summary
-    ><div id="g-regras"></div></details>
   <div class="jg-stage"><canvas id="g-cv" aria-label="Área do jogo"></canvas>
+    <div class="jg-modal" id="g-modal" hidden><div class="jg-painel" role="dialog" aria-modal="true"
+      aria-labelledby="g-modalT"><div class="jg-pt"><h2 id="g-modalT">Como funciona o jogo</h2><button
+      type="button" id="g-modalX" aria-label="Fechar" title="Fechar (Esc)">×</button></div>
+      <div id="g-regras"></div></div></div>
     <div class="jg-col" role="group" aria-label="Controles do jogo">
       <button type="button" class="jg-exp" id="g-btnRecolher" title="Expandir (Esc recolhe)"
         aria-label="Expandir ou recolher"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
@@ -4064,6 +4081,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         class="sol"><circle cx="12" cy="12" r="4"/><path
         d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7
         6.3l1.4-1.4"/></g></svg></button>
+      <button type="button" class="jg-ajuda" id="g-ajuda" title="Como funciona o jogo"
+        aria-label="Como funciona o jogo">?</button>
     </div>
   </div>
   <p class="jg-hint">Controles: W A S D andam (ou clique no chão; segure para seguir o mouse) e clicar num
@@ -8322,6 +8341,29 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     if (!mudo) som("orbe");
   });
   rotuloSom(); setZoom(zoom);
+  var modal = $("modal"), pausouModal = false;   /* "?": regras num modal; pausa o jogo enquanto aberto */
+  function abreAjuda() {
+    if (!modal.hidden) return;
+    pausouModal = estado === "jogando"; if (pausouModal) estado = "pausa";
+    modal.hidden = false; $("modalX").focus();
+  }
+  function fechaAjuda() {
+    if (modal.hidden) return;
+    modal.hidden = true;
+    if (pausouModal && estado === "pausa") estado = "jogando";
+    pausouModal = false; $("ajuda").focus();
+  }
+  $("ajuda").addEventListener("click", abreAjuda);
+  $("modalX").addEventListener("click", fechaAjuda);
+  modal.addEventListener("pointerdown", function (e) { if (e.target === modal) fechaAjuda(); });
+  document.addEventListener("keydown", function (e) {     /* com o modal aberto, só Esc age */
+    if (modal.hidden) return;
+    if (e.key === "Escape") { e.preventDefault(); fechaAjuda(); }
+    else if (e.key === "Tab") return;
+    else e.preventDefault();
+    e.stopImmediatePropagation();
+  }, true);
+  window.addEventListener("hashchange", fechaAjuda);
   var bTema = $("tema"), temaOrig = document.getElementById("themeBtn");   /* mesmo botão do menu */
   bTema.addEventListener("click", function () { temaOrig.click(); });
   function temaUi() { bTema.classList.toggle("escuro", temaOrig.getAttribute("aria-pressed") === "true"); }
