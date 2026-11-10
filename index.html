@@ -265,6 +265,14 @@ var CONFIG = {
     mundo: { largura: 2600, altura: 1800, bloco: 96, props: 70 },   /* mapa em pixels; bloco do chão */
     zoom: { min: 0.6, max: 2, padrao: 0.7, passo: 0.1 },   /* aproximar/afastar (botões, roda, pinça) */
     som: { volume: 0.5 },             /* volume geral dos sons (0 a 1) */
+    musica: {                         /* trilha de aventura (sintetizada, só toca jogando e com som ligado) */
+      volume: 0.5, bpm: 104, tom: 440,          /* tom: nota base da melodia (Hz) */
+      escala: [0, 2, 3, 7, 8],                  /* escala japonesa (hirajoshi) em semitons */
+      melodia: [                       /* 1 compasso por linha; número = nota, "-" segura, "." pausa */
+        [7, "-", 8, 7, 3, "-", 2, 3], [0, "-", "-", 2, 3, "-", 7, "-"],
+        [8, "-", 12, 8, 7, "-", 3, 7], [8, 7, 3, 2, 0, "-", "-", "."]],
+      baixo: [0, 0, -4, -5]                     /* raiz de cada compasso, em semitons abaixo do tom */
+    },
     maxEfeitos: 500,                  /* limite de partículas/textos ao mesmo tempo */
     heroi: {
       vida: 120, folego: 100, folegoPorSeg: 12,   /* fôlego é gasto pelas habilidades */
@@ -2859,9 +2867,11 @@ html.inicio .menu, html.inicio .menu-nome { display: none !important; }
 html.inicio .brand { display: none !important; }
 html.inicio .app { grid-template-columns: minmax(0, 1fr); gap: 0; }
 html.inicio .side { border: 0 !important; padding: 0; min-height: 0; position: static; }
-html.inicio .side > .theme-btn { position: fixed !important; top: 0.75rem; right: 0.75rem; left: auto; margin: 0; z-index: 6; }
+html.inicio .side > .theme-btn { position: fixed !important; top: 0.75rem; right: 0.75rem; left: auto;
+  margin: 0; z-index: 6; }
 @media (min-width: 56.01rem) { html.inicio .side > .theme-btn { top: 1rem; right: 1rem; } }
-#viewIni .wrap { min-height: calc(100dvh - 5rem); display: flex; align-items: center; justify-content: center; }
+#viewIni .wrap { min-height: calc(100dvh - 5rem); display: flex; align-items: center;
+  justify-content: center; }
 #viewIni .home-anel { width: min(100%, 46rem, calc(100dvh - 7rem)); }
 /* início: "by Rota" sempre no rodapé da tela */
 html.inicio .byrota { position: fixed; left: 50%; bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
@@ -2973,8 +2983,11 @@ html.tela-cheia #viewJogo .jg-exp .i-ex, #viewJogo .jg-col.em-tela .jg-exp .i-ex
 #viewJogo .jg-tela .mn { display: none; }
 #viewJogo .jg-tela.em-tela .mn { display: inline; }
 #viewJogo .jg-tela.em-tela .mx { display: none; }
-#viewJogo .jg-stage:fullscreen { width: 100vw; height: 100vh; border: 0; border-radius: 0; }
-#viewJogo .jg-stage:-webkit-full-screen { width: 100vw; height: 100vh; border: 0; border-radius: 0; }
+#viewJogo .jg-stage:fullscreen { position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
+  border-radius: 0; }
+#viewJogo .jg-stage:-webkit-full-screen { position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
+  border-radius: 0; }
+html:has(.jg-stage:fullscreen) { overflow: hidden; scrollbar-gutter: auto; }
 #viewJogo .jg-como {
   border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.75rem 1rem; background: var(--surface);
   font-size: 0.875rem; line-height: 1.55; max-width: 60rem;
@@ -7480,7 +7493,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function somInicia() {
     if (au) { if (au.state === "suspended") au.resume(); return; }
     var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    au = new AC(); var n = au.sampleRate;
+    au = new AC(); var n = au.sampleRate; setTimeout(musicaLiga, 0);
     ruido = au.createBuffer(1, n, n); var d = ruido.getChannelData(0);
     for (var i = 0; i < n; i++) d[i] = rnd() * 2 - 1;
   }
@@ -7525,6 +7538,65 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     orbe: function () { tom(600, 1100, 0.14, "sine", 0.2); },
     fim: function () { tom(320, 50, 1.2, "sawtooth", 0.3); tom(160, 40, 1.3, "triangle", 0.25, 0.1); }
   };
+  /* ---------- trilha: flauta (shakuhachi), shamisen e taiko ---------- */
+  var M = C.musica, mus = null, musT = 0, musI = 0, musTimer = null;
+  function musSaida() {
+    if (mus) return mus;
+    mus = au.createGain(); mus.gain.value = M.volume * C.som.volume * 0.6; mus.connect(au.destination);
+    return mus;
+  }
+  function hz(semi) { return M.tom * Math.pow(2, semi / 12); }
+  function flauta(f, t, dur) {
+    var o = au.createOscillator(), g = au.createGain(), v = au.createOscillator(), vg = au.createGain();
+    o.type = "sine"; o.frequency.value = f; v.frequency.value = 5.2; vg.gain.value = f * 0.008;
+    v.connect(vg); vg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.32, t + 0.07);
+    g.gain.setValueAtTime(0.28, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(musSaida()); o.start(t); v.start(t);
+    o.stop(t + dur + 0.05); v.stop(t + dur + 0.05);
+    var r = au.createBufferSource(), fl = au.createBiquadFilter(), rg = au.createGain();   /* sopro */
+    r.buffer = ruido; fl.type = "bandpass"; fl.frequency.value = f * 2; fl.Q.value = 3;
+    rg.gain.setValueAtTime(0.0001, t); rg.gain.linearRampToValueAtTime(0.1, t + 0.04);
+    rg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    r.connect(fl); fl.connect(rg); rg.connect(musSaida()); r.start(t); r.stop(t + dur + 0.05);
+  }
+  function corda(f, t, vol) {
+    var o = au.createOscillator(), fl = au.createBiquadFilter(), g = au.createGain();
+    o.type = "sawtooth"; o.frequency.value = f; fl.type = "lowpass";
+    fl.frequency.setValueAtTime(2600, t); fl.frequency.exponentialRampToValueAtTime(300, t + 0.3);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    o.connect(fl); fl.connect(g); g.connect(musSaida()); o.start(t); o.stop(t + 0.35);
+  }
+  function taiko(t, vol) {
+    var o = au.createOscillator(), g = au.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(130, t);
+    o.frequency.exponentialRampToValueAtTime(48, t + 0.28);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    o.connect(g); g.connect(musSaida()); o.start(t); o.stop(t + 0.35);
+    var r = au.createBufferSource(), fl = au.createBiquadFilter(), rg = au.createGain();
+    r.buffer = ruido; fl.type = "lowpass"; fl.frequency.value = 900;
+    rg.gain.setValueAtTime(vol * 0.5, t); rg.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+    r.connect(fl); fl.connect(rg); rg.connect(musSaida()); r.start(t); r.stop(t + 0.12);
+  }
+  function musPasso(i, t, passo) {          /* i: colcheia dentro do laço */
+    var bar = Math.floor(i / 8) % M.melodia.length, k = i % 8, nota = M.melodia[bar][k];
+    if (typeof nota === "number") {
+      var n = 1; while (k + n < 8 && M.melodia[bar][k + n] === "-") n++;
+      flauta(hz(nota), t, passo * n * 0.95);
+    }
+    var raiz = hz(M.baixo[bar % M.baixo.length] - 12);
+    if (k % 2 === 0) corda(k === 4 ? raiz * 1.5 : raiz, t, 0.22);
+    if (k === 0) taiko(t, 0.55); else if (k === 4) taiko(t, 0.38);
+    else if (k === 6 || (bar === M.melodia.length - 1 && k === 7)) taiko(t, 0.2);
+  }
+  function musTick() {
+    var jogando = au && !mudo && estado === "jogando" && !document.hidden && cv.offsetParent !== null;
+    if (!jogando) { musT = 0; return; }
+    var passo = 60 / M.bpm / 2, agora = au.currentTime;
+    if (musT < agora) musT = agora + 0.05;
+    while (musT < agora + 0.35) { musPasso(musI, musT, passo); musI++; musT += passo; }
+  }
+  function musicaLiga() { if (!musTimer) musTimer = setInterval(musTick, 120); }
   function som(nome) {
     if (mudo || !au) return;
     var t = performance.now(); if (t - (ultSom[nome] || 0) < 45) return; ultSom[nome] = t;
