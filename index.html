@@ -165,7 +165,8 @@ var CONFIG = {
     diagramas: "ferramentas-diagramas", /* último desenho dos diagramas */
     investimento: "ferramentas-investimento", /* dados da calculadora de renda fixa */
     jogo: "ferramentas-jogo",         /* recorde do jogo */
-    jogoSom: "ferramentas-jogo-som"   /* som ligado ou mudo */
+    jogoSom: "ferramentas-jogo-som",  /* som ligado ou mudo */
+    jogoMao: "ferramentas-jogo-mao"   /* analógico à direita (1) ou à esquerda (0) */
   },
 
   /* ROLETA */
@@ -3006,6 +3007,8 @@ html.tela-cheia #viewJogo .jg-exp .i-ex, #viewJogo .jg-col.em-tela .jg-exp .i-ex
 html:has(.jg-stage:fullscreen) { overflow: hidden; scrollbar-gutter: auto; }
 #viewJogo #g-btnFull { display: none !important; }   /* o Expandir fica dentro do jogo (#g-btnRecolher) */
 #viewJogo .jg-ajuda { font: inherit; font-size: 1.1rem; font-weight: 700; }
+#viewJogo .jg-mao[hidden] { display: none !important; }
+#viewJogo .jg-mao[aria-pressed="true"] { border-color: #ffb454; color: #ffb454; }
 #viewJogo .jg-modal { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center;
   background: rgba(0, 0, 0, 0.62); padding: 0.75rem; }
 #viewJogo .jg-modal[hidden] { display: none; }
@@ -4092,6 +4095,13 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         6.3l1.4-1.4"/></g></svg></button>
       <button type="button" class="jg-ajuda" id="g-ajuda" title="Como funciona o jogo"
         aria-label="Como funciona o jogo">?</button>
+      <button type="button" class="jg-mao" id="g-mao" title="Mover o analógico para o outro lado"
+        aria-label="Mover o analógico para o outro lado" aria-pressed="false" hidden><svg viewBox="0 0 24 24"
+        width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path
+        d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path
+        d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+        </svg></button>
     </div>
   </div>
   <p class="jg-hint">Controles: W A S D andam (ou clique no chão; segure para seguir o mouse) e clicar num
@@ -8177,6 +8187,9 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     var big = clamp(W * 0.09, 30, 38), sm = big * 0.72, d = big + sm + 16, R = big;   /* analógico = botão da espada */
     var cx = Math.min(W - 26 - big, W - 8 - sm - 0.87 * d), cy = H - 18 - big;
     var bx = 14 + R, by = cy;                      /* bem no canto esquerdo, na altura da espada */
+    var emPe = H > W;                              /* celular em pé: botão de mão troca o lado do analógico */
+    if (bMao.hidden === emPe) bMao.hidden = !emPe;
+    if (emPe && maoDir) { bx = Math.min(cx, W - 60 - R); by = cy - 0.966 * d - sm - 14 - R; }
     tc.base = { x: bx, y: by }; tc.R = R; tc.bots = [];
     ctx.fillStyle = "rgba(20,16,12,.45)"; ctx.beginPath(); ctx.arc(bx, by, R, 0, PI2); ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2; ctx.stroke();
@@ -8299,6 +8312,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     somInicia();
     if (e.pointerType === "touch") { toque = true; sec.querySelector(".jg-stage").classList.add("toque"); }
     else if (e.pointerType === "mouse") { toque = false;
+        bMao.hidden = true;
         sec.querySelector(".jg-stage").classList.remove("toque"); }
     if (estado === "inicio" || estado === "fim") { comeca(); return; }
     if (estado === "pausa") { estado = "jogando"; return; }
@@ -8378,6 +8392,14 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     e.stopImmediatePropagation();
   }, true);
   window.addEventListener("hashchange", fechaAjuda);
+  var bMao = $("mao"), maoDir = false;     /* analógico à direita, acima dos poderes (celular em pé) */
+  try { maoDir = localStorage.getItem(CONFIG.chaves.jogoMao) === "1"; } catch (e) {}
+  bMao.setAttribute("aria-pressed", maoDir ? "true" : "false");
+  bMao.addEventListener("click", function () {
+    maoDir = !maoDir; bMao.setAttribute("aria-pressed", maoDir ? "true" : "false");
+    joy.id = null; joy.x = 0; joy.y = 0;
+    try { localStorage.setItem(CONFIG.chaves.jogoMao, maoDir ? "1" : "0"); } catch (e) {}
+  });
   var bTema = $("tema"), temaOrig = document.getElementById("themeBtn");   /* mesmo botão do menu */
   bTema.addEventListener("click", function () { temaOrig.click(); });
   function temaUi() { bTema.classList.toggle("escuro", temaOrig.getAttribute("aria-pressed") === "true"); }
