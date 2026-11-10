@@ -8120,15 +8120,18 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     ctx.fillStyle = "#fff"; ctx.font = "bold 12px 'DM Sans', sans-serif"; ctx.textAlign = "left";
     ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 3;
     ctx.strokeText("Nível " + hero.lvl, 12, 72); ctx.fillText("Nível " + hero.lvl, 12, 72);
-    var linhas = ["Onda " + onda + "  ·  " + pontos + " pts" + (W > 520 ? "  ·  recorde " + melhor : "")];
-    if (dem.length + fila.length) linhas.push((dem.length + fila.length) + " demônios");
-    var lw = 0, lh = 17;           /* quadrado escuro com borda, igual ao dos botões */
-    linhas.forEach(function (l) { lw = Math.max(lw, ctx.measureText(l).width); });
-    var qw = lw + 20, qh = linhas.length * lh + 10, qx = W - 10 - qw, qy = 10;
+    /* caixa de informações: mesmo estilo e altura (36 px) dos botões; uma linha, com o que couber */
+    ctx.font = "600 13px 'DM Sans', sans-serif";
+    var nd = dem.length + fila.length, sep = "  ·  ", livre = W >= 864 ? W / 2 - 180 - 24 - 24 : W - bw - 12 - 30 - 20;   /* >= 864: botões em fila no meio */
+    var cand = ["Onda " + onda, pontos + " pts", "recorde " + melhor, nd + " demônios"], txt = "";
+    [[0, 1, 2, 3], [0, 1, 3], [0, 1, 2], [0, 1], [0]].some(function (ix) {
+      txt = ix.map(function (k) { return cand[k]; }).join(sep);
+      return ctx.measureText(txt).width <= livre; });
+    var qw = ctx.measureText(txt).width + 24, qh = 36, qx = W - 9.6 - qw, qy = 9.6;
     ctx.fillStyle = "rgba(20,16,12,.78)"; ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.roundRect(qx, qy, qw, qh, 11); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#f4ead8"; ctx.textAlign = "right";
-    linhas.forEach(function (l, i) { ctx.fillText(l, qx + qw - 10, qy + 5 + (i + 1) * lh - 4); });
+    ctx.beginPath(); ctx.roundRect(qx, qy, qw, qh, 11.2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#f4ead8"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, qx + qw / 2, qy + qh / 2 + 0.5); ctx.textBaseline = "alphabetic";
     /* habilidades */
     if (toque) { slots = []; desenhaToque(); }
     var ks = toque ? [] : C.ordemBarra, sz = clamp(W / 9, 44, 62), gap = 8, tot = ks.length * sz
