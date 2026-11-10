@@ -8189,9 +8189,6 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     var big = comb ? clamp(W * 0.11, 34, 46) : clamp(W * 0.09, 30, 38), sm = big * 0.72, d = big + sm + 16;
     var R = comb ? big * 1.8 : big, cx = Math.min(W - 26 - big, W - 8 - sm - 0.87 * d), cy = H - 18 - big;
     var sx = cx, sy = cy, ax = cx, ay = cy, a0 = 195, pa = 45;   /* espada, centro da roda, ângulos da roda */
-    if (comb) {                    /* controle único: espada mais à esquerda e acima; poderes à direita, girados */
-      ax = W - 16 - sm - d; ay = cy + 2; sx = ax - 1.55 * d; sy = cy - 24; a0 = 230; pa = 40;
-    }
     var bx = comb ? sx : 14 + R, by = comb ? sy : cy;    /* analógico: canto esquerdo, na altura da espada */
     tc.base = { x: bx, y: by }; tc.R = R; tc.bots = []; tc.comb = comb;
     if (comb) {
