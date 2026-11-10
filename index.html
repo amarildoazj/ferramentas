@@ -1107,7 +1107,20 @@ html.tela-cheia .byrota {
 html.tela-cheia #viewFmt .panes, html.tela-cheia #viewCmp .panes {
   grid-template-rows: repeat(2, minmax(0, 1fr));
 }
-html.tela-cheia #viewCmp #c-viewDiff .dbody { height: auto; }
+/* mobile: o wrap rola, as caixas ficam com altura fixa e podem ser aumentadas pelo grip */
+html.tela-cheia #viewFmt > .wrap, html.tela-cheia #viewCmp > .wrap, html.tela-cheia #viewDia > .wrap {
+  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+html.tela-cheia #viewFmt .panes, html.tela-cheia #viewCmp .panes {
+  flex: none; grid-template-rows: none; grid-auto-rows: auto;
+}
+html.tela-cheia #viewFmt .grip, html.tela-cheia #viewCmp .grip { display: grid; }
+html.tela-cheia #viewFmt .edit { flex: none; height: var(--fh, 20rem); }
+html.tela-cheia #viewCmp #c-viewInput { flex: none; display: block; }
+html.tela-cheia #viewCmp .ed { flex: none; height: var(--ch, 20rem); }
+html.tela-cheia #viewCmp #c-viewDiff:not([hidden]) { flex: none; display: block; }
+html.tela-cheia #viewCmp #c-viewDiff .dbody { height: var(--ch, 20rem); }
+html.tela-cheia #viewDia .dia-stage { flex: none; height: 70vh; min-height: 18rem; }
 }
 #viewFmt footer {
   font-size: 0.8125rem;
