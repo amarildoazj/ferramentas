@@ -448,11 +448,11 @@ var CONFIG = {
       padding: 0 0 0.75rem; border-right: 0; border-bottom: 1px solid var(--line); min-height: 0;
     }
     .brand { flex: 0 1 auto; }
-    .menu { flex-direction: row; flex-wrap: wrap; flex: 1 1 100%; order: 2; gap: 0.25rem;
+    .menu { flex-direction: row; flex-wrap: wrap; flex: 1 1 100%; order: 2; gap: 0;
       padding-top: 0.75rem; margin-top: -0.25rem; }
     /* celular: só os ícones; o nome da página aberta aparece centralizado abaixo deles */
     .menu { justify-content: space-between; }
-    .mi { font-size: 0; gap: 0; padding: 0.65rem 0.85rem; flex: 0 0 auto; }
+    .mi { font-size: 0; gap: 0; padding: 0.65rem 0.5rem; flex: 0 0 auto; }
     .mi svg { width: 1.3rem; height: 1.3rem; }
     .menu-nome {
       display: block; order: 3; flex: 1 1 100%; margin: -0.25rem 0 0; text-align: center;
@@ -466,12 +466,18 @@ var CONFIG = {
     }
     .topo-btn:not([hidden]) { display: inline-flex; }
     html.tela-cheia .topo-btn { display: none !important; }
-    .theme-btn { margin-left: auto; align-self: center; order: 1; flex: none; gap: 0.35rem;
-      padding: 0.4rem 0.7rem; }
-    .brand { gap: 0.6rem; flex: 1 1 auto; }
+    /* celular: "Utilidades" centralizado; Modo escuro vira só o ícone, no canto direito do topo */
+    .side > .theme-btn {
+      position: absolute; top: -2.25rem; right: -1rem; margin: 0; order: 1; width: 2.5rem; height: 2.5rem;
+      padding: 0;
+      justify-content: center;
+    }
+    .side > .theme-btn #themeLabel {
+      position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+    .brand { gap: 0.6rem; flex: 1 1 100%; justify-content: center; }
     .brand-logo { width: 2.5rem; height: 2.5rem; border-radius: 0.7rem; }
     .brand-title { font-size: 1.2rem; }
-    .theme-btn { padding: 0.4rem 0.55rem; font-size: 0.75rem; gap: 0.3rem; }
   }
 
   /* Formatador */
