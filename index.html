@@ -8176,7 +8176,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function desenhaToque() {      /* analógico à esquerda e roda de ataques à direita */
     var big = clamp(W * 0.09, 30, 38), sm = big * 0.72, d = big + sm + 16, R = big;   /* analógico = botão da espada */
     var cx = Math.min(W - 26 - big, W - 8 - sm - 0.87 * d), cy = H - 18 - big;
-    var bx = W - cx, by = cy;                      /* espelhado: mesma altura e mesma distância da borda */
+    var bx = 14 + R, by = cy;                      /* bem no canto esquerdo, na altura da espada */
     tc.base = { x: bx, y: by }; tc.R = R; tc.bots = [];
     ctx.fillStyle = "rgba(20,16,12,.45)"; ctx.beginPath(); ctx.arc(bx, by, R, 0, PI2); ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2; ctx.stroke();
