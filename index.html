@@ -1098,7 +1098,7 @@ html.tela-cheia #viewCmp .diffwrap {
 html.tela-cheia #viewCmp #c-viewDiff .dbody { flex: 1 1 0; height: auto; min-height: 0; }
 html.tela-cheia #viewCmp .mini { height: auto; align-self: stretch; margin-bottom: 0; }
 html.tela-cheia .byrota {
-  margin: 0.35rem auto 0.1rem;
+  margin: calc(0.35rem + 4px) auto calc(0.1rem + 4px);   /* +4px em cima e embaixo */
   padding: 3px 8px;
   flex: none;
   transform: translateY(-0.55rem);
