@@ -2978,6 +2978,14 @@ html.inicio { scrollbar-gutter: auto; }
 #viewJogo .jg-ferr .jg-zn { font-size: 0.62rem; font-weight: 600; gap: 0.1rem; padding: 0.2rem 0;
   font-variant-numeric: tabular-nums; }
 #viewJogo .jg-ferr button:hover { background: rgba(255, 255, 255, 0.14); }
+/* palco largo: controles em fila, no topo, centralizados entre a vida (esq.) e a pontuação (dir.) */
+#viewJogo .jg-stage { container-type: inline-size; }
+@container (min-width: 54rem) {
+  #viewJogo .jg-col { top: 0.6rem; right: auto; left: 50%; transform: translateX(-50%);
+    flex-direction: row; gap: 0.3rem; }
+  #viewJogo .jg-ferr { flex-direction: row; }
+  #viewJogo .jg-ferr .jg-zn { padding: 0 0.15rem; min-height: 2rem; }
+}
 #viewJogo .jg-ferr .off, #viewJogo .jg-pausa .pl, #viewJogo .jg-exp .i-co { display: none; }
 #viewJogo .jg-ferr .mudo .on { display: none; }
 #viewJogo .jg-ferr .mudo .off { display: inline; }
@@ -8163,9 +8171,9 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     ctx.fillText(h.icone, x, y + tam * 0.04); ctx.textBaseline = "alphabetic";
   }
   function desenhaToque() {      /* analógico à esquerda e roda de ataques à direita */
-    var R = clamp(W * 0.15, 42, 60), big = clamp(W * 0.09, 30, 38), sm = big * 0.72, d = big + sm + 16;
-    var bx = 26 + R, by = H - 26 - R;
+    var big = clamp(W * 0.09, 30, 38), sm = big * 0.72, d = big + sm + 16, R = big;   /* analógico = botão da espada */
     var cx = Math.min(W - 26 - big, W - 8 - sm - 0.87 * d), cy = H - 18 - big;
+    var bx = W - cx, by = cy;                      /* espelhado: mesma altura e mesma distância da borda */
     tc.base = { x: bx, y: by }; tc.R = R; tc.bots = [];
     ctx.fillStyle = "rgba(20,16,12,.45)"; ctx.beginPath(); ctx.arc(bx, by, R, 0, PI2); ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2; ctx.stroke();
@@ -8273,7 +8281,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       if (Math.hypot(x - b.x, y - b.y) <= b.r + 6) {
         miraAuto(); CASTA[b.k](); seg[e.pointerId] = b.k;
         try { cv.setPointerCapture(e.pointerId); } catch (z) {} return true; } }
-    if (tc.base && joy.id == null && Math.hypot(x - tc.base.x, y - tc.base.y) <= tc.R * 1.8) {
+    if (tc.base && joy.id == null && Math.hypot(x - tc.base.x, y - tc.base.y) <= tc.R * 2.2) {
       joy.id = e.pointerId; moveJoy(x, y); try { cv.setPointerCapture(e.pointerId);
           } catch (z) {} return true; }
     return false;
