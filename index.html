@@ -345,7 +345,8 @@ var CONFIG = {
   planilhas: {
     linhasMin: 40,                    /* linhas mostradas, no mínimo, mesmo com a aba vazia */
     linhasExtra: 10,                  /* linhas vazias que sobram abaixo do último dado */
-    colunasMin: 12,                   /* colunas mostradas, no mínimo */
+    colunasMin: 6,                    /* colunas mostradas, no mínimo */
+    colunasExtra: 1,                  /* colunas vazias que sobram à direita do último dado */
     maxLinhas: 5000, maxColunas: 60,  /* limites de tamanho de cada aba (também valem ao importar) */
     maxAbas: 30,
     altLinha: 28, altCab: 28,         /* altura das linhas e do título das colunas (px) */
@@ -9040,7 +9041,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   }
   function nLin(sh) { return Math.min(CP.maxLinhas, Math.max(CP.linhasMin, usado(sh).r + CP.linhasExtra)); }
   function nCol(sh) {
-    return Math.min(CP.maxColunas, Math.max(CP.colunasMin, usado(sh).c + 1, sh.larg.length));
+    return Math.min(CP.maxColunas, Math.max(CP.colunasMin, usado(sh).c + CP.colunasExtra));
   }
   function largura(sh, c) { return sh.larg[c] || CP.largPadrao; }
   function estilo(sh, r, c) { return sh.est[r + "," + c] || null; }
@@ -10224,7 +10225,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         if (fzr) { cls += " fzr"; sty += "top:" + topo + "px;"; }
         if (c === cz.c - 1) cls += " fze";
         if (r === cz.l - 1) cls += " fzb";
-        if (fl && r === fl.l) cls += " fh" + (fl.cols[c] ? " fa" : "");
+        if (fl && r === fl.l && mostra(sh, r, c) !== "") cls += " fh" + (fl.cols[c] ? " fa" : "");
         h.push('<td class="' + cls.trim() + '"' + (sty ? ' style="' + sty + '"' : "") + ">"
           + esc(mostra(sh, r, c)) + "</td>");
       }
@@ -11103,7 +11104,8 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     switch (k) {
       case "ArrowDown":
         e.preventDefault();
-        if (e.altKey && sh.filtro && cur.r === sh.filtro.l) { abreMenu(cur.c, tdAt(cur.r, cur.c)); return; }
+        var tdf = tdAt(cur.r, cur.c);
+        if (e.altKey && tdf && tdf.classList.contains("fh")) { abreMenu(cur.c, tdf); return; }
         vaiPara(passo(cur.r, 1), cur.c, e.shiftKey); return;
       case "ArrowUp": e.preventDefault(); vaiPara(passo(cur.r, -1), cur.c, e.shiftKey); return;
       case "ArrowLeft": e.preventDefault(); vaiPara(cur.r, cur.c - 1, e.shiftKey); return;
