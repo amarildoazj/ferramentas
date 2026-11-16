@@ -351,6 +351,7 @@ var CONFIG = {
     maxAbas: 30,
     altLinha: 28, altCab: 28,         /* altura das linhas e do título das colunas (px) */
     largCab: 46,                      /* largura da coluna com o número das linhas (px) */
+    congelarMax: 0.5,                 /* colunas congeladas ocupam no máximo essa fração da largura */
     largPadrao: 96,                   /* largura padrão das colunas (px) */
     desfazerMax: 30                   /* quantos passos o Desfazer guarda, por aba */
   },
@@ -10193,8 +10194,17 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   var larCab = CP.largCab, altL = CP.altLinha;
   grid.style.setProperty("--alt", altL + "px");
   grid.style.setProperty("--altcab", CP.altCab + "px");
+  function efetivo(sh) {   /* colunas congeladas que de fato ficam fixas: no máximo metade da largura da grade */
+    var cz = { l: sh.congelar.l, c: 0 }, lim = (grid.clientWidth || 99999) * CP.congelarMax, tot = larCab;
+    while (cz.c < sh.congelar.c) {
+      tot += largura(sh, cz.c);
+      if (tot > lim) break;
+      cz.c++;
+    }
+    return cz;
+  }
   function render() {
-    var sh = S(), nr = nLin(sh), nc = nCol(sh), cz = sh.congelar, h = [], r, c;
+    var sh = S(), nr = nLin(sh), nc = nCol(sh), cz = efetivo(sh), h = [], r, c;
     var left = [larCab], tot = larCab, fl = sh.filtro;
     calcOc(sh);
     for (c = 0; c < nc; c++) { left.push(tot); tot += largura(sh, c); }
@@ -10305,7 +10315,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   function visivel(r, c) {
     var td = tdAt(r, c);
     if (!td) return;
-    var sh = S(), cz = sh.congelar, gr = grid.getBoundingClientRect(), tr = td.getBoundingClientRect();
+    var sh = S(), cz = efetivo(sh), gr = grid.getBoundingClientRect(), tr = td.getBoundingClientRect();
     var topoLim = gr.top + CP.altCab + cz.l * altL, esqLim = gr.left + larCab, i;
     for (i = 0; i < cz.c; i++) esqLim += largura(sh, i);
     if (r >= cz.l) {
@@ -11137,6 +11147,11 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   } else wb.abas.push(novaAba("Planilha 1"));
   desenhaAbas(); render(); botoes();
   window.plaOnShow = function () { render(); };
+  var larAnt = grid.clientWidth;
+  window.addEventListener("resize", function () {   /* girou o celular: refaz as colunas fixas */
+    if (!grid.offsetParent) return;
+    if (grid.clientWidth !== larAnt) { larAnt = grid.clientWidth; render(); }
+  });
 })();
 
 (function () {   /* Subtítulos das páginas em uma linha só: a letra diminui até caber (mínimo MIN px) */
