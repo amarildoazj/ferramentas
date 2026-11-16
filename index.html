@@ -3050,7 +3050,8 @@ html.tela-cheia #viewPla .lede, html.tela-cheia #viewPla .pl-hint { display: non
 html.tela-cheia #viewPla .hrs-bar .theme-btn { margin-left: 0; }
 html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16rem; }
 #viewPla .pl-grid tr.oc { display: none; }
-#viewPla .pl-grid td.fh { position: relative; padding-right: 1.5rem; }
+#viewPla .pl-grid td.fh { padding-right: 1.5rem; }
+#viewPla .pl-grid td.fh:not(.fzr):not(.fzc) { position: relative; }
 #viewPla .pl-grid td.fh::after {
   content: ""; position: absolute; right: 0.3rem; top: 50%; width: 0.9rem; height: 0.9rem;
   margin-top: -0.45rem; border: 1px solid var(--line); border-radius: 0.2rem; background: var(--surface);
