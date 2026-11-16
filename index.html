@@ -17,7 +17,7 @@
    1. <head>        título, ícone e fontes do Google (Newsreader, DM Sans, DM Mono)
    1b. <script>     bloco CONFIG (configurações) antes do CSS
    2. <style>       todo o CSS, separado por comentários (veja "ONDE FICA CADA PÁGINA")
-   3. <body>        menu lateral (<aside class="side">) e as 7 páginas (<main class="content">)
+   3. <body>        menu lateral (<aside class="side">) e as páginas (<main class="content">)
    4. <script> #1   JavaScript de cada página + menu lateral e tema
    5. <script> #2   recursos extras: cores e numeração do formatador, alças de altura,
                     modo Expandir, divisória arrastável e contador de caracteres
@@ -36,6 +36,7 @@
                                                        IIFE "Calculadora de salário"
    Roleta                  #roleta      viewRol  r-   "/* Roleta */"           IIFE com P = "r-"
    Diagramas               #diagramas   viewDia  d-   "/* Diagramas */"       IIFE com P = "d-"
+   Planilhas               #planilhas   viewPla  pl-  "/* Planilhas */"       IIFE "Planilhas"
    Investimento            #investimento viewInv i-   "/* Investimento */"   IIFE com P = "i-"
    Jogo (Lâmina do Sol)    #jogo        viewJogo g-   "/* Jogo */"          IIFE "Jogo: Lâmina do Sol"
    Início (bolhas)         #inicio      viewIni  --   "/* Início */"         IIFE "Página inicial"
@@ -134,6 +135,24 @@
                    O apagador remove o traço inteiro que o círculo encostar (apagar()).
    Teclas ......... Delete, Ctrl+Z/Y, Ctrl+D, Ctrl+A, setas, Enter, Esc (com o desenho em foco).
 
+ PLANILHAS (viewPla)
+   Grade editável com abas, fórmulas, formatos, importar e exportar. Tamanhos e limites em
+   CONFIG.planilhas; o que fica salvo no navegador usa CONFIG.chaves.planilhas.
+   Modelo: wb = { abas: [aba], ativa }. Cada aba tem nome, dados (linhas de células: número, texto,
+   booleano ou null; texto que começa com "=" é fórmula), est (estilo por "linha,coluna": f = formato
+   g/n/r/d/dm/p, b = negrito, bg = cor, al = alinhamento), larg, congelar {l, c} e listas (sugestões
+   por coluna). O arquivo exportado (planilhas.json) guarda o mesmo modelo, com os estilos repetidos
+   reunidos em "estilos" e ligados por "em"; limpaArquivo()/limpaAba() validam tudo que entra.
+   Fórmulas: tokens() -> parse() (árvore) -> ev() calcula, com cache por aba (limpaCache() zera).
+   Funções em funcao() (nomes em português valem: ALIAS). Referências a outra aba: Aba!A1 ou
+   'Nome com espaço'!A1; colunas inteiras: E:E.
+   Inserir/excluir linha ou coluna e renomear aba reescrevem as referências (ajustaEstrutura,
+   renomeiaRefs); colar e preencher deslocam as referências relativas (deslocaRel).
+   Desfazer: checkpoint() guarda uma cópia da aba antes de cada mudança (snap/restaura).
+   Teclas: setas, Tab, Enter/F2, Delete, Ctrl+C/X/V/Z/Y/A/B/D/R, Shift+setas (seleção).
+   Importar aceita .json (desta página) e .csv; Exportar grava planilhas.json; "CSV da aba".
+
+ DICAS PARA MEXER
  DICAS PARA MEXER
    - Para criar uma página nova: copie uma <section class="view" hidden>, ponha um
      prefixo novo nos ids, inclua o nome em VIEWS (JS) e um <a class="mi"> no menu.
@@ -164,6 +183,7 @@ var CONFIG = {
     roleta: "ferramentas-roleta",     /* lista de pessoas da roleta */
     diagramas: "ferramentas-diagramas", /* último desenho dos diagramas */
     investimento: "ferramentas-investimento", /* dados da calculadora de renda fixa */
+    planilhas: "ferramentas-planilhas", /* abas e células da página Planilhas */
     jogo: "ferramentas-jogo",         /* recorde do jogo */
     jogoSom: "ferramentas-jogo-som",  /* som ligado ou mudo */
     jogoMao: "ferramentas-jogo-mao"   /* controle único espada+analógico ligado (1) ou não (0) */
@@ -321,6 +341,19 @@ var CONFIG = {
              brasa: "#ff9a3c", critico: "#ffd24a" }
   },
 
+  /* PLANILHAS: limites e tamanhos (as linhas e colunas vazias que aparecem a mais, etc.) */
+  planilhas: {
+    linhasMin: 40,                    /* linhas mostradas, no mínimo, mesmo com a aba vazia */
+    linhasExtra: 10,                  /* linhas vazias que sobram abaixo do último dado */
+    colunasMin: 12,                   /* colunas mostradas, no mínimo */
+    maxLinhas: 5000, maxColunas: 60,  /* limites de tamanho de cada aba (também valem ao importar) */
+    maxAbas: 30,
+    altLinha: 28, altCab: 28,         /* altura das linhas e do título das colunas (px) */
+    largCab: 46,                      /* largura da coluna com o número das linhas (px) */
+    largPadrao: 96,                   /* largura padrão das colunas (px) */
+    desfazerMax: 30                   /* quantos passos o Desfazer guarda, por aba */
+  },
+
   /* PÁGINA INICIAL: bolhas com as ferramentas ao redor do logo. giroSeg = volta da engrenagem no hover */
   inicio: {
     giroSeg: 4,
@@ -331,6 +364,7 @@ var CONFIG = {
       horas: "Data, hora e horas extras",
       salario: "Calculadora de salário líquido",
       investimento: "Calculadora de renda fixa",
+      planilhas: "Planilhas com abas, fórmulas, importar e exportar",
       roleta: "Sorteio com roleta",
       diagramas: "Editor simples de formas e setas",
       jogo: "Lâmina do Sol: um joguinho de ação"
@@ -533,7 +567,7 @@ var CONFIG = {
       padding-top: 0.75rem; margin-top: -0.25rem; }
     /* celular: só os ícones; o nome da página aberta aparece centralizado abaixo deles */
     .menu { justify-content: space-between; }
-    .mi { font-size: 0; gap: 0; padding: 0.65rem 0.5rem; flex: 0 0 auto; }
+    .mi { font-size: 0; gap: 0; padding: 0.65rem 0.25rem; flex: 0 0 auto; }
     .mi svg { width: 1.3rem; height: 1.3rem; }
     .menu-nome {
       display: block; order: 3; flex: 1 1 100%; margin: -0.25rem 0 0; text-align: center;
@@ -2866,6 +2900,139 @@ html.tela-cheia #viewDia .dia-hint { display: none; }
 #viewDia .d-h-nw, #viewDia .d-h-se { cursor: nwse-resize; }
 #viewDia .d-h-ne, #viewDia .d-h-sw { cursor: nesw-resize; }
 
+/* Planilhas */
+#viewPla .wrap {
+  max-width: var(--largura-pagina); margin-inline: auto; display: flex; flex-direction: column;
+  gap: 1rem;
+}
+#viewPla header {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.5rem; row-gap: 0.5rem; align-items: center;
+}
+#viewPla h1 {
+  font-family: var(--font-display); font-weight: 400; margin: 0; letter-spacing: -0.01em;
+  font-size: clamp(2.25rem, 6vw, 3.5rem); line-height: 1.05; text-wrap: balance; grid-column: 1 / -1;
+}
+#viewPla .lede { margin: 0; color: var(--muted); max-width: 44rem; text-wrap: pretty; grid-column: 1; }
+#viewPla .hrs-bar {
+  grid-column: 2; grid-row: 2; display: flex; gap: 0.5rem; align-items: center;
+  justify-content: flex-end;
+}
+@media (max-width: 36rem) {
+  #viewPla .hrs-bar { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; }
+}
+#viewPla .btn {
+  font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.2; color: var(--fg);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 0.625rem;
+  padding: 0.5rem 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+}
+#viewPla .btn:hover:not(:disabled) { border-color: var(--accent); }
+#viewPla .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+#viewPla .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#viewPla .btn.on { border-color: var(--accent); background: var(--accent-soft); }
+#viewPla .btn.sm { padding: 0.4rem 0.6rem; }
+#viewPla .btn svg { width: 1.05rem; height: 1.05rem; flex: none; }
+#viewPla select.btn { appearance: auto; padding: 0.45rem 0.5rem; }
+#viewPla .pl-bar {
+  display: flex; flex-wrap: wrap; gap: 0.6rem 1.1rem; align-items: flex-end;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: 0.8rem 1rem;
+}
+#viewPla .pl-grp { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+#viewPla .pl-grp > b {
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+#viewPla .pl-row { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+#viewPla .pl-cor {
+  width: 2.1rem; height: 2.1rem; padding: 0.15rem; border: 1px solid var(--line); border-radius: 0.5rem;
+  background: var(--surface); cursor: pointer;
+}
+#viewPla .pl-msg { font-size: 0.8125rem; color: var(--muted); }
+#viewPla .pl-fx { display: flex; align-items: center; gap: 0.5rem; }
+#viewPla .pl-end {
+  min-width: 3.4rem; text-align: center; font-family: var(--font-mono); font-size: 0.8125rem;
+  padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: 0.5rem; background: var(--surface);
+}
+#viewPla .pl-fxl { font-family: var(--font-display); font-style: italic; color: var(--muted); }
+#viewPla #pl-fx {
+  flex: 1 1 auto; min-width: 0; font: inherit; font-size: 0.875rem; color: var(--fg);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.45rem 0.6rem;
+}
+#viewPla #pl-fx:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+#viewPla .pl-grid {
+  --alt: 28px; --altcab: 28px; --pl-sel: rgba(196, 98, 63, 0.16);
+  position: relative; height: clamp(24rem, 66vh, 48rem); overflow: auto; outline: none;
+  border: 1px solid var(--line); border-radius: 0.75rem; background: var(--surface);
+  overscroll-behavior: contain;
+}
+#viewPla .pl-grid:focus-visible { border-color: var(--accent); }
+#viewPla .pl-grid table {
+  border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 0.875rem;
+  font-variant-numeric: tabular-nums; user-select: none; -webkit-user-select: none;
+}
+#viewPla .pl-grid td, #viewPla .pl-grid th {
+  box-sizing: border-box; height: var(--alt); padding: 0 0.4rem; overflow: hidden; white-space: nowrap;
+  text-overflow: ellipsis; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: var(--surface); line-height: 1.2;
+}
+#viewPla .pl-grid thead th {
+  position: sticky; top: 0; z-index: 4; height: var(--altcab); background: var(--bg); color: var(--muted);
+  font-size: 0.75rem; font-weight: 600; text-align: center;
+}
+#viewPla .pl-grid th.pl-rh {
+  position: sticky; left: 0; z-index: 3; background: var(--bg); color: var(--muted); font-size: 0.75rem;
+  font-weight: 500; text-align: center; padding: 0;
+}
+#viewPla .pl-grid th.pl-corner { position: sticky; left: 0; top: 0; z-index: 6; background: var(--bg); }
+#viewPla .pl-grid th.pl-ch.fzc { z-index: 6; }
+#viewPla .pl-grid td.fzc, #viewPla .pl-grid td.fzr { position: sticky; z-index: 2; }
+#viewPla .pl-grid td.fzr.fzc { z-index: 3; }
+#viewPla .pl-grid th.pl-rh.fzr { z-index: 5; }
+#viewPla .pl-grid th.on { background: var(--accent-soft); color: var(--fg); }
+#viewPla .pl-grid .fze { border-right: 2px solid var(--muted); }
+#viewPla .pl-grid td.fzb { border-bottom: 2px solid var(--muted); }
+#viewPla .pl-grid td.al { text-align: left; }
+#viewPla .pl-grid td.ac { text-align: center; }
+#viewPla .pl-grid td.ar { text-align: right; }
+#viewPla .pl-grid td.b { font-weight: 700; }
+#viewPla .pl-grid td.bg { color: #1d1b16; }
+#viewPla .pl-grid td.rg { box-shadow: inset 0 0 0 999px var(--pl-sel); }
+#viewPla .pl-grid td.cur { box-shadow: none; outline: 2px solid var(--accent); outline-offset: -2px; }
+#viewPla .pl-rz {
+  position: absolute; top: 0; right: -3px; bottom: 0; width: 7px; cursor: col-resize; z-index: 7;
+}
+#viewPla .pl-rz:hover { background: var(--accent); opacity: 0.5; }
+#viewPla .pl-ed {
+  position: absolute; display: none; z-index: 20; box-sizing: border-box; font: inherit; font-size: 0.875rem;
+  padding: 0 0.4rem; color: var(--fg); background: var(--surface); border: 2px solid var(--accent);
+  border-radius: 0; outline: none;
+}
+#viewPla .pl-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+#viewPla .pl-abas { display: flex; flex: 1 1 auto; gap: 0.3rem; overflow-x: auto; padding-bottom: 2px; }
+#viewPla .pl-aba, #viewPla .pl-mais {
+  font: inherit; font-size: 0.875rem; font-weight: 600; color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.4rem 0.9rem; cursor: pointer;
+  white-space: nowrap; flex: none;
+}
+#viewPla .pl-mais { padding: 0.4rem 0.7rem; }
+#viewPla .pl-aba:hover, #viewPla .pl-mais:hover { border-color: var(--accent); }
+#viewPla .pl-aba.on { border-color: var(--accent); background: var(--accent-soft); }
+#viewPla .pl-aba:focus-visible, #viewPla .pl-mais:focus-visible { outline: 2px solid var(--accent); }
+#viewPla .pl-aba-ed {
+  font: inherit; font-size: 0.875rem; font-weight: 600; color: var(--fg); background: var(--surface);
+  border: 2px solid var(--accent); border-radius: 0.5rem; padding: 0.3rem 0.6rem; flex: none;
+}
+#viewPla .pl-stat { font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+#viewPla .pl-hint { margin: 0; font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+html.tela-cheia #viewPla > .wrap {
+  max-width: none; margin: 0; width: 100%; gap: 0.6rem; min-height: 0; overflow-y: auto; overflow-x: hidden;
+}
+html.tela-cheia #viewPla > .wrap > * { flex-shrink: 0; }
+html.tela-cheia #viewPla header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+html.tela-cheia #viewPla .lede, html.tela-cheia #viewPla .pl-hint { display: none; }
+html.tela-cheia #viewPla .hrs-bar .theme-btn { margin-left: 0; }
+html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16rem; }
+
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
 html.inicio .menu, html.inicio .menu-nome { display: none !important; }
@@ -3189,6 +3356,10 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       <a href="#investimento" class="mi" data-view="investimento"><svg viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Investimento</a>
+      <a href="#planilhas" class="mi" data-view="planilhas"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path
+        d="M3 10h18M3 15h18M9 4v16"/></svg>Planilhas</a>
       <a href="#roleta" class="mi" data-view="roleta"><svg viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path
@@ -4113,6 +4284,114 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     0 ou F, Fogo: área em linha; - ou R, Eclipse, quando a barra de abates enche. P ou o botão Pausar
     pausam. No celular: analógico à esquerda para andar e roda de botões à direita (o
     botão grande é o ataque livre; segure para repetir).</p>
+</div>
+    </section>
+
+    <!-- ================= PÁGINA: Planilhas · menu #planilhas · ids pl- · JS: "/* ===== Planilhas"
+         · CSS: "/* Planilhas */" · limites e tamanhos: CONFIG.planilhas ================= -->
+    <section id="viewPla" class="view" aria-label="Planilhas" hidden>
+<div class="wrap">
+  <header>
+    <h1>Planilhas</h1>
+    <p class="lede">Crie abas, edite com fórmulas e guarde tudo em um arquivo para importar e exportar.
+      O que você faz também fica salvo só neste navegador.</p>
+    <div class="hrs-bar">
+    <button type="button" class="btn btn-full" id="pl-btnFull" aria-pressed="false"
+      title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
+      height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
+      d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/><path
+      class="i-co" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1
+      2 2v3"/></svg><span class="lbl">Expandir</span></button>
+  </div>
+  </header>
+
+  <div class="pl-bar" role="toolbar" aria-label="Ferramentas da planilha">
+    <div class="pl-grp"><b>Arquivo</b><div class="pl-row">
+      <button type="button" class="btn" id="pl-imp"
+        title="Abre um arquivo .json de planilhas e troca as abas atuais por ele">Importar</button>
+      <button type="button" class="btn" id="pl-add"
+        title="Junta as abas de um arquivo .json (ou um .csv) às abas atuais">Adicionar abas</button>
+      <button type="button" class="btn" id="pl-exp"
+        title="Salva todas as abas em um arquivo planilhas.json">Exportar</button>
+      <button type="button" class="btn" id="pl-csv"
+        title="Salva só a aba atual como .csv (abre no Excel)">CSV da aba</button>
+      <input type="file" id="pl-file" accept=".json,.csv,.tsv,.txt,application/json,text/csv" hidden>
+    </div></div>
+    <div class="pl-grp"><b>Aba</b><div class="pl-row">
+      <button type="button" class="btn" id="pl-ren"
+        title="Renomear a aba (ou duplo clique no nome)">Renomear</button>
+      <button type="button" class="btn" id="pl-dup" title="Cria uma cópia da aba atual">Duplicar</button>
+      <button type="button" class="btn sm" id="pl-mvl" title="Mover a aba para a esquerda"
+        aria-label="Mover a aba para a esquerda">&larr;</button>
+      <button type="button" class="btn sm" id="pl-mvr" title="Mover a aba para a direita"
+        aria-label="Mover a aba para a direita">&rarr;</button>
+      <button type="button" class="btn" id="pl-del" title="Excluir a aba atual">Excluir</button>
+    </div></div>
+    <div class="pl-grp"><b>Formato</b><div class="pl-row">
+      <select id="pl-fmt" class="btn" aria-label="Formato do número">
+        <option value="g">Geral</option><option value="n">Número 0,00</option>
+        <option value="r">Moeda R$</option><option value="d">Data</option>
+        <option value="dm">Dia/mês</option><option value="p">Percentual</option>
+      </select>
+      <button type="button" class="btn sm" id="pl-bold" title="Negrito (Ctrl+B)"
+        aria-label="Negrito"><b>B</b></button>
+      <input type="color" class="pl-cor" id="pl-cor" value="#ffe599" aria-label="Cor de fundo"
+        title="Cor de fundo da seleção">
+      <button type="button" class="btn sm" id="pl-semcor" title="Tira a cor de fundo">Sem cor</button>
+      <button type="button" class="btn sm" id="pl-al-l" title="Alinhar à esquerda"
+        aria-label="Alinhar à esquerda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h14"/></svg></button>
+      <button type="button" class="btn sm" id="pl-al-c" title="Centralizar"
+        aria-label="Centralizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M5 18h14"/></svg></button>
+      <button type="button" class="btn sm" id="pl-al-r" title="Alinhar à direita"
+        aria-label="Alinhar à direita"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 12h10M6 18h14"/></svg></button>
+    </div></div>
+    <div class="pl-grp"><b>Linhas e colunas</b><div class="pl-row">
+      <button type="button" class="btn sm" id="pl-addr"
+        title="Insere linha acima da seleção">+ Linha</button>
+      <button type="button" class="btn sm" id="pl-delr"
+        title="Exclui as linhas da seleção">&minus; Linha</button>
+      <button type="button" class="btn sm" id="pl-addc"
+        title="Insere coluna à esquerda da seleção">+ Coluna</button>
+      <button type="button" class="btn sm" id="pl-delc"
+        title="Exclui as colunas da seleção">&minus; Coluna</button>
+      <select id="pl-frz" class="btn" aria-label="Congelar linhas e colunas">
+        <option value="0">Sem congelar</option><option value="l">Congelar 1ª linha</option>
+        <option value="c">Congelar 1ª coluna</option><option value="a">Congelar até a célula</option>
+        <option value="x" hidden>Congelado</option>
+      </select>
+    </div></div>
+    <div class="pl-grp"><b>Editar</b><div class="pl-row">
+      <button type="button" class="btn" id="pl-undo" title="Desfazer (Ctrl+Z)">Desfazer</button>
+      <button type="button" class="btn" id="pl-redo" title="Refazer (Ctrl+Y)">Refazer</button>
+    </div></div>
+  </div>
+
+  <div class="pl-fx">
+    <span class="pl-end" id="pl-end">A1</span><span class="pl-fxl">fx</span>
+    <input type="text" id="pl-fx" autocomplete="off" spellcheck="false"
+      placeholder="Valor ou fórmula (comece com =)" aria-label="Conteúdo da célula">
+  </div>
+
+  <div class="pl-grid" id="pl-grid" tabindex="0" role="grid" aria-label="Planilha">
+    <input type="text" class="pl-ed" id="pl-ed" autocomplete="off" spellcheck="false"
+      aria-label="Editar célula">
+  </div>
+
+  <div class="pl-foot">
+    <div class="pl-abas" id="pl-abas" role="tablist" aria-label="Abas"></div>
+    <span class="pl-msg" id="pl-msg" role="status"></span>
+    <span class="pl-stat" id="pl-stat" role="status"></span>
+  </div>
+  <p class="pl-hint">Dicas: clique escolhe a célula; duplo clique, F2 ou digitar edita; Enter confirma
+    e Esc cancela. Fórmulas começam com = (SOMA, MÉDIA, MÍN, MÁX, SE, SOMASE, CONT.SE, ARRED...), por
+    exemplo =SOMA(E2:E39) ou =SOMASE(Transações!E:E; "Mercado"; Transações!C:C). Ctrl+C e Ctrl+V copiam
+    e colam (inclusive do Excel), Ctrl+Z desfaz, Ctrl+D e Ctrl+R preenchem. Arraste a borda do título de
+    uma coluna para mudar a largura. Para levar para outro aparelho, use Exportar e depois Importar.</p>
+  <datalist id="pl-dl"></datalist>
 </div>
     </section>
 
@@ -8538,11 +8817,1484 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   novo(); estado = "inicio"; lerCores(); ajusta(); requestAnimationFrame(laco);
 })();
 
+/* ===== Planilhas: abas, grade editável, fórmulas, importar e exportar ===== */
+(function () {
+  var P = "pl-", CP = CONFIG.planilhas, KEY = CONFIG.chaves.planilhas;
+  function $(id) { return document.getElementById(P + id); }
+  var FMTS = { g: 1, n: 1, r: 1, d: 1, dm: 1, p: 1 };
+  var wb = { abas: [], ativa: 0 };
+  var cur = { r: 0, c: 0 }, anc = { r: 0, c: 0 }, editando = false, clip = null, pintado = null;
+  var grid = $("grid"), ed = $("ed"), bar = $("fx"), endEl = $("end"), abasEl = $("abas");
+
+  /* ---------- utilidades ---------- */
+  function colNome(i) {
+    var s = "";
+    for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s;
+    return s;
+  }
+  function colIdx(s) {
+    var n = 0;
+    for (var i = 0; i < s.length; i++) n = n * 26 + (s.toUpperCase().charCodeAt(i) - 64);
+    return n - 1;
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function S() { return wb.abas[wb.ativa]; }
+  function novaAba(nome) {
+    return { nome: nome, larg: [], congelar: { l: 0, c: 0 }, listas: {}, est: {}, dados: [],
+      und: [], red: [], cache: null };
+  }
+  function get(sh, r, c) { var row = sh.dados[r]; return row && row[c] !== undefined ? row[c] : null; }
+  function put(sh, r, c, v) {
+    while (sh.dados.length <= r) sh.dados.push([]);
+    var row = sh.dados[r];
+    while (row.length <= c) row.push(null);
+    row[c] = v;
+  }
+  function usado(sh) {
+    var nr = 0, nc = 0;
+    sh.dados.forEach(function (row, r) {
+      for (var c = row.length - 1; c >= 0; c--) if (row[c] !== null && row[c] !== undefined) {
+        nr = r + 1; if (c + 1 > nc) nc = c + 1; break;
+      }
+    });
+    return { r: nr, c: nc };
+  }
+  function nLin(sh) { return Math.min(CP.maxLinhas, Math.max(CP.linhasMin, usado(sh).r + CP.linhasExtra)); }
+  function nCol(sh) {
+    return Math.min(CP.maxColunas, Math.max(CP.colunasMin, usado(sh).c + 1, sh.larg.length));
+  }
+  function largura(sh, c) { return sh.larg[c] || CP.largPadrao; }
+  function estilo(sh, r, c) { return sh.est[r + "," + c] || null; }
+
+  /* ---------- fórmulas: tokens, árvore e cálculo ---------- */
+  function Erro(m) { this.m = m; }
+  var ALIAS = { "SOMA": "SUM", "MÉDIA": "AVERAGE", "MEDIA": "AVERAGE", "MÍNIMO": "MIN", "MINIMO": "MIN",
+    "MÁXIMO": "MAX", "MAXIMO": "MAX", "CONT.NÚM": "COUNT", "CONT.NUM": "COUNT", "CONT.VALORES": "COUNTA",
+    "ARRED": "ROUND", "SE": "IF", "SOMASE": "SUMIF", "CONT.SE": "COUNTIF", "E": "AND", "OU": "OR",
+    "NÃO": "NOT", "NAO": "NOT", "HOJE": "TODAY", "AGORA": "NOW" };
+  var RE_CEL = /^\$?[A-Z]{1,3}\$?\d+$/, RE_COL = /^\$?[A-Z]{1,3}$/;
+  function celXY(t) {
+    var m = /^\$?([A-Z]{1,3})\$?(\d+)$/.exec(t);
+    return { r: parseInt(m[2], 10) - 1, c: colIdx(m[1]) };
+  }
+  function depoisDeDoisPontos(out) {   /* E:E -> o segundo E também é coluna */
+    var u = out[out.length - 1];
+    return !!u && u.t === "o" && u.v === ":";
+  }
+  function tokens(f) {
+    var out = [], i = 0, n = f.length, ch, m;
+    while (i < n) {
+      ch = f.charAt(i);
+      if (/\s/.test(ch)) { i++; continue; }
+      if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(f.charAt(i + 1)))) {
+        m = /^[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?/.exec(f.slice(i));
+        out.push({ t: "n", v: parseFloat(m[0]) }); i += m[0].length; continue;
+      }
+      if (ch === '"') {
+        var s = ""; i++;
+        while (i < n) {
+          if (f.charAt(i) === '"') { if (f.charAt(i + 1) === '"') { s += '"'; i += 2; continue; } break; }
+          s += f.charAt(i++);
+        }
+        if (i >= n) throw new Erro("#ERRO!");
+        i++; out.push({ t: "s", v: s }); continue;
+      }
+      if (ch === "'") {
+        var j = f.indexOf("'", i + 1);
+        if (j < 0 || f.charAt(j + 1) !== "!") throw new Erro("#ERRO!");
+        out.push({ t: "q", v: f.slice(i + 1, j) }); i = j + 2; continue;
+      }
+      if (/[A-Za-zÀ-ÿ_$]/.test(ch)) {
+        m = /^[A-Za-zÀ-ÿ0-9_.$]+/.exec(f.slice(i));
+        var id = m[0], nx = f.charAt(i + id.length);
+        i += id.length;
+        if (nx === "!") { out.push({ t: "q", v: id }); i++; continue; }
+        var up = id.toUpperCase();
+        if (nx === "(") out.push({ t: "f", v: up });
+        else if (RE_CEL.test(up)) out.push({ t: "c", v: up });
+        else if (RE_COL.test(up) && (f.charAt(i) === ":" || depoisDeDoisPontos(out)))
+          out.push({ t: "k", v: up });
+        else if (up === "TRUE" || up === "VERDADEIRO") out.push({ t: "b", v: true });
+        else if (up === "FALSE" || up === "FALSO") out.push({ t: "b", v: false });
+        else throw new Erro("#NOME?");
+        continue;
+      }
+      var two = f.substr(i, 2);
+      if (two === "<>" || two === "<=" || two === ">=") { out.push({ t: "o", v: two }); i += 2; continue; }
+      if ("+-*/^&=<>(),;:%".indexOf(ch) >= 0) {
+        out.push({ t: "o", v: ch === ";" ? "," : ch }); i++; continue;
+      }
+      throw new Erro("#ERRO!");
+    }
+    return out;
+  }
+  function parse(f) {
+    var tk = tokens(f), p = 0;
+    function peek() { return tk[p]; }
+    function isOp(v) { var t = tk[p]; return t && t.t === "o" && t.v === v; }
+    function cmp() {
+      var a = cat();
+      while (peek() && peek().t === "o" && /^(=|<>|<=|>=|<|>)$/.test(peek().v)) {
+        var op = tk[p++].v; a = { t: "bin", op: op, a: a, b: cat() };
+      }
+      return a;
+    }
+    function cat() {
+      var a = add();
+      while (isOp("&")) { p++; a = { t: "bin", op: "&", a: a, b: add() }; }
+      return a;
+    }
+    function add() {
+      var a = mul();
+      while (isOp("+") || isOp("-")) { var op = tk[p++].v; a = { t: "bin", op: op, a: a, b: mul() }; }
+      return a;
+    }
+    function mul() {
+      var a = pot();
+      while (isOp("*") || isOp("/")) { var op = tk[p++].v; a = { t: "bin", op: op, a: a, b: pot() }; }
+      return a;
+    }
+    function pot() {
+      var a = un();
+      while (isOp("^")) { p++; a = { t: "bin", op: "^", a: a, b: un() }; }
+      return a;
+    }
+    function un() {
+      if (isOp("-")) { p++; return { t: "neg", a: un() }; }
+      if (isOp("+")) { p++; return un(); }
+      var a = prim();
+      while (isOp("%")) { p++; a = { t: "pct", a: a }; }
+      return a;
+    }
+    function ref(q) {
+      var t = tk[p++];
+      if (t.t === "k") {
+        if (!isOp(":")) throw new Erro("#ERRO!");
+        p++;
+        var t2 = tk[p++];
+        if (!t2 || (t2.t !== "k" && t2.t !== "c")) throw new Erro("#ERRO!");
+        var c2 = t2.t === "k" ? colIdx(t2.v.replace("$", "")) : celXY(t2.v).c;
+        return { t: "rng", q: q, r0: 0, r1: -1, c0: colIdx(t.v.replace("$", "")), c1: c2 };
+      }
+      var a = celXY(t.v);
+      if (isOp(":")) {
+        p++;
+        var t3 = tk[p++];
+        if (!t3 || t3.t !== "c") throw new Erro("#ERRO!");
+        var b = celXY(t3.v);
+        return { t: "rng", q: q, r0: Math.min(a.r, b.r), r1: Math.max(a.r, b.r),
+          c0: Math.min(a.c, b.c), c1: Math.max(a.c, b.c) };
+      }
+      return { t: "ref", q: q, r: a.r, c: a.c };
+    }
+    function prim() {
+      var t = tk[p];
+      if (!t) throw new Erro("#ERRO!");
+      if (t.t === "n" || t.t === "s" || t.t === "b") { p++; return { t: "v", v: t.v }; }
+      if (t.t === "q") { p++; return ref(t.v); }
+      if (t.t === "c" || t.t === "k") return ref(null);
+      if (t.t === "f") {
+        p++;
+        if (!isOp("(")) throw new Erro("#ERRO!");
+        p++;
+        var args = [];
+        if (isOp(")")) p++;
+        else {
+          for (;;) {
+            args.push(cmp());
+            if (isOp(",")) { p++; continue; }
+            if (isOp(")")) { p++; break; }
+            throw new Erro("#ERRO!");
+          }
+        }
+        return { t: "fn", n: ALIAS[t.v] || t.v, args: args };
+      }
+      if (isOp("(")) {
+        p++;
+        var e = cmp();
+        if (!isOp(")")) throw new Erro("#ERRO!");
+        p++;
+        return e;
+      }
+      throw new Erro("#ERRO!");
+    }
+    var tree = cmp();
+    if (p < tk.length) throw new Erro("#ERRO!");
+    return tree;
+  }
+  var arvores = {};
+  function arvore(f) {
+    if (!(f in arvores)) {
+      try { arvores[f] = parse(f.slice(1)); }
+      catch (e) { arvores[f] = e instanceof Erro ? e : new Erro("#ERRO!"); }
+    }
+    return arvores[f];
+  }
+  function abaPorNome(q) {
+    var k = String(q).toLowerCase();
+    for (var i = 0; i < wb.abas.length; i++) if (wb.abas[i].nome.toLowerCase() === k) return wb.abas[i];
+    return null;
+  }
+  var pilha = {};
+  function valor(sh, r, c) {
+    var raw = get(sh, r, c);
+    if (typeof raw !== "string" || raw.charAt(0) !== "=" || raw.length < 2) return raw;
+    sh.cache = sh.cache || {};
+    var k = r + "," + c;
+    if (k in sh.cache) return sh.cache[k];
+    var id = wb.abas.indexOf(sh) + ":" + k, res;
+    if (pilha[id]) return new Erro("#CICLO!");
+    pilha[id] = 1;
+    try {
+      var t = arvore(raw);
+      res = t instanceof Erro ? t : ev(t, sh);
+      if (res && res.rng) res = res.vals[0] === undefined ? 0 : res.vals[0];
+      if (res === null || res === undefined) res = 0;
+    } catch (e) { res = e instanceof Erro ? e : new Erro("#ERRO!"); }
+    delete pilha[id];
+    sh.cache[k] = res;
+    return res;
+  }
+  function paraNum(v) {
+    if (v instanceof Erro) return v;
+    if (v === null || v === undefined || v === "") return 0;
+    if (typeof v === "boolean") return v ? 1 : 0;
+    if (typeof v === "number") return v;
+    var n = numTexto(String(v));
+    return n === null ? new Erro("#VALOR!") : n;
+  }
+  function paraTxt(v) {
+    if (v instanceof Erro) return v;
+    if (v === null || v === undefined) return "";
+    if (typeof v === "boolean") return v ? "VERDADEIRO" : "FALSO";
+    if (typeof v === "number") return fmtNum(v, "g");
+    return String(v);
+  }
+  function ev(t, sh) {
+    switch (t.t) {
+      case "v": return t.v;
+      case "ref":
+        var s1 = t.q ? abaPorNome(t.q) : sh;
+        if (!s1) return new Erro("#REF!");
+        return valor(s1, t.r, t.c);
+      case "rng":
+        var s2 = t.q ? abaPorNome(t.q) : sh;
+        if (!s2) return new Erro("#REF!");
+        var r1 = t.r1 < 0 ? Math.max(0, usado(s2).r - 1) : t.r1, vals = [], r, c;
+        for (r = t.r0; r <= r1; r++) for (c = t.c0; c <= t.c1; c++) vals.push(valor(s2, r, c));
+        return { rng: true, vals: vals };
+      case "neg":
+        var a0 = paraNum(ev1(t.a, sh));
+        return a0 instanceof Erro ? a0 : -a0;
+      case "pct":
+        var a1 = paraNum(ev1(t.a, sh));
+        return a1 instanceof Erro ? a1 : a1 / 100;
+      case "bin": return binario(t, sh);
+      case "fn": return funcao(t, sh);
+    }
+    return new Erro("#ERRO!");
+  }
+  function ev1(t, sh) {
+    var v = ev(t, sh);
+    if (v && v.rng) return v.vals.length ? v.vals[0] : 0;
+    return v;
+  }
+  function binario(t, sh) {
+    var a = ev1(t.a, sh), b = ev1(t.b, sh), op = t.op;
+    if (a instanceof Erro) return a;
+    if (b instanceof Erro) return b;
+    if (op === "&") return paraTxt(a) + paraTxt(b);
+    if (/^(=|<>|<=|>=|<|>)$/.test(op)) {
+      var x = a === null ? (typeof b === "string" ? "" : 0) : a;
+      var y = b === null ? (typeof a === "string" ? "" : 0) : b;
+      if (typeof x === "string" && typeof y === "string") { x = x.toLowerCase(); y = y.toLowerCase(); }
+      else if (typeof x !== typeof y) {
+        var rx = typeof x === "number" ? 0 : typeof x === "string" ? 1 : 2;
+        var ry = typeof y === "number" ? 0 : typeof y === "string" ? 1 : 2;
+        x = rx; y = ry;
+      }
+      switch (op) {
+        case "=": return x === y; case "<>": return x !== y; case "<": return x < y;
+        case ">": return x > y; case "<=": return x <= y; default: return x >= y;
+      }
+    }
+    var n1 = paraNum(a), n2 = paraNum(b);
+    if (n1 instanceof Erro) return n1;
+    if (n2 instanceof Erro) return n2;
+    switch (op) {
+      case "+": return n1 + n2;
+      case "-": return n1 - n2;
+      case "*": return n1 * n2;
+      case "/": return n2 === 0 ? new Erro("#DIV/0!") : n1 / n2;
+      default:
+        var p = Math.pow(n1, n2);
+        return isFinite(p) ? p : new Erro("#NÚM!");
+    }
+  }
+  function achata(args, soNum) {
+    var out = [];
+    for (var i = 0; i < args.length; i++) {
+      var v = args[i];
+      if (v instanceof Erro) return v;
+      if (v && v.rng) {
+        for (var j = 0; j < v.vals.length; j++) {
+          var x = v.vals[j];
+          if (x instanceof Erro) return x;
+          if (soNum) { if (typeof x === "number") out.push(x); }
+          else if (x !== null && x !== "") out.push(x);
+        }
+      } else if (soNum) {
+        var n = paraNum(v);
+        if (n instanceof Erro) return n;
+        out.push(n);
+      } else if (v !== null) out.push(v);
+    }
+    return out;
+  }
+  function criterio(c) {
+    if (typeof c === "number") return function (x) { return typeof x === "number" && x === c; };
+    var s = String(c === null ? "" : c), m = /^(<=|>=|<>|=|<|>)?(.*)$/.exec(s), op = m[1] || "=", rest = m[2];
+    var num = numTexto(rest);
+    return function (x) {
+      var a, b;
+      if (num !== null) {
+        if (typeof x !== "number") return op === "<>";
+        a = x; b = num;
+      } else {
+        a = String(x === null ? "" : x).toLowerCase(); b = rest.toLowerCase();
+        if (typeof x === "number") return op === "<>";
+      }
+      switch (op) {
+        case "=": return a === b; case "<>": return a !== b; case "<": return a < b;
+        case ">": return a > b; case "<=": return a <= b; default: return a >= b;
+      }
+    };
+  }
+  function funcao(t, sh) {
+    var n = t.n, i, args;
+    if (n === "IF") {
+      var c = ev1(t.args[0] || { t: "v", v: false }, sh);
+      if (c instanceof Erro) return c;
+      var cb = typeof c === "string" ? c.length > 0 : !!c;
+      var ramo = cb ? t.args[1] : t.args[2];
+      if (!ramo) return cb ? true : false;
+      return ev1(ramo, sh);
+    }
+    args = t.args.map(function (a) { return ev(a, sh); });
+    var l, k, x;
+    switch (n) {
+      case "SUM": l = achata(args, true); if (l instanceof Erro) return l;
+        return l.reduce(function (s, v) { return s + v; }, 0);
+      case "AVERAGE": l = achata(args, true); if (l instanceof Erro) return l;
+        return l.length ? l.reduce(function (s, v) { return s + v; }, 0) / l.length : new Erro("#DIV/0!");
+      case "MIN": l = achata(args, true); if (l instanceof Erro) return l;
+        return l.length ? Math.min.apply(null, l) : 0;
+      case "MAX": l = achata(args, true); if (l instanceof Erro) return l;
+        return l.length ? Math.max.apply(null, l) : 0;
+      case "COUNT": l = achata(args, true); return l instanceof Erro ? l : l.length;
+      case "COUNTA": l = achata(args, false); return l instanceof Erro ? l : l.length;
+      case "ABS": x = paraNum(ev1v(args[0])); return x instanceof Erro ? x : Math.abs(x);
+      case "INT": x = paraNum(ev1v(args[0])); return x instanceof Erro ? x : Math.floor(x);
+      case "ROUND":
+        x = paraNum(ev1v(args[0])); k = args.length > 1 ? paraNum(ev1v(args[1])) : 0;
+        if (x instanceof Erro) return x;
+        if (k instanceof Erro) return k;
+        var f = Math.pow(10, k);
+        return Math.round((x + (x < 0 ? -1e-12 : 1e-12)) * f) / f;
+      case "AND": case "OR":
+        l = achata(args, false); if (l instanceof Erro) return l;
+        if (!l.length) return new Erro("#VALOR!");
+        var bs = l.map(function (v) { return typeof v === "string" ? v.length > 0 : !!v; });
+        return n === "AND" ? bs.every(Boolean) : bs.some(Boolean);
+      case "NOT":
+        x = ev1v(args[0]);
+        return x instanceof Erro ? x : !(typeof x === "string" ? x.length > 0 : !!x);
+      case "TODAY": return Math.floor(agoraSerial());
+      case "NOW": return agoraSerial();
+      case "SUMIF": case "COUNTIF":
+        if (!args[0] || !args[0].rng || args.length < 2) return new Erro("#VALOR!");
+        var crit = ev1v(args[1]);
+        if (crit instanceof Erro) return crit;
+        var test = criterio(crit), alvo = n === "SUMIF" && args[2] && args[2].rng ? args[2] : args[0];
+        var tot = 0;
+        for (i = 0; i < args[0].vals.length; i++) {
+          var cv = args[0].vals[i];
+          if (cv instanceof Erro || !test(cv)) continue;
+          if (n === "COUNTIF") tot++;
+          else { var sv = alvo.vals[i]; if (typeof sv === "number") tot += sv; }
+        }
+        return tot;
+    }
+    return new Erro("#NOME?");
+  }
+  function agoraSerial() {
+    return (Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000 + 25569;
+  }
+  function ev1v(v) { return v && v.rng ? (v.vals.length ? v.vals[0] : 0) : v; }
+
+  /* ---------- reescreve referências (inserir/excluir linhas e colunas, colar, renomear aba) ---------- */
+  var REF_CORPO = "((?:'[^']+'|[A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_.]*)!)?"
+    + "(\\$?[A-Za-z]{1,3}\\$?\\d+(?::\\$?[A-Za-z]{1,3}\\$?\\d+)?"
+    + "|\\$?[A-Za-z]{1,3}:\\$?[A-Za-z]{1,3})(?![A-Za-zÀ-ÿ0-9_.(!])";
+  var RE_REF;
+  try { RE_REF = new RegExp("(?<![A-Za-zÀ-ÿ0-9_.$'])" + REF_CORPO, "g"); }
+  catch (e) { RE_REF = new RegExp(REF_CORPO, "g"); }   /* navegador antigo, sem lookbehind */
+  function reescreve(f, fn) {   /* aplica fn(qualificador, texto) às referências (fora de "textos") */
+    var partes = f.split(/("(?:[^"]|"")*")/);
+    for (var i = 0; i < partes.length; i += 2) {
+      partes[i] = partes[i].replace(RE_REF, function (m, q, ref) {
+        var nome = q ? q.slice(0, -1).replace(/^'|'$/g, "") : null;
+        var res = fn(nome, ref);
+        return res === null || res === undefined ? m : (q || "") + res;
+      });
+    }
+    return partes.join("");
+  }
+  function umaRef(txt, mapa) {   /* txt: A1, $A$1, A1:B2, E:E; mapa(eixo, i, ehFim) = novo i ou -1 */
+    var m = /^(\$?)([A-Za-z]{1,3})(\$?)(\d+)$/, cols = /^(\$?)([A-Za-z]{1,3})$/;
+    var pedacos = txt.split(":"), out = [], nums = [], ehIntervalo = pedacos.length > 1;
+    for (var i = 0; i < pedacos.length; i++) {
+      var p = pedacos[i], a = m.exec(p), b = a ? null : cols.exec(p);
+      if (a) {
+        var cc = mapa("c", colIdx(a[2]), i === 1), rr = mapa("r", parseInt(a[4], 10) - 1, i === 1);
+        if (cc < 0 || rr < 0) return "#REF!";
+        nums.push({ r: rr, c: cc });
+        out.push(a[1] + colNome(cc) + a[3] + (rr + 1));
+      } else if (b) {
+        var c2 = mapa("c", colIdx(b[2]), i === 1);
+        if (c2 < 0) return "#REF!";
+        nums.push({ r: 0, c: c2 });
+        out.push(b[1] + colNome(c2));
+      } else return null;
+    }
+    if (ehIntervalo && nums.length === 2 && (nums[0].r > nums[1].r || nums[0].c > nums[1].c)) return "#REF!";
+    return out.join(":");
+  }
+  function deslocaRel(f, dr, dc) {   /* colar/preencher: move só as referências sem $ */
+    return reescreve(f, function (q, ref) {
+      var m = /^(\$?)([A-Za-z]{1,3})(\$?)(\d+)$/;
+      var out = ref.split(":").map(function (p) {
+        var a = m.exec(p);
+        if (a) {
+          var r0 = parseInt(a[4], 10) - 1;
+          var c = a[1] ? colIdx(a[2]) : colIdx(a[2]) + dc, r = a[3] ? r0 : r0 + dr;
+          return c < 0 || r < 0 ? null : a[1] + colNome(c) + a[3] + (r + 1);
+        }
+        var b = /^(\$?)([A-Za-z]{1,3})$/.exec(p);
+        if (!b) return null;
+        var c2 = b[1] ? colIdx(b[2]) : colIdx(b[2]) + dc;
+        return c2 < 0 ? null : b[1] + colNome(c2);
+      });
+      return out.indexOf(null) >= 0 ? "#REF!" : out.join(":");
+    });
+  }
+  function ajustaEstrutura(alvo, eixo, idx, qtd) {   /* qtd > 0: inseriu antes de idx; < 0: excluiu */
+    wb.abas.forEach(function (sh) {
+      sh.dados.forEach(function (row) {
+        for (var c = 0; c < row.length; c++) {
+          var v = row[c];
+          if (typeof v !== "string" || v.charAt(0) !== "=") continue;
+          row[c] = reescreve(v, function (q, ref) {
+            var dono = q ? abaPorNome(q) : sh;
+            if (dono !== alvo) return null;
+            var pedacos = ref.split(":");
+            return umaRef(ref, function (ex, i, fim) {
+              if (ex !== eixo) return i;
+              if (qtd > 0) return i >= idx ? i + qtd : i;
+              var n = -qtd;
+              if (i < idx) return i;
+              if (i >= idx + n) return i - n;
+              if (pedacos.length === 2) return fim ? idx - 1 : idx;   /* intervalo encolhe */
+              return -1;
+            });
+          });
+        }
+      });
+    });
+  }
+  function renomeiaRefs(velho, novo) {
+    var vq = new RegExp("(^|[^A-Za-zÀ-ÿ0-9_.'])(?:'" + velho.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      + "'|" + velho.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")!", "gi");
+    var nq = /^[A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_]*$/.test(novo) ? novo : "'" + novo + "'";
+    wb.abas.forEach(function (sh) {
+      sh.dados.forEach(function (row) {
+        for (var c = 0; c < row.length; c++) {
+          var v = row[c];
+          if (typeof v !== "string" || v.charAt(0) !== "=" || v.indexOf("!") < 0) continue;
+          row[c] = v.split(/("(?:[^"]|"")*")/).map(function (p, i) {
+            return i % 2 ? p : p.replace(vq, function (m, pre) { return pre + nq + "!"; });
+          }).join("");
+        }
+      });
+    });
+  }
+
+  /* ---------- números, datas e texto ---------- */
+  function numTexto(s) {
+    s = s.replace(/\s/g, "").replace(/^R\$/i, "");
+    if (!/^[-+]?[\d.,]+$/.test(s)) return null;
+    var neg = s.charAt(0) === "-";
+    s = s.replace(/^[-+]/, "");
+    if (/,/.test(s)) {
+      if ((s.match(/,/g) || []).length > 1) return null;
+      if (/\./.test(s.split(",")[1])) return null;
+      s = s.replace(/\./g, "").replace(",", ".");
+    } else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+    else if ((s.match(/\./g) || []).length > 1) return null;
+    var n = parseFloat(s);
+    return isNaN(n) ? null : (neg ? -n : n);
+  }
+  function serial(d) { return Math.round((Date.UTC(d.y, d.m - 1, d.d) - Date.UTC(1899, 11, 30)) / 86400000); }
+  function dataDe(sr) {
+    var d = new Date(Math.round(sr) * 86400000 + Date.UTC(1899, 11, 30));
+    return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() };
+  }
+  function p2(n) { return (n < 10 ? "0" : "") + n; }
+  function dataTexto(s) {
+    var m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/.exec(s.trim());
+    if (!m) return null;
+    var d = parseInt(m[1], 10), mo = parseInt(m[2], 10);
+    var y = m[3] ? parseInt(m[3], 10) : new Date().getFullYear();
+    if (m[3] && m[3].length === 2) y += 2000;
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    var t = new Date(Date.UTC(y, mo - 1, d));
+    if (t.getUTCMonth() !== mo - 1) return null;
+    return serial({ y: y, m: mo, d: d });
+  }
+  var nf2 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var nfG = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 10, useGrouping: false });
+  var nfP = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
+  function fmtNum(v, f) {
+    if (typeof v !== "number" || !isFinite(v)) return "#NÚM!";
+    switch (f) {
+      case "n": return nf2.format(v);
+      case "r": return (v < 0 ? "-R$ " : "R$ ") + nf2.format(Math.abs(v));
+      case "p": return nfP.format(v * 100) + "%";
+      case "d": case "dm":
+        var d = dataDe(v);
+        return p2(d.d) + "/" + p2(d.m) + (f === "d" ? "/" + d.y : "");
+    }
+    return nfG.format(v);
+  }
+  function mostra(sh, r, c) {   /* texto exibido na célula */
+    var v = valor(sh, r, c);
+    if (v instanceof Erro) return v.m;
+    if (v === null || v === undefined) return "";
+    if (typeof v === "boolean") return v ? "☑" : "☐";
+    if (typeof v === "number") { var st = estilo(sh, r, c); return fmtNum(v, st && st.f || "g"); }
+    return String(v);
+  }
+  function textoEdicao(sh, r, c) {
+    var raw = get(sh, r, c);
+    if (raw === null) return "";
+    if (typeof raw === "boolean") return raw ? "VERDADEIRO" : "FALSO";
+    if (typeof raw === "number") {
+      var st = estilo(sh, r, c), f = st && st.f;
+      if (f === "d" || f === "dm") return fmtNum(raw, "d");
+      if (f === "p") return nfP.format(raw * 100) + "%";
+      return nfG.format(raw);
+    }
+    return String(raw);
+  }
+  function entrada(txt, fmtAtual) {   /* texto digitado -> { v, f } */
+    if (txt === "") return { v: null };
+    if (txt.charAt(0) === "=" && txt.length > 1) return { v: txt.replace(/\s+$/, "") };
+    var u = txt.trim().toUpperCase();
+    if (u === "VERDADEIRO" || u === "TRUE") return { v: true };
+    if (u === "FALSO" || u === "FALSE") return { v: false };
+    var dt = dataTexto(txt);
+    if (dt !== null) return { v: dt, f: !fmtAtual || fmtAtual === "g" ? "d" : null };
+    var pc = /^(.*\S)\s*%$/.exec(txt.trim());
+    var livre = !fmtAtual || fmtAtual === "g";
+    if (pc) {
+      var np = numTexto(pc[1]);
+      if (np !== null) return { v: np / 100, f: livre ? "p" : null };
+    }
+    var n = numTexto(txt);
+    if (n !== null) return { v: n, f: /^\s*-?R\$/i.test(txt) && livre ? "r" : null };
+    return { v: txt };
+  }
+
+  /* ---------- desfazer, salvar sozinho e mensagens ---------- */
+  function snap(sh) {
+    return JSON.stringify({ d: sh.dados, e: sh.est, l: sh.larg, g: sh.congelar, s: sh.listas });
+  }
+  function checkpoint() {
+    var sh = S();
+    sh.und.push(snap(sh));
+    if (sh.und.length > CP.desfazerMax) sh.und.shift();
+    sh.red = [];
+  }
+  function restaura(sh, txt) {
+    var o = JSON.parse(txt);
+    sh.dados = o.d; sh.est = o.e; sh.larg = o.l; sh.congelar = o.g; sh.listas = o.s;
+  }
+  function desfaz() {
+    var sh = S();
+    if (!sh.und.length) return;
+    sh.red.push(snap(sh)); restaura(sh, sh.und.pop());
+    limpaCache(); render(); salvaDepois(); botoes();
+  }
+  function refaz() {
+    var sh = S();
+    if (!sh.red.length) return;
+    sh.und.push(snap(sh)); restaura(sh, sh.red.pop());
+    limpaCache(); render(); salvaDepois(); botoes();
+  }
+  function limpaCache() { wb.abas.forEach(function (s) { s.cache = null; }); }
+  var tSalva = 0, tMsg = 0;
+  function msg(t) {
+    var el = $("msg");
+    el.textContent = t;
+    clearTimeout(tMsg);
+    tMsg = setTimeout(function () { el.textContent = ""; }, 4000);
+  }
+  function salvaDepois() { clearTimeout(tSalva); tSalva = setTimeout(salva, 500); }
+  function salva() {
+    try {
+      var o = paraArquivo(wb.abas);
+      o.ativa = wb.ativa;
+      localStorage.setItem(KEY, JSON.stringify(o));
+    } catch (e) { msg("Não coube no navegador: use Exportar para guardar em arquivo."); }
+  }
+  function botoes() {
+    var sh = S();
+    $("undo").disabled = !sh.und.length;
+    $("redo").disabled = !sh.red.length;
+  }
+
+  /* ---------- arquivo: gravar e ler ---------- */
+  function paraArquivo(abas) {
+    return { formato: "ferramentas-planilhas", versao: 1, abas: abas.map(function (sh) {
+      var estilos = [], idx = {}, em = {};
+      Object.keys(sh.est).forEach(function (k) {
+        var key = JSON.stringify(sh.est[k]);
+        if (!(key in idx)) { idx[key] = estilos.length; estilos.push(sh.est[k]); }
+        em[k] = idx[key];
+      });
+      var dados = sh.dados.map(function (row) {
+        var n = row.length;
+        while (n > 0 && (row[n - 1] === null || row[n - 1] === undefined)) n--;
+        return row.slice(0, n);
+      });
+      while (dados.length && !dados[dados.length - 1].length) dados.pop();
+      return { nome: sh.nome, larg: sh.larg, congelar: sh.congelar, listas: sh.listas,
+        estilos: estilos, em: em, dados: dados };
+    }) };
+  }
+  function nomeUnico(nome, ignora) {
+    nome = String(nome || "Planilha").replace(/[\[\]!']/g, "").trim().slice(0, 31) || "Planilha";
+    var base = nome, n = 2;
+    function existe(x) {
+      return wb.abas.some(function (s) { return s !== ignora && s.nome.toLowerCase() === x.toLowerCase(); });
+    }
+    while (existe(nome)) nome = base.slice(0, 28) + " (" + n++ + ")";
+    return nome;
+  }
+  function limpaEstilo(e) {
+    var o = {};
+    if (!e || typeof e !== "object") return o;
+    if (typeof e.f === "string" && FMTS[e.f] && e.f !== "g") o.f = e.f;
+    if (e.b) o.b = 1;
+    if (typeof e.bg === "string" && /^#[0-9a-fA-F]{6}$/.test(e.bg)) o.bg = e.bg.toLowerCase();
+    if (e.al === "l" || e.al === "c" || e.al === "r") o.al = e.al;
+    return o;
+  }
+  function limpaAba(a, ocupados) {
+    if (!a || typeof a !== "object" || !Array.isArray(a.dados)) return null;
+    var sh = novaAba("");
+    sh.nome = a.nome;
+    a.dados.slice(0, CP.maxLinhas).forEach(function (row) {
+      var out = [];
+      if (Array.isArray(row)) row.slice(0, CP.maxColunas).forEach(function (v) {
+        if (typeof v === "number" && isFinite(v)) out.push(v);
+        else if (typeof v === "string") out.push(v.slice(0, 5000));
+        else if (typeof v === "boolean") out.push(v);
+        else out.push(null);
+      });
+      sh.dados.push(out);
+    });
+    if (Array.isArray(a.larg)) sh.larg = a.larg.slice(0, CP.maxColunas).map(function (w) {
+      w = Number(w); return isFinite(w) && w >= 30 ? Math.min(600, Math.round(w)) : 0;
+    });
+    if (a.congelar && typeof a.congelar === "object") {
+      sh.congelar.l = Math.max(0, Math.min(50, parseInt(a.congelar.l, 10) || 0));
+      sh.congelar.c = Math.max(0, Math.min(20, parseInt(a.congelar.c, 10) || 0));
+    }
+    if (a.listas && typeof a.listas === "object") Object.keys(a.listas).forEach(function (k) {
+      if (/^[A-Z]{1,3}$/.test(k) && Array.isArray(a.listas[k]))
+        sh.listas[k] = a.listas[k].slice(0, 300).map(function (x) { return String(x).slice(0, 80); });
+    });
+    if (Array.isArray(a.estilos) && a.em && typeof a.em === "object") {
+      var lim = a.estilos.slice(0, 5000).map(limpaEstilo);
+      Object.keys(a.em).forEach(function (k) {
+        if (!/^\d{1,5},\d{1,3}$/.test(k)) return;
+        var e = lim[a.em[k]];
+        if (e && Object.keys(e).length) sh.est[k] = e;
+      });
+    }
+    return sh;
+  }
+  function limpaArquivo(o) {
+    if (!o || o.formato !== "ferramentas-planilhas" || !Array.isArray(o.abas)) return null;
+    var abas = o.abas.slice(0, CP.maxAbas).map(function (a) { return limpaAba(a); }).filter(Boolean);
+    return abas.length ? abas : null;
+  }
+  function csvLinha(s) { return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function csvDe(sh) {
+    var u = usado(sh), linhas = [];
+    for (var r = 0; r < u.r; r++) {
+      var cols = [];
+      for (var c = 0; c < u.c; c++) {
+        var v = valor(sh, r, c), st = estilo(sh, r, c), f = st && st.f, t;
+        if (v instanceof Erro) t = v.m;
+        else if (v === null) t = "";
+        else if (typeof v === "boolean") t = v ? "VERDADEIRO" : "FALSO";
+        else if (typeof v === "number") t = f === "d" || f === "dm" ? fmtNum(v, "d") : nfG.format(v);
+        else t = String(v);
+        cols.push(csvLinha(t));
+      }
+      linhas.push(cols.join(";"));
+    }
+    return "﻿" + linhas.join("\r\n");
+  }
+  function csvLer(txt) {
+    txt = txt.replace(/^﻿/, "");
+    var primeira = txt.split(/\r?\n/)[0] || "";
+    var sep = [";", "\t", ","].reduce(function (b, s) {
+      return primeira.split(s).length > primeira.split(b).length ? s : b;
+    }, ";");
+    var rows = [], row = [], cel = "", asp = false;
+    for (var i = 0; i < txt.length; i++) {
+      var ch = txt.charAt(i);
+      if (asp) {
+        if (ch === '"') { if (txt.charAt(i + 1) === '"') { cel += '"'; i++; } else asp = false; }
+        else cel += ch;
+      } else if (ch === '"') asp = true;
+      else if (ch === sep) { row.push(cel); cel = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && txt.charAt(i + 1) === "\n") i++;
+        row.push(cel); rows.push(row); row = []; cel = "";
+      } else cel += ch;
+    }
+    if (cel !== "" || row.length) { row.push(cel); rows.push(row); }
+    return rows;
+  }
+  function baixar(blob, nome) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  function temDados() { return wb.abas.some(function (s) { return usado(s).r > 0; }); }
+  function importar(arquivo, adicionar) {
+    var rd = new FileReader(), ehCsv = /\.(csv|tsv|txt)$/i.test(arquivo.name);
+    rd.onload = function () {
+      if (ehCsv) {
+        var rows = csvLer(String(rd.result));
+        if (!rows.length) { msg("Arquivo vazio."); return; }
+        if (wb.abas.length >= CP.maxAbas) { msg("Limite de abas atingido."); return; }
+        var sh = novaAba(nomeUnico(arquivo.name.replace(/\.[^.]+$/, "")));
+        rows.slice(0, CP.maxLinhas).forEach(function (row, r) {
+          row.slice(0, CP.maxColunas).forEach(function (t, c) {
+            if (t === "") return;
+            var e = entrada(t, "g");
+            put(sh, r, c, e.v);
+            if (e.f) sh.est[r + "," + c] = { f: e.f };
+          });
+        });
+        wb.abas.push(sh); ativa(wb.abas.length - 1);
+        msg("Aba criada a partir do CSV."); salvaDepois();
+        return;
+      }
+      var o = null, abas = null;
+      try { o = JSON.parse(String(rd.result)); abas = limpaArquivo(o); } catch (e) {}
+      if (!abas) { msg("Arquivo inválido. Use um arquivo exportado por esta página."); return; }
+      if (adicionar) {
+        var livre = CP.maxAbas - wb.abas.length;
+        if (livre <= 0) { msg("Limite de abas atingido."); return; }
+        abas.slice(0, livre).forEach(function (a) { a.nome = nomeUnico(a.nome); wb.abas.push(a); });
+        ativa(wb.abas.length - Math.min(abas.length, livre));
+        msg(Math.min(abas.length, livre) + " aba(s) adicionada(s).");
+      } else {
+        if (temDados() && !window.confirm("Substituir as abas atuais pelas do arquivo?")) return;
+        wb.abas = [];
+        abas.forEach(function (a) { a.nome = nomeUnico(a.nome); wb.abas.push(a); });
+        ativa(0);
+        msg(abas.length + " aba(s) importada(s).");
+      }
+      salvaDepois();
+    };
+    rd.readAsText(arquivo);
+  }
+
+  /* ---------- desenho da grade ---------- */
+  var larCab = CP.largCab, altL = CP.altLinha;
+  grid.style.setProperty("--alt", altL + "px");
+  grid.style.setProperty("--altcab", CP.altCab + "px");
+  function render() {
+    var sh = S(), nr = nLin(sh), nc = nCol(sh), cz = sh.congelar, h = [], r, c;
+    var left = [larCab], tot = larCab;
+    for (c = 0; c < nc; c++) { left.push(tot); tot += largura(sh, c); }
+    h.push('<table style="width:' + tot + 'px"><colgroup><col style="width:' + larCab + 'px">');
+    for (c = 0; c < nc; c++) h.push('<col style="width:' + largura(sh, c) + 'px">');
+    h.push('</colgroup><thead><tr><th class="pl-corner"></th>');
+    for (c = 0; c < nc; c++) {
+      var fc = c < cz.c;
+      h.push('<th class="pl-ch' + (fc ? " fzc" : "") + (c === cz.c - 1 ? " fze" : "") + '"'
+        + (fc ? ' style="left:' + left[c + 1] + 'px"' : "") + ">" + colNome(c)
+        + '<i class="pl-rz" data-rz="' + c + '"></i></th>');
+    }
+    h.push("</tr></thead><tbody>");
+    for (r = 0; r < nr; r++) {
+      var fzr = r < cz.l, topo = CP.altCab + r * altL;
+      h.push("<tr" + (fzr ? ' class="fzr"' : "") + '><th class="pl-rh' + (fzr ? " fzr" : "") + '"'
+        + (fzr ? ' style="top:' + topo + 'px"' : "") + ">" + (r + 1) + "</th>");
+      for (c = 0; c < nc; c++) {
+        var st = estilo(sh, r, c), cls = "", sty = "", v = get(sh, r, c);
+        if (st) {
+          if (st.b) cls += " b";
+          if (st.bg) { cls += " bg"; sty += "background:" + st.bg + ";"; }
+        }
+        cls += " a" + alinha(sh, r, c, st);
+        if (c < cz.c) { cls += " fzc"; sty += "left:" + left[c + 1] + "px;"; }
+        if (fzr) { cls += " fzr"; sty += "top:" + topo + "px;"; }
+        if (c === cz.c - 1) cls += " fze";
+        if (r === cz.l - 1) cls += " fzb";
+        h.push('<td class="' + cls.trim() + '"' + (sty ? ' style="' + sty + '"' : "") + ">"
+          + esc(mostra(sh, r, c)) + "</td>");
+      }
+      h.push("</tr>");
+    }
+    h.push("</tbody></table>");
+    var sc = [grid.scrollTop, grid.scrollLeft];
+    grid.innerHTML = h.join("");
+    grid.appendChild(ed);
+    grid.scrollTop = sc[0]; grid.scrollLeft = sc[1];
+    pintado = null;
+    pinta();
+  }
+  function alinha(sh, r, c, st) {   /* esquerda, centro ou direita (padrão: pelo tipo do resultado) */
+    if (st && st.al) return st.al;
+    var v = valor(sh, r, c);
+    return typeof v === "boolean" ? "c" : typeof v === "number" ? "r" : "l";
+  }
+  function tab() { return grid.querySelector("table"); }
+  function tdAt(r, c) {
+    var tb = tab().tBodies[0], row = tb && tb.rows[r];
+    return row ? row.cells[c + 1] || null : null;
+  }
+  function faixa() {
+    return { r0: Math.min(anc.r, cur.r), r1: Math.max(anc.r, cur.r),
+      c0: Math.min(anc.c, cur.c), c1: Math.max(anc.c, cur.c) };
+  }
+  function pinta() {
+    var i, j, f, td;
+    if (pintado) {
+      for (i = pintado.r0; i <= pintado.r1; i++) for (j = pintado.c0; j <= pintado.c1; j++) {
+        td = tdAt(i, j);
+        if (td) td.classList.remove("rg", "cur");
+      }
+      var ch = grid.querySelectorAll("th.on");
+      for (i = 0; i < ch.length; i++) ch[i].classList.remove("on");
+    }
+    f = faixa(); pintado = f;
+    for (i = f.r0; i <= f.r1; i++) for (j = f.c0; j <= f.c1; j++) {
+      td = tdAt(i, j);
+      if (td) td.classList.add("rg");
+    }
+    td = tdAt(cur.r, cur.c);
+    if (td) td.classList.add("cur");
+    var tbr = tab().tBodies[0], hr = tab().tHead.rows[0];
+    for (i = f.r0; i <= f.r1 && i < 4000; i++) if (tbr.rows[i]) tbr.rows[i].cells[0].classList.add("on");
+    for (j = f.c0; j <= f.c1; j++) if (hr.cells[j + 1]) hr.cells[j + 1].classList.add("on");
+    endEl.textContent = colNome(cur.c) + (cur.r + 1);
+    if (document.activeElement !== bar) bar.value = textoEdicao(S(), cur.r, cur.c);
+    estado();
+  }
+  function estado() {
+    var sh = S(), f = faixa(), n = 0, soma = 0, cont = 0, r, c;
+    if ((f.r1 - f.r0 + 1) * (f.c1 - f.c0 + 1) > 1) {
+      for (r = f.r0; r <= f.r1; r++) for (c = f.c0; c <= f.c1; c++) {
+        var v = valor(sh, r, c);
+        if (v !== null && v !== "") cont++;
+        if (typeof v === "number") { n++; soma += v; }
+      }
+      $("stat").textContent = "Contagem: " + cont + (n ? " · Soma: " + fmtNum(soma, "n") + " · Média: "
+        + fmtNum(soma / n, "n") : "");
+    } else $("stat").textContent = "";
+    var st = estilo(sh, cur.r, cur.c);
+    $("fmt").value = st && st.f || "g";
+    $("bold").classList.toggle("on", !!(st && st.b));
+    var cz = sh.congelar;
+    $("frz").value = cz.l === 0 && cz.c === 0 ? "0" : cz.l === 1 && cz.c === 0 ? "l"
+      : cz.l === 0 && cz.c === 1 ? "c" : "x";
+  }
+  function visivel(r, c) {
+    var td = tdAt(r, c);
+    if (!td) return;
+    var sh = S(), cz = sh.congelar, gr = grid.getBoundingClientRect(), tr = td.getBoundingClientRect();
+    var topoLim = gr.top + CP.altCab + cz.l * altL, esqLim = gr.left + larCab, i;
+    for (i = 0; i < cz.c; i++) esqLim += largura(sh, i);
+    if (r >= cz.l) {
+      if (tr.top < topoLim) grid.scrollTop -= topoLim - tr.top;
+      else if (tr.bottom > gr.top + grid.clientHeight)
+        grid.scrollTop += tr.bottom - gr.top - grid.clientHeight;
+    }
+    if (c >= cz.c) {
+      if (tr.left < esqLim) grid.scrollLeft -= esqLim - tr.left;
+      else if (tr.right > gr.left + grid.clientWidth)
+        grid.scrollLeft += tr.right - gr.left - grid.clientWidth;
+    }
+  }
+  function vaiPara(r, c, estende) {
+    var sh = S();
+    r = Math.max(0, Math.min(nLin(sh) - 1, r)); c = Math.max(0, Math.min(nCol(sh) - 1, c));
+    cur = { r: r, c: c };
+    if (!estende) anc = { r: r, c: c };
+    pinta(); visivel(r, c);
+  }
+
+  /* ---------- edição ---------- */
+  function iniciaEdicao(txt) {
+    var sh = S(), td = tdAt(cur.r, cur.c);
+    if (!td) return;
+    var v = get(sh, cur.r, cur.c);
+    if (typeof v === "boolean" && txt === undefined) { alternaBool(); return; }
+    var gr = grid.getBoundingClientRect(), tr = td.getBoundingClientRect();
+    ed.style.left = (tr.left - gr.left + grid.scrollLeft) + "px";
+    ed.style.top = (tr.top - gr.top + grid.scrollTop) + "px";
+    ed.style.width = Math.max(tr.width, 140) + "px";
+    ed.style.height = tr.height + "px";
+    var lista = sh.listas[colNome(cur.c)];
+    var dl = $("dl");
+    dl.innerHTML = "";
+    if (lista && cur.r > 0) {
+      lista.forEach(function (x) {
+        var o = document.createElement("option");
+        o.value = x; dl.appendChild(o);
+      });
+      ed.setAttribute("list", P + "dl");
+    } else ed.removeAttribute("list");
+    ed.value = txt === undefined ? textoEdicao(sh, cur.r, cur.c) : txt;
+    ed.style.display = "block"; editando = true;
+    ed.focus();
+    if (txt === undefined) ed.select(); else ed.setSelectionRange(ed.value.length, ed.value.length);
+  }
+  function fechaEdicao() {
+    ed.style.display = "none"; ed.removeAttribute("list"); editando = false;
+  }
+  function gravaCelula(r, c, txt) {
+    var sh = S(), st = estilo(sh, r, c), e = entrada(txt, st && st.f || "g");
+    if (get(sh, r, c) === e.v) return false;
+    put(sh, r, c, e.v);
+    if (e.f) setEstilo(r, c, { f: e.f });
+    return true;
+  }
+  function confirmaEdicao(txt) {
+    if (txt === undefined) txt = ed.value;
+    fechaEdicao();
+    checkpoint();
+    var mudou = gravaCelula(cur.r, cur.c, txt);
+    if (!mudou) { S().und.pop(); botoes(); return; }
+    atualiza();
+  }
+  function atualiza() {
+    limpaCache(); renderSeNecessario(); salvaDepois(); botoes();
+  }
+  function renderSeNecessario() {
+    var sh = S();
+    if (tab().tBodies[0].rows.length < nLin(sh) || tab().tHead.rows[0].cells.length - 1 < nCol(sh)) render();
+    else refrescaValores();
+    pinta();
+  }
+  function refrescaValores() {   /* atualiza texto, alinhamento e estilo das células já desenhadas */
+    var sh = S(), tb = tab().tBodies[0], r, c;
+    for (r = 0; r < tb.rows.length; r++) {
+      var row = tb.rows[r];
+      for (c = 0; c < row.cells.length - 1; c++) {
+        var td = row.cells[c + 1], t = mostra(sh, r, c), st = estilo(sh, r, c);
+        if (td.textContent !== t) td.textContent = t;
+        td.classList.remove("al", "ac", "ar");
+        td.classList.add("a" + alinha(sh, r, c, st));
+        td.style.background = st && st.bg ? st.bg : "";
+        td.classList.toggle("b", !!(st && st.b));
+        td.classList.toggle("bg", !!(st && st.bg));
+      }
+    }
+  }
+  function alternaBool() {
+    var sh = S();
+    checkpoint();
+    put(sh, cur.r, cur.c, !get(sh, cur.r, cur.c));
+    atualiza();
+  }
+
+  /* ---------- estilos ---------- */
+  function setEstilo(r, c, patch) {
+    var sh = S(), k = r + "," + c, o = {}, old = sh.est[k] || {}, p;
+    for (p in old) o[p] = old[p];
+    for (p in patch) {
+      if (patch[p] === null || patch[p] === 0 || patch[p] === "g") delete o[p]; else o[p] = patch[p];
+    }
+    if (Object.keys(o).length) sh.est[k] = o; else delete sh.est[k];
+  }
+  function estiloFaixa(patch) {
+    var f = faixa();
+    checkpoint();
+    for (var r = f.r0; r <= f.r1; r++) for (var c = f.c0; c <= f.c1; c++) setEstilo(r, c, patch);
+    limpaCache(); refrescaValores(); pinta(); salvaDepois(); botoes();
+  }
+
+  /* ---------- editar a faixa: apagar, copiar, colar, preencher ---------- */
+  function apaga() {
+    var sh = S(), f = faixa();
+    checkpoint();
+    for (var r = f.r0; r <= f.r1; r++) for (var c = f.c0; c <= f.c1; c++) {
+      if (get(sh, r, c) !== null) put(sh, r, c, null);
+    }
+    atualiza();
+  }
+  function tsvDe(f) {
+    var sh = S(), linhas = [];
+    for (var r = f.r0; r <= f.r1; r++) {
+      var cols = [];
+      for (var c = f.c0; c <= f.c1; c++) {
+        var t = mostra(sh, r, c);
+        if (typeof get(sh, r, c) === "boolean") t = get(sh, r, c) ? "VERDADEIRO" : "FALSO";
+        cols.push(t.replace(/[\t\r\n]+/g, " "));
+      }
+      linhas.push(cols.join("\t"));
+    }
+    return linhas.join("\n");
+  }
+  function copia(ev, corta) {
+    var sh = S(), f = faixa(), raw = [], est = [];
+    for (var r = f.r0; r <= f.r1; r++) {
+      var a = [], b = [];
+      for (var c = f.c0; c <= f.c1; c++) { a.push(get(sh, r, c)); b.push(estilo(sh, r, c)); }
+      raw.push(a); est.push(b);
+    }
+    var tsv = tsvDe(f);
+    clip = { tsv: tsv, r0: f.r0, c0: f.c0, raw: raw, est: est };
+    if (ev && ev.clipboardData) { ev.clipboardData.setData("text/plain", tsv); ev.preventDefault(); }
+    if (corta) apaga();
+    msg(corta ? "Recortado." : "Copiado.");
+  }
+  function cola(txt) {
+    var sh = S(), f = faixa(), r, c;
+    var interno = clip && clip.tsv === txt;
+    var linhas;
+    if (interno) linhas = clip.raw;
+    else {
+      linhas = txt.replace(/\r\n?/g, "\n").replace(/\n$/, "").split("\n").map(function (l) {
+        return l.split("\t");
+      });
+    }
+    var h = linhas.length, w = Math.max.apply(null, linhas.map(function (l) { return l.length; }));
+    var r0 = f.r0, c0 = f.c0, rr = h, cc = w;
+    if (h === 1 && w === 1) { rr = f.r1 - f.r0 + 1; cc = f.c1 - f.c0 + 1; }
+    if (r0 + rr > CP.maxLinhas) rr = CP.maxLinhas - r0;
+    if (c0 + cc > CP.maxColunas) cc = CP.maxColunas - c0;
+    checkpoint();
+    for (r = 0; r < rr; r++) for (c = 0; c < cc; c++) {
+      var sr = r % h, sc = c % w, v = linhas[sr][sc];
+      if (v === undefined) v = interno ? null : "";
+      if (interno) {
+        if (typeof v === "string" && v.charAt(0) === "=")
+          v = deslocaRel(v, r0 + r - (clip.r0 + sr), c0 + c - (clip.c0 + sc));
+        put(sh, r0 + r, c0 + c, v);
+        var es = clip.est[sr][sc];
+        if (es) sh.est[(r0 + r) + "," + (c0 + c)] = JSON.parse(JSON.stringify(es));
+        else delete sh.est[(r0 + r) + "," + (c0 + c)];
+      } else {
+        var st = estilo(sh, r0 + r, c0 + c), e = entrada(String(v), st && st.f || "g");
+        put(sh, r0 + r, c0 + c, e.v);
+        if (e.f) setEstilo(r0 + r, c0 + c, { f: e.f });
+      }
+    }
+    anc = { r: r0, c: c0 }; cur = { r: r0 + rr - 1, c: c0 + cc - 1 };
+    limpaCache(); render(); salvaDepois(); botoes();
+  }
+  function preenche(dir) {   /* Ctrl+D (baixo) e Ctrl+R (direita) */
+    var sh = S(), f = faixa(), r, c;
+    if (dir === "d" ? f.r1 === f.r0 : f.c1 === f.c0) return;
+    checkpoint();
+    for (r = f.r0; r <= f.r1; r++) for (c = f.c0; c <= f.c1; c++) {
+      if (dir === "d" ? r === f.r0 : c === f.c0) continue;
+      var sr = dir === "d" ? f.r0 : r, sc = dir === "d" ? c : f.c0, v = get(sh, sr, sc);
+      if (typeof v === "string" && v.charAt(0) === "=") v = deslocaRel(v, r - sr, c - sc);
+      put(sh, r, c, v);
+      var es = estilo(sh, sr, sc);
+      if (es) sh.est[r + "," + c] = JSON.parse(JSON.stringify(es)); else delete sh.est[r + "," + c];
+    }
+    atualiza(); refrescaValores();
+  }
+
+  /* ---------- linhas e colunas ---------- */
+  function deslocaEstilos(eixo, idx, qtd) {
+    var sh = S(), novo = {};
+    Object.keys(sh.est).forEach(function (k) {
+      var p = k.split(","), r = +p[0], c = +p[1], i = eixo === "r" ? r : c;
+      if (qtd > 0) { if (i >= idx) i += qtd; }
+      else { if (i >= idx && i < idx - qtd) return; if (i >= idx - qtd) i += qtd; }
+      novo[(eixo === "r" ? i : r) + "," + (eixo === "r" ? c : i)] = sh.est[k];
+    });
+    sh.est = novo;
+  }
+  function insereLinha() {
+    var sh = S(), f = faixa(), n = f.r1 - f.r0 + 1;
+    if (usado(sh).r + n > CP.maxLinhas) { msg("Limite de linhas."); return; }
+    checkpoint();
+    for (var i = 0; i < n; i++) sh.dados.splice(f.r0, 0, []);
+    deslocaEstilos("r", f.r0, n); ajustaEstrutura(sh, "r", f.r0, n);
+    limpaCache(); render(); salvaDepois(); botoes();
+  }
+  function excluiLinha() {
+    var sh = S(), f = faixa(), n = f.r1 - f.r0 + 1;
+    checkpoint();
+    sh.dados.splice(f.r0, n);
+    deslocaEstilos("r", f.r0, -n); ajustaEstrutura(sh, "r", f.r0, -n);
+    anc = cur = { r: Math.min(f.r0, nLin(sh) - 1), c: cur.c };
+    limpaCache(); render(); salvaDepois(); botoes();
+  }
+  function deslocaListas(idx, qtd) {
+    var sh = S(), novo = {};
+    Object.keys(sh.listas).forEach(function (L) {
+      var i = colIdx(L);
+      if (qtd > 0) { if (i >= idx) i += qtd; }
+      else { if (i >= idx && i < idx - qtd) return; if (i >= idx - qtd) i += qtd; }
+      novo[colNome(i)] = sh.listas[L];
+    });
+    sh.listas = novo;
+  }
+  function insereColuna() {
+    var sh = S(), f = faixa(), n = f.c1 - f.c0 + 1;
+    if (nCol(sh) + n > CP.maxColunas) { msg("Limite de colunas."); return; }
+    checkpoint();
+    sh.dados.forEach(function (row) {
+      if (row.length > f.c0) for (var i = 0; i < n; i++) row.splice(f.c0, 0, null);
+    });
+    for (var i = 0; i < n; i++) if (sh.larg.length > f.c0) sh.larg.splice(f.c0, 0, 0);
+    deslocaEstilos("c", f.c0, n); deslocaListas(f.c0, n); ajustaEstrutura(sh, "c", f.c0, n);
+    limpaCache(); render(); salvaDepois(); botoes();
+  }
+  function excluiColuna() {
+    var sh = S(), f = faixa(), n = f.c1 - f.c0 + 1;
+    checkpoint();
+    sh.dados.forEach(function (row) { row.splice(f.c0, n); });
+    sh.larg.splice(f.c0, n);
+    deslocaEstilos("c", f.c0, -n); deslocaListas(f.c0, -n); ajustaEstrutura(sh, "c", f.c0, -n);
+    anc = cur = { r: cur.r, c: Math.min(f.c0, nCol(sh) - 1) };
+    limpaCache(); render(); salvaDepois(); botoes();
+  }
+
+  /* ---------- abas ---------- */
+  function desenhaAbas() {
+    var h = [];
+    wb.abas.forEach(function (a, i) {
+      h.push('<button type="button" role="tab" class="pl-aba' + (i === wb.ativa ? " on" : "")
+        + '" data-i="' + i + '" aria-selected="' + (i === wb.ativa) + '">' + esc(a.nome) + "</button>");
+    });
+    h.push('<button type="button" class="pl-mais" id="pl-novaaba" title="Nova aba"'
+      + ' aria-label="Nova aba">+</button>');
+    abasEl.innerHTML = h.join("");
+    $("novaaba").addEventListener("click", novaAbaClick);
+  }
+  function marcaAbas() {   /* só troca a aba marcada, sem refazer os botões (duplo clique segue valendo) */
+    var bs = abasEl.querySelectorAll(".pl-aba");
+    for (var i = 0; i < bs.length; i++) {
+      bs[i].classList.toggle("on", i === wb.ativa);
+      bs[i].setAttribute("aria-selected", i === wb.ativa ? "true" : "false");
+    }
+  }
+  function ativa(i, manter) {
+    fechaEdicao();
+    wb.ativa = Math.max(0, Math.min(wb.abas.length - 1, i));
+    cur = { r: 0, c: 0 }; anc = { r: 0, c: 0 };
+    limpaCache(); if (manter) marcaAbas(); else desenhaAbas();
+    render(); botoes();
+    grid.scrollTop = 0; grid.scrollLeft = 0;
+  }
+  function novaAbaClick() {
+    if (wb.abas.length >= CP.maxAbas) { msg("Limite de abas atingido."); return; }
+    wb.abas.push(novaAba(nomeUnico("Planilha " + (wb.abas.length + 1))));
+    ativa(wb.abas.length - 1); salvaDepois();
+  }
+  function renomeia(i, nome) {
+    var sh = wb.abas[i], novo = nomeUnico(nome, sh);
+    if (novo === sh.nome) return;
+    var velho = sh.nome;
+    sh.nome = novo;
+    renomeiaRefs(velho, novo);
+    limpaCache(); salvaDepois();
+  }
+  function editaNomeAba(i) {
+    var b = abasEl.querySelector('[data-i="' + i + '"]');
+    if (!b) return;
+    var inp = document.createElement("input");
+    inp.className = "pl-aba-ed"; inp.value = wb.abas[i].nome; inp.maxLength = 31;
+    inp.style.width = Math.max(6, b.offsetWidth / 8) + "em";
+    b.replaceWith(inp);
+    inp.focus(); inp.select();
+    var feito = false;
+    function fim(ok) {
+      if (feito) return; feito = true;
+      if (ok && inp.value.trim()) renomeia(i, inp.value);
+      desenhaAbas(); render();
+    }
+    inp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") fim(true); else if (e.key === "Escape") fim(false);
+      e.stopPropagation();
+    });
+    inp.addEventListener("blur", function () { fim(true); });
+  }
+  abasEl.addEventListener("click", function (e) {
+    var b = e.target.closest(".pl-aba");
+    if (b && +b.getAttribute("data-i") !== wb.ativa) ativa(+b.getAttribute("data-i"), true);
+  });
+  abasEl.addEventListener("dblclick", function (e) {
+    var b = e.target.closest(".pl-aba");
+    if (b) editaNomeAba(+b.getAttribute("data-i"));
+  });
+  $("ren").addEventListener("click", function () { editaNomeAba(wb.ativa); });
+  $("dup").addEventListener("click", function () {
+    if (wb.abas.length >= CP.maxAbas) { msg("Limite de abas atingido."); return; }
+    var sh = S(), o = paraArquivo([sh]).abas[0], copia2 = limpaAba(o);
+    copia2.nome = nomeUnico(sh.nome + " (cópia)");
+    wb.abas.splice(wb.ativa + 1, 0, copia2);
+    ativa(wb.ativa + 1); salvaDepois();
+  });
+  $("del").addEventListener("click", function () {
+    if (wb.abas.length <= 1) { msg("É preciso manter pelo menos uma aba."); return; }
+    if (!window.confirm('Excluir a aba "' + S().nome + '"?')) return;
+    var i = wb.ativa;
+    wb.abas.splice(i, 1);
+    limpaCache();
+    ativa(Math.min(i, wb.abas.length - 1)); salvaDepois();
+  });
+  function moveAba(d) {
+    var i = wb.ativa, j = i + d;
+    if (j < 0 || j >= wb.abas.length) return;
+    var t = wb.abas[i]; wb.abas[i] = wb.abas[j]; wb.abas[j] = t;
+    wb.ativa = j; desenhaAbas(); salvaDepois();
+  }
+  $("mvl").addEventListener("click", function () { moveAba(-1); });
+  $("mvr").addEventListener("click", function () { moveAba(1); });
+
+  /* ---------- toolbar ---------- */
+  $("fmt").addEventListener("change", function () { estiloFaixa({ f: this.value }); grid.focus(); });
+  $("bold").addEventListener("click", function () {
+    var st = estilo(S(), cur.r, cur.c);
+    estiloFaixa({ b: st && st.b ? null : 1 }); grid.focus();
+  });
+  $("cor").addEventListener("input", function () { estiloFaixa({ bg: this.value }); });
+  $("semcor").addEventListener("click", function () { estiloFaixa({ bg: null }); grid.focus(); });
+  [["al-l", "l"], ["al-c", "c"], ["al-r", "r"]].forEach(function (p) {
+    $(p[0]).addEventListener("click", function () { estiloFaixa({ al: p[1] }); grid.focus(); });
+  });
+  $("frz").addEventListener("change", function () {
+    var sh = S(), v = this.value;
+    checkpoint();
+    if (v === "0") sh.congelar = { l: 0, c: 0 };
+    else if (v === "l") sh.congelar = { l: 1, c: 0 };
+    else if (v === "c") sh.congelar = { l: 0, c: 1 };
+    else if (v === "a") sh.congelar = { l: cur.r, c: cur.c };
+    render(); salvaDepois(); botoes(); grid.focus();
+  });
+  $("addr").addEventListener("click", function () { insereLinha(); grid.focus(); });
+  $("delr").addEventListener("click", function () { excluiLinha(); grid.focus(); });
+  $("addc").addEventListener("click", function () { insereColuna(); grid.focus(); });
+  $("delc").addEventListener("click", function () { excluiColuna(); grid.focus(); });
+  $("undo").addEventListener("click", function () { desfaz(); grid.focus(); });
+  $("redo").addEventListener("click", function () { refaz(); grid.focus(); });
+  function escolheArquivo(modo) { $("file").setAttribute("data-modo", modo); $("file").click(); }
+  $("imp").addEventListener("click", function () { escolheArquivo("sub"); });
+  $("add").addEventListener("click", function () { escolheArquivo("add"); });
+  $("file").addEventListener("change", function () {
+    var f = this.files && this.files[0], inp = this;
+    if (f) importar(f, inp.getAttribute("data-modo") === "add");
+    inp.value = "";
+  });
+  $("exp").addEventListener("click", function () {
+    var txt = JSON.stringify(paraArquivo(wb.abas));
+    baixar(new Blob([txt], { type: "application/json" }), "planilhas.json");
+    msg("Arquivo planilhas.json salvo.");
+  });
+  $("csv").addEventListener("click", function () {
+    var sh = S();
+    var nome = sh.nome.replace(/[\\/:*?"<>|]/g, "_") + ".csv";
+    baixar(new Blob([csvDe(sh)], { type: "text/csv;charset=utf-8" }), nome);
+    msg("CSV da aba salvo.");
+  });
+  bar.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      checkpoint();
+      if (gravaCelula(cur.r, cur.c, bar.value)) atualiza(); else { S().und.pop(); botoes(); }
+      grid.focus();
+    } else if (e.key === "Escape") { bar.value = textoEdicao(S(), cur.r, cur.c); grid.focus(); }
+    e.stopPropagation();
+  });
+  ed.addEventListener("keydown", function (e) {
+    e.stopPropagation();
+    var d = e.shiftKey ? -1 : 1;
+    if (e.key === "Enter") {
+      e.preventDefault(); confirmaEdicao(); vaiPara(cur.r + d, cur.c); grid.focus();
+    } else if (e.key === "Tab") {
+      e.preventDefault(); confirmaEdicao(); vaiPara(cur.r, cur.c + d); grid.focus();
+    }
+    else if (e.key === "Escape") { e.preventDefault(); fechaEdicao(); grid.focus(); }
+  });
+  ed.addEventListener("blur", function () { if (editando) confirmaEdicao(); });
+
+  /* ---------- mouse, toque e teclado na grade ---------- */
+  var arrastando = false, redim = null;
+  grid.addEventListener("pointerdown", function (e) {
+    var t = e.target, rz = t.closest && t.closest(".pl-rz");
+    if (rz) {
+      var c = +rz.getAttribute("data-rz");
+      redim = { c: c, x: e.clientX, w: largura(S(), c) };
+      grid.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      return;
+    }
+    if (t === ed) return;
+    var td = t.closest && t.closest("td, th");
+    if (!td) return;
+    if (editando) confirmaEdicao();
+    var sh = S();
+    if (td.tagName === "TH") {
+      var ult = { r: nLin(sh) - 1, c: nCol(sh) - 1 };
+      if (td.classList.contains("pl-corner")) { anc = { r: 0, c: 0 }; cur = ult; }
+      else if (td.classList.contains("pl-ch")) {
+        var cc = td.cellIndex - 1;
+        if (!e.shiftKey) anc = { r: 0, c: cc };
+        cur = { r: ult.r, c: cc };
+      } else {
+        var rr = td.parentNode.rowIndex - 1;
+        if (!e.shiftKey) anc = { r: rr, c: 0 };
+        cur = { r: rr, c: ult.c };
+      }
+      pinta(); grid.focus(); e.preventDefault(); return;
+    }
+    var r = td.parentNode.rowIndex - 1, c2 = td.cellIndex - 1;
+    cur = { r: r, c: c2 };
+    if (!e.shiftKey) anc = { r: r, c: c2 };
+    pinta();
+    arrastando = e.pointerType !== "touch";
+    grid.focus({ preventScroll: true });
+    if (e.pointerType === "mouse") e.preventDefault();
+  });
+  grid.addEventListener("pointermove", function (e) {
+    if (redim) {
+      var w = Math.max(30, Math.min(600, redim.w + e.clientX - redim.x)), sh = S();
+      while (sh.larg.length <= redim.c) sh.larg.push(0);
+      sh.larg[redim.c] = Math.round(w);
+      var col = grid.querySelectorAll("col")[redim.c + 1];
+      if (col) col.style.width = sh.larg[redim.c] + "px";
+      var tb = grid.querySelector("table"), tot = larCab;
+      for (var i = 0; i < nCol(sh); i++) tot += largura(sh, i);
+      tb.style.width = tot + "px";
+      return;
+    }
+    if (!arrastando) return;
+    var el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest && el.closest("td");
+    if (!td || !grid.contains(td)) return;
+    var r = td.parentNode.rowIndex - 1, c = td.cellIndex - 1;
+    if (r !== cur.r || c !== cur.c) { cur = { r: r, c: c }; pinta(); }
+  });
+  function soltou() {
+    if (redim) { redim = null; render(); salvaDepois(); }
+    arrastando = false;
+  }
+  grid.addEventListener("pointerup", soltou);
+  grid.addEventListener("pointercancel", soltou);
+  grid.addEventListener("dblclick", function (e) {
+    var td = e.target.closest && e.target.closest("td");
+    if (td) iniciaEdicao();
+  });
+  grid.addEventListener("copy", function (e) { if (!editando) copia(e, false); });
+  grid.addEventListener("cut", function (e) { if (!editando) copia(e, true); });
+  grid.addEventListener("paste", function (e) {
+    if (editando) return;
+    var txt = e.clipboardData ? e.clipboardData.getData("text/plain") : "";
+    if (txt) { e.preventDefault(); cola(txt); }
+  });
+  grid.addEventListener("keydown", function (e) {
+    if (editando) return;
+    var k = e.key, ctrl = e.ctrlKey || e.metaKey, sh = S();
+    var pg = Math.max(1, Math.floor(grid.clientHeight / altL) - 2);
+    if (ctrl) {
+      var low = k.toLowerCase();
+      if (low === "z") { e.preventDefault(); e.shiftKey ? refaz() : desfaz(); return; }
+      if (low === "y") { e.preventDefault(); refaz(); return; }
+      if (low === "a") {
+        e.preventDefault(); anc = { r: 0, c: 0 }; cur = { r: nLin(sh) - 1, c: nCol(sh) - 1 };
+        pinta(); return;
+      }
+      if (low === "b") { e.preventDefault(); $("bold").click(); return; }
+      if (low === "d") { e.preventDefault(); preenche("d"); return; }
+      if (low === "r") { e.preventDefault(); preenche("r"); return; }
+      if (/^(Arrow(Down|Up|Left|Right)|Home|End)$/.test(k)) {
+        e.preventDefault();
+        var u = usado(sh), r = cur.r, c = cur.c;
+        if (k === "ArrowDown" || k === "End") r = Math.max(0, u.r - 1);
+        if (k === "ArrowUp" || k === "Home") r = 0;
+        if (k === "ArrowRight") c = Math.max(0, u.c - 1);
+        if (k === "ArrowLeft") c = 0;
+        if (k === "End") c = Math.max(0, u.c - 1);
+        if (k === "Home") c = 0;
+        vaiPara(r, c, e.shiftKey); return;
+      }
+      return;
+    }
+    switch (k) {
+      case "ArrowDown": e.preventDefault(); vaiPara(cur.r + 1, cur.c, e.shiftKey); return;
+      case "ArrowUp": e.preventDefault(); vaiPara(cur.r - 1, cur.c, e.shiftKey); return;
+      case "ArrowLeft": e.preventDefault(); vaiPara(cur.r, cur.c - 1, e.shiftKey); return;
+      case "ArrowRight": e.preventDefault(); vaiPara(cur.r, cur.c + 1, e.shiftKey); return;
+      case "Tab": e.preventDefault(); vaiPara(cur.r, cur.c + (e.shiftKey ? -1 : 1)); return;
+      case "Enter":
+        e.preventDefault();
+        if (e.shiftKey) vaiPara(cur.r - 1, cur.c); else iniciaEdicao();
+        return;
+      case "F2": e.preventDefault(); iniciaEdicao(); return;
+      case "Home": e.preventDefault(); vaiPara(cur.r, 0, e.shiftKey); return;
+      case "End": e.preventDefault(); vaiPara(cur.r, Math.max(0, usado(sh).c - 1), e.shiftKey); return;
+      case "PageDown": e.preventDefault(); vaiPara(cur.r + pg, cur.c, e.shiftKey); return;
+      case "PageUp": e.preventDefault(); vaiPara(cur.r - pg, cur.c, e.shiftKey); return;
+      case "Delete": case "Backspace": e.preventDefault(); apaga(); return;
+      case " ":
+        if (typeof get(sh, cur.r, cur.c) === "boolean") { e.preventDefault(); alternaBool(); return; }
+    }
+    if (k.length === 1 && !e.altKey) { e.preventDefault(); iniciaEdicao(k); }
+  });
+
+  /* ---------- início: recupera o que está salvo ou cria uma aba em branco ---------- */
+  var sv = null;
+  try { sv = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  var ini = sv ? limpaArquivo(sv) : null;
+  if (ini) {
+    ini.forEach(function (a) { a.nome = nomeUnico(a.nome); wb.abas.push(a); });
+    wb.ativa = Math.max(0, Math.min(wb.abas.length - 1, parseInt(sv.ativa, 10) || 0));
+  } else wb.abas.push(novaAba("Planilha 1"));
+  desenhaAbas(); render(); botoes();
+  window.plaOnShow = function () { render(); };
+})();
+
 /* ===== Menu lateral e tema: troca de página (VIEWS), endereço #..., modo escuro/claro ===== */
 (function () {
   var VIEWS = {
     comparador: "viewCmp", formatador: "viewFmt", horas: "viewHrs", salario: "viewSal", roleta: "viewRol",
     diagramas: "viewDia",
+    planilhas: "viewPla",
     investimento: "viewInv", jogo: "viewJogo", inicio: "viewIni"
   };
   var items = document.querySelectorAll(".mi");
@@ -8583,6 +10335,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     if (name === "horas" && window.hrsOnShow) window.hrsOnShow();
     if (name === "roleta" && window.rolOnShow) window.rolOnShow();
     if (name === "diagramas" && window.diaOnShow) window.diaOnShow();
+    if (name === "planilhas" && window.plaOnShow) window.plaOnShow();
     if (name === "jogo" && window.jogoOnShow) window.jogoOnShow();
   }
   items.forEach(function (a) {
