@@ -4563,7 +4563,6 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     e colam (inclusive do Excel), Ctrl+Z desfaz, Ctrl+D e Ctrl+R preenchem. Arraste a borda do título de
     uma coluna para mudar a largura (duplo clique ajusta sozinho). O que você faz fica salvo neste navegador;
     para levar para outro aparelho, use Exportar e depois Importar.</p>
-  <datalist id="pl-dl"></datalist>
   <div class="pl-xm" id="pl-xm" role="dialog" aria-modal="true" aria-label="Exportar" hidden>
     <div class="pl-xm-box">
       <h2>Exportar como</h2>
@@ -10570,16 +10569,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     ed.style.top = (tr.top - gr.top + grid.scrollTop) + "px";
     ed.style.width = Math.max(tr.width, 140) + "px";
     ed.style.height = tr.height + "px";
-    var lista = sh.listas[colNome(cur.c)];
-    var dl = $("dl");
-    dl.innerHTML = "";
-    if (lista && cur.r > 0) {
-      lista.forEach(function (x) {
-        var o = document.createElement("option");
-        o.value = x; dl.appendChild(o);
-      });
-      ed.setAttribute("list", P + "dl");
-    } else ed.removeAttribute("list");
+    ed.removeAttribute("list");
     ed.value = txt === undefined ? textoEdicao(sh, cur.r, cur.c) : txt;
     ed.style.display = "block"; editando = true;
     ed.focus();
