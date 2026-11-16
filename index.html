@@ -4509,7 +4509,7 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         se ela estiver selecionada)">
         <svg viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-        aria-hidden="true"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/></svg>Ir ao fim</button>
+        aria-hidden="true"><path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/></svg>Ir para linha vazia</button>
       <button type="button" class="btn" id="pl-filt" title="Liga ou desliga o filtro nas colunas (usa a
         linha da célula atual como cabeçalho)">
         <svg viewBox="0 0 24 24" fill="none"
@@ -10910,16 +10910,19 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   $("delr").addEventListener("click", function () { excluiLinha(); grid.focus(); });
   $("addc").addEventListener("click", function () { insereColuna(); grid.focus(); });
   $("delc").addEventListener("click", function () { excluiColuna(); grid.focus(); });
-  function irAoFim() {   /* primeira célula vazia depois do último registro da coluna (ou da linha) */
-    var sh = S(), f = faixa(), nl = nLin(sh), nc = nCol(sh), r, c, ult = -1;
+  function irAoFim() {   /* primeira célula vazia da coluna (ou da linha), contando a partir do 1º registro */
+    var sh = S(), f = faixa(), nl = nLin(sh), nc = nCol(sh), r, c;
+    function cheia(x) { return x !== null && x !== ""; }
     var linhaInteira = f.c0 === 0 && f.c1 === nc - 1 && !(f.r0 === 0 && f.r1 === nl - 1);
     if (linhaInteira) {
-      for (c = 0; c < nc; c++) if (valor(sh, cur.r, c) !== null && valor(sh, cur.r, c) !== "") ult = c;
-      vaiPara(cur.r, ult + 1);
-      msg("Fim da linha " + (cur.r + 1) + ": " + colNome(cur.c) + (cur.r + 1) + ".");
+      for (c = 0; c < nc && !cheia(valor(sh, cur.r, c)); c++);
+      while (c < nc && cheia(valor(sh, cur.r, c))) c++;
+      vaiPara(cur.r, c);
+      msg("Primeira célula vazia da linha " + (cur.r + 1) + ": " + colNome(cur.c) + (cur.r + 1) + ".");
     } else {
-      for (r = 0; r < nl; r++) if (valor(sh, r, cur.c) !== null && valor(sh, r, cur.c) !== "") ult = r;
-      vaiPara(ult + 1, cur.c);
+      for (r = 0; r < nl && !cheia(valor(sh, r, cur.c)); r++);
+      while (r < nl && (cheia(valor(sh, r, cur.c)) || (sh.oc && sh.oc[r]))) r++;
+      vaiPara(r, cur.c);
       msg("Primeira linha vazia da coluna " + colNome(cur.c) + ": " + (cur.r + 1) + ".");
     }
   }
