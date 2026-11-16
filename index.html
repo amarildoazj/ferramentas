@@ -3114,6 +3114,13 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
 #viewPla .pl-xm-op:hover, #viewPla .pl-xm-op:focus-visible { border-color: var(--accent); outline: none; }
 #viewPla .pl-xm-op span { font-size: 0.8125rem; color: var(--muted); }
 #viewPla .pl-xm-box .btn { justify-content: center; }
+.pl-as {
+  position: fixed; z-index: 90; width: 2rem; height: 2rem; margin: -1rem 0 0 -1rem; pointer-events: none;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--surface, #fff); color: var(--fg, #222); border: 1px solid var(--line, #bbb);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.pl-as svg { width: 1.3rem; height: 1.3rem; }
 
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
@@ -11003,7 +11010,50 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     render(); salvaDepois(); botoes();
     msg("Coluna " + colNome(c) + " ajustada.");
   }
+  /* botão do meio: rolagem automática (o ponteiro mostra a direção e a velocidade) */
+  var auto = null, autoEl = null;
+  function autoPara() {
+    if (!auto) return;
+    cancelAnimationFrame(auto.raf); auto = null;
+    if (autoEl) { autoEl.remove(); autoEl = null; }
+    grid.style.cursor = "";
+  }
+  function autoPasso() {
+    if (!auto) return;
+    var dx = auto.x - auto.x0, dy = auto.y - auto.y0, zona = 12;
+    function v(d) { return Math.abs(d) < zona ? 0 : (d - Math.sign(d) * zona) * 0.18; }
+    grid.scrollLeft += v(dx); grid.scrollTop += v(dy);
+    auto.raf = requestAnimationFrame(autoPasso);
+  }
+  function autoInicia(e) {
+    autoPara();
+    auto = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, raf: 0 };
+    autoEl = document.createElement("div");
+    autoEl.className = "pl-as";
+    autoEl.setAttribute("aria-hidden", "true");
+    autoEl.style.left = e.clientX + "px"; autoEl.style.top = e.clientY + "px";
+    autoEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"'
+      + ' stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l3 3h-6zM12 21l3-3h-6zM3 12l3-3v6z'
+      + 'M21 12l-3-3v6z"/><circle cx="12" cy="12" r="1.5"/></svg>';
+    document.body.appendChild(autoEl);
+    grid.style.cursor = "all-scroll";
+    auto.raf = requestAnimationFrame(autoPasso);
+  }
+  grid.addEventListener("mousedown", function (e) { if (e.button === 1) e.preventDefault(); });
+  grid.addEventListener("auxclick", function (e) { if (e.button === 1) e.preventDefault(); });
+  document.addEventListener("pointermove", function (e) {
+    if (auto) { auto.x = e.clientX; auto.y = e.clientY; }
+  });
+  document.addEventListener("pointerdown", function (e) { if (auto && e.button !== 1) autoPara(); }, true);
+  document.addEventListener("keydown", function (e) { if (auto) autoPara(); }, true);
+  window.addEventListener("blur", autoPara);
   grid.addEventListener("pointerdown", function (e) {
+    if (e.button === 1) {
+      e.preventDefault();
+      if (auto) autoPara(); else autoInicia(e);
+      return;
+    }
+    if (e.button !== 0) return;
     var t = e.target, rz = t.closest && t.closest(".pl-rz");
     if (rz) {
       var c = +rz.getAttribute("data-rz"), agora = Date.now();
