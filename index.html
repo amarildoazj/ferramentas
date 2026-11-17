@@ -155,7 +155,8 @@
    .xlsx (ou abre o Google Planilhas); "CSV da aba". O .xlsx é montado e lido aqui mesmo (zip simples).
 
  FAVORITOS (viewFav)
-   Pastas que abrem e fecham, com busca e "Abrir/Fechar todas". Os dados ficam no bloco
+   Pilha de pastas (igual ao menu) e, ao lado, os links da pasta aberta; com busca (no celular a
+   pasta abre em tela cheia, com botão Pastas para voltar). Os dados ficam no bloco
    <script id="fav-dados"> (var FAVORITOS): s = seções {n, l = links soltos, f = pastas {n, l}},
    cada link é [título, endereço, número do ícone]; i = ícones (data URI) usados pelos links.
    Para atualizar: gere o novo bloco a partir do bookmarks.html exportado do Firefox.
@@ -3137,7 +3138,6 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) #viewFav { --fav-bg: #f1eee6; }
 }
-
 /* Barra de busca */
   #viewFav .toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
   #viewFav .search { position: relative; flex: 1 1 18rem; min-width: 0; }
@@ -3157,108 +3157,47 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
     padding: 0.65rem 0.9rem 0.65rem 2.5rem;
   }
   #viewFav .search input::placeholder { color: var(--muted); opacity: 0.8; }
-  #viewFav .btn {
-    font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.2;
-    color: var(--fg); background: var(--surface);
-    border: 1px solid var(--line); border-radius: 0.625rem;
-    padding: 0.65rem 1rem; cursor: pointer;
-  }
-  #viewFav .btn:hover { border-color: var(--accent); }
-  #viewFav .btn { display: inline-flex; align-items: center; gap: 0.5rem; }
-  #viewFav .btn svg { width: 1.1rem; height: 1.1rem; flex: none; }
-  @media (max-width: 40rem) {
-    #viewFav .btn .bt { display: none; }
-    #viewFav .btn { padding: 0.65rem; }
-  }
 
-/* Seções e cartões */
-  #viewFav #fv-sections { display: flex; flex-direction: column; gap: 2rem; margin-top: 1.5rem; }
-  #viewFav .sec { display: flex; flex-direction: column; gap: 0.75rem; }
-  #viewFav .sec-head {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 0.5rem;
-  }
-  #viewFav .sec-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-  #viewFav .sec-count { font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-  #viewFav .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
-    gap: 1rem;
+/* Pilha de pastas (igual ao menu do site) e painel de links */
+  #viewFav .fv-main {
+    display: grid; grid-template-columns: 17rem minmax(0, 1fr); gap: 1.5rem; margin-top: 1.5rem;
     align-items: start;
   }
-  #viewFav .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 1rem;
-    min-width: 0;
-    overflow: hidden;
+  #viewFav .fv-main[hidden] { display: none; }
+  #viewFav .fv-pastas {
+    display: flex; flex-direction: column; gap: 0.25rem; position: sticky; top: 1rem;
+    padding-right: 1.5rem; border-right: 1px solid var(--line);
   }
-  #viewFav .card.open { border-color: var(--accent); }
-  #viewFav .card-head {
-    display: flex; align-items: center; gap: 0.75rem; width: 100%;
-    padding: 1rem 1.1rem; background: none; border: 0; color: inherit;
-    font: inherit; text-align: left; cursor: pointer;
+  #viewFav .fv-pasta {
+    display: flex; align-items: center; gap: 0.7rem; width: 100%; font: inherit;
+    padding: 0.65rem 0.8rem; border-radius: 0.625rem; border: 1px solid transparent; background: none;
+    color: var(--muted); font-size: 0.9375rem; font-weight: 500; line-height: 1.25; text-align: left;
+    cursor: pointer;
   }
-  #viewFav .card-head:focus-visible { outline-offset: -2px; border-radius: 1rem; }
-  #viewFav .card-head:hover .fname { color: var(--accent); }
-  #viewFav .fico { width: 1.4rem; height: 1.4rem; flex: none; color: var(--accent); }
-  #viewFav .fico.on { display: none; }
-  #viewFav .card.open .fico.off { display: none; }
-  #viewFav .card.open .fico.on { display: block; }
-  #viewFav .fname {
-    font-family: var(--font-display);
-    font-size: 1.375rem;
-    line-height: 1.1;
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow-wrap: anywhere;
+  #viewFav .fv-pasta[hidden] { display: none; }
+  #viewFav .fv-pasta .fico { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; color: inherit; }
+  #viewFav .fv-pasta:hover { color: var(--fg); background: var(--surface); }
+  #viewFav .fv-pasta.on {
+    color: var(--fg); background: var(--surface); border-color: var(--line);
+    box-shadow: inset 3px 0 0 var(--accent); font-weight: 600;
   }
-  #viewFav .fcount {
-    flex: none; font-size: 0.75rem; font-weight: 600; color: var(--muted);
-    background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
-    padding: 0.1rem 0.55rem; font-variant-numeric: tabular-nums;
+  #viewFav .fv-pasta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #viewFav .fv-pn { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  #viewFav .fv-pc {
+    flex: none; font-size: 0.75rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums;
   }
-  #viewFav .chev {
-    flex: none;
-    width: 1rem;
-    height: 1rem;
-    color: var(--muted);
-    transition: transform 0.2s ease;
+  #viewFav .fv-painel { min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+  #viewFav .fv-topo { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+  #viewFav .fv-titulo {
+    font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; line-height: 1.1; margin: 0;
   }
-  #viewFav .card.open .chev { transform: rotate(180deg); }
-  #viewFav .card-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.2s ease; }
-  #viewFav .card.open .card-body { grid-template-rows: 1fr; }
-  #viewFav .card-inner {
-    overflow: hidden;
-    min-height: 0;
-    visibility: hidden;
-    transition: visibility 0s linear 0.2s;
-  }
-  #viewFav .card.open .card-inner { visibility: visible; transition-delay: 0s; }
-  #viewFav .links.loose { flex-direction: row; flex-wrap: wrap; gap: 0.5rem; padding: 0; }
-  #viewFav .links.loose .lk {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 0.75rem;
-  }
-  #viewFav .links.loose li[hidden] { display: none; }
+  #viewFav .fv-total { font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  #viewFav .fv-voltar { display: none; }
   #viewFav .links {
-    list-style: none;
-    margin: 0;
-    padding: 0.25rem 0.5rem 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
+    list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
   }
+  #viewFav .links li[hidden] { display: none; }
   #viewFav .lk {
     display: flex; align-items: center; gap: 0.75rem; min-width: 0;
     padding: 0.5rem 0.65rem; border-radius: 0.625rem; color: var(--fg); text-decoration: none;
@@ -3294,8 +3233,18 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   #viewFav .empty { margin: 0; padding: 2rem 0; color: var(--muted); text-align: center; }
   #viewFav footer { font-size: 0.8125rem; color: var(--muted); margin-top: 1.75rem; }
   #viewFav footer p { margin: 0; text-wrap: pretty; }
-  @media (prefers-reduced-motion: reduce) {
-    #viewFav .card-body, #viewFav .chev, #viewFav .card-inner { transition: none; }
+  @media (max-width: 47.99rem) {
+    #viewFav .fv-main { display: block; }
+    #viewFav .fv-pastas { position: static; padding-right: 0; border-right: 0; }
+    #viewFav .fv-main.det .fv-pastas { display: none; }
+    #viewFav .fv-main:not(.det) .fv-painel { display: none; }
+    #viewFav .fv-voltar {
+      display: inline-flex; align-items: center; gap: 0.35rem; flex: 1 1 100%; font: inherit;
+      font-size: 0.875rem; font-weight: 600; color: var(--accent); background: none; border: 0;
+      padding: 0.25rem 0; cursor: pointer;
+    }
+    #viewFav .fv-voltar svg { width: 1.1rem; height: 1.1rem; }
+    #viewFav .links { grid-template-columns: 1fr; }
   }
 
 
@@ -4782,23 +4731,16 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       <input type="search" id="fv-q" placeholder="Buscar por nome ou endereço" autocomplete="off"
         spellcheck="false" aria-label="Buscar favoritos">
     </label>
-    <button type="button" class="btn" id="fv-btnOpenAll" aria-label="Abrir todas" title="Abrir todas">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path
-        d="M7 9l5 5 5-5M7 4l5 5 5-5" transform="translate(0 4)"/></svg><span class="bt">Abrir todas</span>
-    </button>
-    <button type="button" class="btn" id="fv-btnCloseAll" aria-label="Fechar todas" title="Fechar todas">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path
-        d="M7 20l5-5 5 5M7 11l5-5 5 5"/></svg><span class="bt">Fechar todas</span>
-    </button>
   </div>
 
-  <div id="fv-sections"></div>
   <p class="empty" id="fv-empty" hidden></p>
+  <div class="fv-main" id="fv-main">
+    <nav class="fv-pastas" id="fv-pastas" aria-label="Pastas de favoritos"></nav>
+    <div class="fv-painel" id="fv-painel"></div>
+  </div>
 
   <footer>
-    <p>Clique em uma pasta para abrir ou fechar. Os links abrem em uma nova aba.</p>
+    <p>Escolha uma pasta para ver os links. Eles abrem em uma nova aba.</p>
   </footer>
 </div>
     </section>
@@ -11656,22 +11598,18 @@ var FAVORITOS = {
   ajusta();
 })();
 
-(function () {   /* Favoritos: pastas e links vindos de FAVORITOS (bloco #fav-dados) */
+(function () {   /* Favoritos: pilha de pastas à esquerda, links da pasta aberta à direita */
+  var pastas = [];   /* todas as pastas de FAVORITOS, na ordem */
+  FAVORITOS.s.forEach(function (sec) { sec.f.forEach(function (f) { pastas.push(f); }); });
   var ICON_OFF =
     '<svg class="fico off" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
     'aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 ' +
     '1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
-  var ICON_ON =
-    '<svg class="fico on" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
-    'aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 ' +
-    '6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 ' +
-    '0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>';
-  var CHEV =
-    '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
-    'aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  var VOLTAR =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="m15 18-6-6 6-6"/></svg>';
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -11683,8 +11621,6 @@ var FAVORITOS = {
   function hostOf(u) {
     try { return new URL(u).host.replace(/^www\./, ""); } catch (e) { return u; }
   }
-
-  var cards = [], secs = [], searching = false;
 
   function buildLink(l) {
       var li = el("li");
@@ -11707,118 +11643,86 @@ var FAVORITOS = {
       return { li: li, hay: (l[0] + " " + l[1]).toLowerCase() };
   }
 
-  function buildCard(f, idx) {
-    var id = "fc-" + idx;
-    var card = el("div", "card");
-    var head = el("button", "card-head");
-    head.type = "button";
-    head.setAttribute("aria-expanded", "false");
-    head.setAttribute("aria-controls", id);
-    head.innerHTML = ICON_OFF + ICON_ON;
-    var name = el("span", "fname", f.n);
-    var count = el("span", "fcount", String(f.l.length));
-    head.appendChild(name); head.appendChild(count);
-    head.insertAdjacentHTML("beforeend", CHEV);
-    card.appendChild(head);
 
-    var body = el("div", "card-body"); body.id = id;
-    var inner = el("div", "card-inner");
-    var ul = el("ul", "links");
-    var items = f.l.map(function (l) {
-      var r = buildLink(l); ul.appendChild(r.li); return r;
-    });
-    inner.appendChild(ul); body.appendChild(inner); card.appendChild(body);
+  var lista = document.getElementById("fv-pastas"), painel = document.getElementById("fv-painel");
+  var main = document.getElementById("fv-main"), q = document.getElementById("fv-q");
+  var vazio = document.getElementById("fv-empty"), larga = window.matchMedia("(min-width: 48rem)");
+  var itens = [], sel = -1, termo = "";
 
-    var c = { el: card, head: head, count: count, items: items, total: f.l.length, open: false };
-    head.addEventListener("click", function () { c.open = !c.open; paint(c); });
-    cards.push(c);
-    return card;
-  }
-
-  function paint(c) {
-    var vis = searching ? true : c.open;
-    c.el.classList.toggle("open", vis);
-    c.head.setAttribute("aria-expanded", vis ? "true" : "false");
-  }
-
-  var sectionsEl = document.getElementById("fv-sections");
-  var idx = 0, totalLinks = 0;
-  FAVORITOS.s.forEach(function (sec) {
-    var s = el("section", "sec");
-    var head = el("div", "sec-head");
-    var n = 0;
-    var soltos = [];
-    sec.f.forEach(function (f) { n += f.l.length; });
-    n += (sec.l || []).length;
-    totalLinks += n;
-    if (sec.n) {
-      head.appendChild(el("h2", "sec-title", sec.n));
-      head.appendChild(el("span", "sec-count", n + (n === 1 ? " favorito" : " favoritos")));
-      s.appendChild(head);
-    }
-    if (sec.l && sec.l.length) {
-      var ulS = el("ul", "links loose");
-      sec.l.forEach(function (l) { var r = buildLink(l); ulS.appendChild(r.li); soltos.push(r); });
-      s.appendChild(ulS);
-    }
-    var grid = el("div", "grid");
-    var mine = [];
-    sec.f.forEach(function (f) {
-      grid.appendChild(buildCard(f, idx++)); mine.push(cards[cards.length - 1]);
-    });
-    s.appendChild(grid);
-    secs.push({ el: s, cards: mine, soltos: soltos });
-    sectionsEl.appendChild(s);
+  var total = 0;
+  pastas.forEach(function (f, i) {
+    total += f.l.length;
+    var b = el("button", "fv-pasta");
+    b.type = "button";
+    b.innerHTML = ICON_OFF;
+    b.appendChild(el("span", "fv-pn", f.n));
+    var n = el("span", "fv-pc", String(f.l.length));
+    b.appendChild(n);
+    b.addEventListener("click", function () { abre(i); });
+    lista.appendChild(b);
+    itens.push({ btn: b, count: n, links: f.l.map(function (l) { return buildLink(l); }) });
   });
   document.getElementById("fv-lede").textContent =
-    totalLinks + " favoritos em " + cards.length + " pastas. Clique em uma pasta para ver os links.";
+    total + " favoritos em " + pastas.length + " pastas. Escolha uma pasta para ver os links.";
 
-  /* Busca */
-  var q = document.getElementById("fv-q"), emptyEl = document.getElementById("fv-empty");
-  function applyFilter() {
-    var term = q.value.trim().toLowerCase();
-    searching = term !== "";
-    var any = false;
-    cards.forEach(function (c) {
-      var hits = 0;
-      c.items.forEach(function (it) {
-        var ok = !term || it.hay.indexOf(term) >= 0;
-        it.li.hidden = !ok;
-        if (ok) hits++;
-      });
-      c.el.hidden = hits === 0;
-      c.count.textContent = term ? hits + " de " + c.total : String(c.total);
-      if (hits) any = true;
-      paint(c);
-    });
-    secs.forEach(function (s) {
-      var ver = false;
-      s.soltos.forEach(function (it) {
-        var ok = !term || it.hay.indexOf(term) >= 0;
-        it.li.hidden = !ok;
-        if (ok) { ver = true; any = true; }
-      });
-      s.el.hidden = !ver && s.cards.every(function (c) { return c.el.hidden; });
-    });
-    emptyEl.hidden = any;
-    if (!any) emptyEl.textContent = "Nenhum favorito encontrado para “" + q.value.trim() + "”.";
+  function visiveis(i) {   /* links da pasta i que passam na busca */
+    return itens[i].links.filter(function (it) { return !termo || it.hay.indexOf(termo) >= 0; });
   }
-  q.addEventListener("input", applyFilter);
+  function desenha() {
+    itens.forEach(function (it, i) {
+      var ok = visiveis(i).length > 0;
+      it.btn.hidden = !ok;
+      it.count.textContent = termo ? visiveis(i).length + " de " + pastas[i].l.length
+        : String(pastas[i].l.length);
+      it.btn.classList.toggle("on", i === sel);
+      it.btn.setAttribute("aria-current", i === sel ? "true" : "false");
+    });
+    painel.innerHTML = "";
+    if (sel < 0) { painel.hidden = !larga.matches; main.classList.remove("det"); return; }
+    painel.hidden = false;
+    var topo = el("div", "fv-topo");
+    var voltar = el("button", "fv-voltar");
+    voltar.type = "button"; voltar.innerHTML = VOLTAR; voltar.appendChild(el("span", null, "Pastas"));
+    voltar.addEventListener("click", function () { sel = -1; desenha(); window.scrollTo(0, 0); });
+    topo.appendChild(voltar);
+    topo.appendChild(el("h2", "fv-titulo", pastas[sel].n));
+    var vis = visiveis(sel);
+    topo.appendChild(el("span", "fv-total", termo ? vis.length + " de " + pastas[sel].l.length
+      : pastas[sel].l.length + (pastas[sel].l.length === 1 ? " favorito" : " favoritos")));
+    painel.appendChild(topo);
+    var ul = el("ul", "links");
+    vis.forEach(function (it) { ul.appendChild(it.li); });
+    painel.appendChild(ul);
+    main.classList.toggle("det", !larga.matches);
+  }
+  function abre(i) {
+    sel = i; desenha();
+    if (!larga.matches) window.scrollTo(0, 0);
+  }
+  function filtra() {
+    termo = q.value.trim().toLowerCase();
+    var algum = false, i;
+    for (i = 0; i < itens.length; i++) if (visiveis(i).length) { algum = true; break; }
+    if (algum && (sel < 0 ? larga.matches : !visiveis(sel).length)) {
+      for (i = 0; i < itens.length; i++) if (visiveis(i).length) { sel = i; break; }
+    }
+    vazio.hidden = algum;
+    if (!algum) vazio.textContent = "Nenhum favorito encontrado para “" + q.value.trim() + "”.";
+    main.hidden = !algum;
+    desenha();
+  }
+  q.addEventListener("input", filtra);
   q.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && q.value) { q.value = ""; applyFilter(); }
+    if (e.key === "Escape" && q.value) { q.value = ""; filtra(); }
   });
-
-  function setAll(v) {
-    cards.forEach(function (c) { if (!c.el.hidden) { c.open = v; paint(c); } });
+  function ajustaTela() {   /* computador abre a 1ª pasta; celular começa na lista de pastas */
+    if (larga.matches && sel < 0) {
+      for (var i = 0; i < itens.length; i++) if (!itens[i].btn.hidden) { sel = i; break; }
+    }
+    desenha();
   }
-  document.getElementById("fv-btnOpenAll").addEventListener("click", function () {
-    if (searching) { q.value = ""; applyFilter(); }
-    setAll(true);
-  });
-  document.getElementById("fv-btnCloseAll").addEventListener("click", function () {
-    if (searching) { q.value = ""; applyFilter(); }
-    setAll(false);
-  });
+  if (larga.addEventListener) larga.addEventListener("change", ajustaTela);
+  ajustaTela();
 })();
 
 /* ===== Menu lateral e tema: troca de página (VIEWS), endereço #..., modo escuro/claro ===== */
