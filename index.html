@@ -3401,6 +3401,16 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   html.tela-cheia .view#viewHrs > .wrap, html.tela-cheia .view#viewSal > .wrap,
   html.tela-cheia .view#viewRol > .wrap { padding-right: 0; }
 
+/* Botão Expandir/Recolher igual em todas as páginas (também fora do modo expandido): ícone e texto */
+  html .view .btn-full {
+    box-sizing: border-box !important; height: 2.25rem !important; padding: 0 0.9rem !important;
+    gap: 0.45rem !important; font: inherit !important; font-size: 0.875rem !important;
+    font-weight: 600 !important; line-height: 1 !important; border-radius: 0.625rem !important;
+    white-space: nowrap; justify-content: center !important; width: 7.25rem !important;
+  }
+  html .view .btn-full svg { width: 15px !important; height: 15px !important; flex: none; stroke-width: 2; }
+  html .view .btn-full .lbl { font-size: 0.875rem !important; font-weight: 600 !important; }
+
 
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
