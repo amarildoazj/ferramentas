@@ -3436,18 +3436,20 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
 /* Celular (até 56rem): Expandir no topo ao lado do Modo escuro; "Descrição" abre/fecha o subtítulo */
   .side > .theme-btn.m-full, .view header .desc-btn { display: none; }
   @media (max-width: 56rem) {
-    .side > .theme-btn.m-full { display: inline-flex; right: 2rem; }
+    .side > .theme-btn.m-full { display: inline-flex; right: -1rem; }
+    .side > .theme-btn:not(.m-full) { right: 2rem; }
     .side > .theme-btn.m-full[hidden] { display: none; }
     html:not(.tela-cheia) .view .btn-full, html:not(.tela-cheia) .view .hrs-bar { display: none !important; }
     .view header .desc-btn {
       display: inline-flex; align-items: center; gap: 0.35rem; justify-self: start; align-self: start;
-      grid-column: 1 / -1; font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--muted);
+      grid-column: 1; grid-row: 1; font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--muted);
       background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.7rem;
       cursor: pointer; width: fit-content;
     }
     .view header .desc-btn[aria-expanded="true"] { color: var(--fg); border-color: var(--accent); }
     .view header .desc-btn .desc-seta { transition: transform 0.15s; }
     .view header .desc-btn[aria-expanded="true"] .desc-seta { transform: rotate(180deg); }
+    .view header h1 { display: none; }   /* o nome da página já aparece abaixo dos ícones do menu */
     .view header .lede { display: none; }
     .view header.desc-on .lede { display: block; }
     html.tela-cheia #viewPla .desc-btn, html.tela-cheia #viewFav .desc-btn { display: none; }
