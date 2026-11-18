@@ -3422,6 +3422,17 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
     gap: 8px; margin: 0;
   }
 
+/* Celular: Modo escuro, Expandir e Recolher só com o ícone (o texto fica só para leitores de tela) */
+  @media (max-width: 40rem) {
+    html .view .btn-full, html.tela-cheia .view #themeBtn { width: 36px !important; padding: 0 !important; }
+    html .view .btn-full .lbl, html.tela-cheia .view #themeBtn #themeLabel {
+      position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
+      white-space: nowrap; margin: 0;
+    }
+    html .view .btn-full { position: relative; }
+  }
+  .psq .psq-n:empty { display: none; }
+
 
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
