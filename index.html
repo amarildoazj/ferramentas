@@ -3282,14 +3282,14 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   #viewFav .btn:hover { border-color: var(--accent); }
   #viewFav .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   html.tela-cheia #viewFav > .wrap {
-    display: flex; flex-direction: column; max-width: none; margin: 0; width: 100%; gap: 1rem;
+    display: flex; flex-direction: column; max-width: none; margin: 0; width: 100%; gap: 0.75rem;
     min-height: 0; overflow: hidden;
   }
   html.tela-cheia #viewFav > .wrap > * { flex-shrink: 0; }
   html.tela-cheia #viewFav header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
   html.tela-cheia #viewFav .lede, html.tela-cheia #viewFav footer { display: none; }
-  html.tela-cheia #viewFav header { row-gap: 0.9rem; }
-  html.tela-cheia #viewFav .fv-main { gap: 1.25rem; padding-bottom: 0.5rem; }
+  html.tela-cheia #viewFav header { row-gap: 0.5rem; }
+  html.tela-cheia #viewFav .fv-main { gap: 1.25rem; }
   html.tela-cheia #viewFav .hrs-bar .theme-btn { margin-left: 0; }
   html.tela-cheia #viewFav .fv-main {
     flex: 1 1 auto; min-height: 0; margin-top: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr);
@@ -3301,6 +3301,16 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
     html.tela-cheia #viewFav .fv-main { display: block; overflow-y: auto; }
     html.tela-cheia #viewFav .fv-painel { overflow-y: visible; }
   }
+
+/* Título igual ao das outras páginas e espaçamento padrão do modo Expandir (--gap-exp) */
+  #viewFav h1 {
+    font-family: var(--font-display); font-weight: 400; margin: 0; letter-spacing: -0.01em;
+    font-size: clamp(2.25rem, 6vw, 3.5rem); line-height: 1.05; text-wrap: balance;
+  }
+  html.tela-cheia { --gap-exp: 0.75rem; }
+  html.tela-cheia .view#viewFav > .wrap, html.tela-cheia .view#viewPla > .wrap,
+  html.tela-cheia .view#viewFmt > .wrap, html.tela-cheia .view#viewCmp > .wrap { gap: var(--gap-exp); }
+  html.tela-cheia #viewFmt #f-tool, html.tela-cheia #viewCmp #c-tool { gap: var(--gap-exp); }
 /* Pesquisar (Comparador e Formatador) */
   #viewCmp .psq, #viewFmt .psq { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
   .psq .psq-box { position: relative; flex: 0 1 20rem; min-width: 10rem; }
