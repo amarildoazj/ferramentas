@@ -163,7 +163,7 @@
    Usa o tema do site (claro/escuro do menu); só o JS "Favoritos" e o CSS "/* Favoritos */" mexem nela.
 
  PESQUISAR (Comparador e Formatador)
-   Caixa "Pesquisar" (ids c-q.. e f-q..) com Aa (maiúsculas), anterior/próxima e contagem. Nas caixas de
+   Caixa "Pesquisar" (ids c-q.. e f-q..) (não diferencia maiúsculas), anterior/próxima e contagem. Nas caixas de
    texto as ocorrências são pintadas por uma camada transparente (.psq-ov) e na tela de diferenças do
    Comparador pelo realce do navegador (::highlight). Ajustes em CONFIG.pesquisa; JS no bloco
    "Pesquisar", CSS "/* Pesquisar */".
@@ -3788,8 +3788,6 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11"
         cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="c-q" placeholder="Pesquisar nos textos"
         autocomplete="off" spellcheck="false" aria-label="Pesquisar"></label>
-      <button type="button" class="btn small" id="c-qCase" aria-pressed="false"
-        title="Diferenciar maiúsculas de minúsculas">Aa</button>
       <button type="button" class="btn small" id="c-qPrev" title="Anterior (Shift+Enter)" disabled>‹</button>
       <span class="psq-n" id="c-qCount" aria-live="polite"></span>
       <button type="button" class="btn small" id="c-qNext" title="Próxima (Enter)" disabled>›</button>
@@ -3917,8 +3915,6 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11"
         cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="f-q" placeholder="Pesquisar na entrada e na saída"
         autocomplete="off" spellcheck="false" aria-label="Pesquisar"></label>
-      <button type="button" class="btn small" id="f-qCase" aria-pressed="false"
-        title="Diferenciar maiúsculas de minúsculas">Aa</button>
       <button type="button" class="btn small" id="f-qPrev" title="Anterior (Shift+Enter)" disabled>‹</button>
       <span class="psq-n" id="f-qCount" aria-live="polite"></span>
       <button type="button" class="btn small" id="f-qNext" title="Próxima (Enter)" disabled>›</button>
@@ -11891,7 +11887,7 @@ var FAVORITOS = {
 })();
 
 /* ===== Pesquisar (Comparador e Formatador) · CSS: bloco Pesquisar · ajustes: CONFIG.pesquisa =====
-   Caixa de pesquisa com contagem, anterior/próximo. Marca todas as ocorrências por cima das caixas de
+   Caixa de pesquisa com contagem, anterior/próximo (ignora maiúsculas). Marca todas as ocorrências por cima das caixas de
    texto (camada transparente "psq-ov") e, na tela de diferenças do Comparador, usa o realce do navegador
    (CSS Custom Highlight; sem ele só a ocorrência atual é selecionada). */
 (function () {
@@ -11925,7 +11921,7 @@ var FAVORITOS = {
 
   function cria(P, campos) {
     var $ = function (s) { return document.getElementById(P + s); };
-    var q = $("q"), nCount = $("qCount"), bPrev = $("qPrev"), bNext = $("qNext"), bCase = $("qCase");
+    var q = $("q"), nCount = $("qCount"), bPrev = $("qPrev"), bNext = $("qNext");
     if (!q) return;
     var achados = [], atual = -1, maiusc = false, tim = 0, ovs = [];
 
@@ -12081,9 +12077,6 @@ var FAVORITOS = {
     });
     bNext.addEventListener("click", function () { anda(1); });
     bPrev.addEventListener("click", function () { anda(-1); });
-    bCase.addEventListener("click", function () {
-      maiusc = !maiusc; bCase.setAttribute("aria-pressed", maiusc ? "true" : "false"); busca();
-    });
 
     /* texto das caixas mudou (digitou, formatou, comparou, trocou de aba): refaz a busca */
     function refaz() { if (q.value) agenda(true); }
