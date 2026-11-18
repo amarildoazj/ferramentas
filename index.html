@@ -3355,6 +3355,27 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   }
 
 
+/* Expandir do Comparador e do Formatador no cabeçalho, no mesmo lugar dos Favoritos e da Planilhas */
+  #viewCmp header, #viewFmt header {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; row-gap: 0.5rem;
+    align-items: center;
+  }
+  #viewCmp header h1, #viewFmt header h1 { grid-column: 1 / -1; }
+  #viewCmp header .lede, #viewFmt header .lede { grid-column: 1; margin: 0; }
+  #viewCmp header .hrs-bar, #viewFmt header .hrs-bar {
+    grid-column: 2; grid-row: 2; display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end;
+    margin: 0;
+  }
+  @media (max-width: 36rem) {
+    #viewCmp header .hrs-bar, #viewFmt header .hrs-bar {
+      grid-column: 1 / -1; grid-row: auto; justify-content: flex-start;
+    }
+  }
+  html.tela-cheia #viewCmp .tabs .btn-full, html.tela-cheia #viewFmt .tabs .btn-full {
+    margin-left: 0.5rem !important; align-self: center;
+  }
+
+
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
 html.inicio .menu, html.inicio .menu-nome { display: none !important; }
@@ -3708,6 +3729,16 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   <header>
     <h1>Comparador de texto</h1>
     <p class="lede">Cole duas versões e veja o que mudou, linha por linha, lado a lado.</p>
+    <div class="hrs-bar">
+      <button type="button" class="btn btn-full" id="c-btnFull" aria-pressed="false"
+        title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
+        height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
+        d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2
+        2h3"/><path class="i-co"
+        d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2
+        2v3"/></svg><span class="lbl">Expandir</span></button>
+    </div>
   </header>
 
   <div class="tabs" role="tablist" aria-label="Tipo de conteúdo">
@@ -3746,14 +3777,6 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         <button type="button" class="btn" id="c-btnClear" title="Limpa o original e o modificado">Limpar
           tudo</button>
       </span>
-      <button type="button" class="btn btn-full" id="c-btnFull" aria-pressed="false"
-        title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
-        height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
-        d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2
-        2h3"/><path class="i-co"
-        d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2
-        2v3"/></svg><span class="lbl">Expandir</span></button>
       <div class="opts">
         <label for="c-optWs"><input type="checkbox" id="c-optWs"> Ignorar espaços</label>
         <label for="c-optCase"><input type="checkbox" id="c-optCase"> Ignorar maiúsculas</label>
@@ -3850,6 +3873,16 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
     <h1>Formatador de JSON e XML</h1>
     <p class="lede">Cole o conteúdo, formate para ler ou minifique para enviar. Formatar também desfaz uma
       minificação.</p>
+    <div class="hrs-bar">
+      <button type="button" class="btn btn-full" id="f-btnFull" aria-pressed="false"
+        title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
+        height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
+        d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2
+        2h3"/><path class="i-co"
+        d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2
+        2v3"/></svg><span class="lbl">Expandir</span></button>
+    </div>
   </header>
 
   <div class="tabs" role="tablist" aria-label="Formato">
@@ -3870,14 +3903,6 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         title="Troca o conteúdo da entrada com o da saída">Trocar lados</button>
       <button type="button" class="btn" id="f-btnExample">Exemplo</button>
       <button type="button" class="btn" id="f-btnClear" title="Limpa a entrada e a saída">Limpar tudo</button>
-      <button type="button" class="btn btn-full" id="f-btnFull" aria-pressed="false"
-        title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
-        height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
-        d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2
-        2h3"/><path class="i-co"
-        d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2
-        2v3"/></svg><span class="lbl">Expandir</span></button>
       <label class="sel" for="f-indent">Indentação
         <select id="f-indent">
           <option value="2" selected>2 espaços</option>
@@ -12507,9 +12532,15 @@ var FAVORITOS = {
     var host = v && (v.querySelector(".tabs") || v.querySelector(".hrs-bar"));
     if (!host) return;
     if (host.classList.contains("hrs-bar")) host.insertBefore(tema, host.firstChild);
-    else host.appendChild(tema);
+    else {
+      host.appendChild(tema);
+      bf = v.querySelector("header .btn-full");   /* Expandir sai do cabeçalho (escondido) e vai para as abas */
+      if (bf) { bfPai = bf.parentNode; host.appendChild(bf); }
+    }
   }
+  var bf = null, bfPai = null;
   function temaVolta() {
+    if (bf && bfPai) { bfPai.appendChild(bf); bf = null; }
     if (tema && temaPai) temaPai.insertBefore(tema, temaIrmao && temaIrmao.parentNode === temaPai
         ? temaIrmao : null);
   }
