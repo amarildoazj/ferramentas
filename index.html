@@ -3375,6 +3375,32 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
     margin-left: 0.5rem !important; align-self: center;
   }
 
+/* Modo Expandir: "Modo escuro" e "Recolher" no mesmo lugar (canto de cima, à direita) e do mesmo tamanho
+   em todas as páginas */
+  html.tela-cheia .view #themeBtn { width: 9rem !important; }
+  html.tela-cheia .view .btn-full { width: 7.25rem !important; }
+  html.tela-cheia .view#viewSal header .hrs-bar, html.tela-cheia .view#viewRol header .hrs-bar,
+  html.tela-cheia .view#viewDia header .hrs-bar, html.tela-cheia .view#viewPla header .hrs-bar,
+  html.tela-cheia .view#viewFav header .hrs-bar, html.tela-cheia .view#viewInv header .hrs-bar {
+    grid-row: 1; grid-column: 2; align-self: start; margin: 0;
+  }
+  html.tela-cheia .view#viewSal header h1, html.tela-cheia .view#viewRol header h1,
+  html.tela-cheia .view#viewDia header h1, html.tela-cheia .view#viewPla header h1,
+  html.tela-cheia .view#viewFav header h1, html.tela-cheia .view#viewInv header h1 { grid-column: 1; }
+  html.tela-cheia #viewFmt .tabs, html.tela-cheia #viewCmp .tabs { align-items: flex-start; }
+  html.tela-cheia #viewFmt .tabs .theme-btn, html.tela-cheia #viewCmp .tabs .theme-btn {
+    margin-left: auto !important; align-self: flex-start;
+  }
+  html.tela-cheia #viewCmp .tabs .btn-full, html.tela-cheia #viewFmt .tabs .btn-full {
+    align-self: flex-start;
+  }
+  html.tela-cheia .view#viewFmt { margin-top: 0; }
+  html.tela-cheia #viewCmp .tabs .theme-btn, html.tela-cheia #viewFmt .tabs .theme-btn { margin-right: 0 !important; }
+  html.tela-cheia #viewCmp .tabs, html.tela-cheia #viewFmt .tabs { gap: 0.5rem; }
+  html.tela-cheia #viewCmp .tabs .btn-full, html.tela-cheia #viewFmt .tabs .btn-full { margin-left: 0 !important; }
+  html.tela-cheia .view#viewHrs > .wrap, html.tela-cheia .view#viewSal > .wrap,
+  html.tela-cheia .view#viewRol > .wrap { padding-right: 0; }
+
 
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
