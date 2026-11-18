@@ -3311,6 +3311,12 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   html.tela-cheia .view#viewFav > .wrap, html.tela-cheia .view#viewPla > .wrap,
   html.tela-cheia .view#viewFmt > .wrap, html.tela-cheia .view#viewCmp > .wrap { gap: var(--gap-exp); }
   html.tela-cheia #viewFmt #f-tool, html.tela-cheia #viewCmp #c-tool { gap: var(--gap-exp); }
+
+/* Espaçamento padrão entre blocos também no modo normal (igual à Planilhas: 1rem) */
+  #viewFav .wrap { display: flex; flex-direction: column; gap: 1rem; }
+  #viewFav .fv-main { margin-top: 0; }
+  #viewFav footer { margin-top: 0.5rem; }
+  #viewFav .lede { color: var(--muted); max-width: 44rem; text-wrap: pretty; }
 /* Pesquisar (Comparador e Formatador) */
   #viewCmp .psq, #viewFmt .psq { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
   .psq .psq-box { position: relative; flex: 0 1 20rem; min-width: 10rem; }
