@@ -3377,8 +3377,6 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
 
 /* Modo Expandir: "Modo escuro" e "Recolher" no mesmo lugar (canto de cima, à direita) e do mesmo tamanho
    em todas as páginas */
-  html.tela-cheia .view #themeBtn { width: 9rem !important; }
-  html.tela-cheia .view .btn-full { width: 7.25rem !important; }
   html.tela-cheia .view#viewSal header .hrs-bar, html.tela-cheia .view#viewRol header .hrs-bar,
   html.tela-cheia .view#viewDia header .hrs-bar, html.tela-cheia .view#viewPla header .hrs-bar,
   html.tela-cheia .view#viewFav header .hrs-bar, html.tela-cheia .view#viewInv header .hrs-bar {
@@ -3410,6 +3408,19 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   }
   html .view .btn-full svg { width: 15px !important; height: 15px !important; flex: none; stroke-width: 2; }
   html .view .btn-full .lbl { font-size: 0.875rem !important; font-weight: 600 !important; }
+
+/* Em px (não rem): na página Data e hora o Expandir aumenta o rem da página e os botões cresciam */
+  html .view .btn-full, html.tela-cheia .view #themeBtn {
+    height: 36px !important; padding: 0 14px !important; gap: 7px !important; font-size: 14px !important;
+    border-radius: 10px !important; line-height: 1 !important;
+  }
+  html .view .btn-full { width: 116px !important; }
+  html.tela-cheia .view #themeBtn { width: 144px !important; border-radius: 999px !important; }
+  html .view .btn-full .lbl, html.tela-cheia .view #themeBtn #themeLabel { font-size: 14px !important; }
+  html.tela-cheia .view #themeBtn svg { width: 16px !important; height: 16px !important; }
+  html.tela-cheia .view#viewHrs .hrs-bar {
+    gap: 8px; margin-top: calc(17.6px - 1.1rem); margin-right: calc(12px - 0.75rem);
+  }
 
 
 /* Início */
