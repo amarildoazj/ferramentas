@@ -3433,6 +3433,26 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   }
   .psq .psq-n:empty { display: none; }
 
+/* Celular (até 56rem): Expandir no topo ao lado do Modo escuro; "Descrição" abre/fecha o subtítulo */
+  .side > .theme-btn.m-full, .view header .desc-btn { display: none; }
+  @media (max-width: 56rem) {
+    .side > .theme-btn.m-full { display: inline-flex; right: 2rem; }
+    .side > .theme-btn.m-full[hidden] { display: none; }
+    html:not(.tela-cheia) .view .btn-full, html:not(.tela-cheia) .view .hrs-bar { display: none !important; }
+    .view header .desc-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem; justify-self: start; align-self: start;
+      grid-column: 1 / -1; font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--muted);
+      background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.7rem;
+      cursor: pointer; width: fit-content;
+    }
+    .view header .desc-btn[aria-expanded="true"] { color: var(--fg); border-color: var(--accent); }
+    .view header .desc-btn .desc-seta { transition: transform 0.15s; }
+    .view header .desc-btn[aria-expanded="true"] .desc-seta { transform: rotate(180deg); }
+    .view header .lede { display: none; }
+    .view header.desc-on .lede { display: block; }
+    html.tela-cheia #viewPla .desc-btn, html.tela-cheia #viewFav .desc-btn { display: none; }
+  }
+
 
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
@@ -12180,6 +12200,51 @@ var FAVORITOS = {
     { el: get("f-out"), tipo: "ta", rot: "Saída" }
   ];
   cria("f-", function () { return fmt; });
+})();
+
+
+/* ===== Celular: Expandir no topo (ao lado do Modo escuro) e botão "Descrição" sob cada título =====
+   Só aparecem em telas até 56rem (a barra lateral vira topo); o CSS fica no bloco "Celular" do estilo. */
+(function () {
+  var side = document.querySelector(".side"), tema = document.getElementById("themeBtn");
+  if (side && tema) {
+    var m = document.createElement("button");
+    m.type = "button"; m.className = "theme-btn m-full"; m.id = "m-btnFull"; m.hidden = true;
+    m.title = "Expandir"; m.setAttribute("aria-label", "Expandir");
+    m.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path ' +
+      'd="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+    side.insertBefore(m, tema.nextSibling);
+    var real = function () {
+      var v = document.querySelector(".view:not([hidden])");
+      return v && v.querySelector(".btn-full");
+    };
+    var sync = function () { var b = real(), h = !b || b.hidden; if (m.hidden !== h) m.hidden = h; };
+    m.addEventListener("click", function () { var b = real(); if (b) b.click(); });
+    window.addEventListener("hashchange", sync);
+    document.addEventListener("click", function () { setTimeout(sync, 0); });
+    if (window.MutationObserver) new MutationObserver(sync).observe(document.body,
+        { subtree: true, attributes: true, attributeFilter: ["hidden"] });
+    sync();
+  }
+  var INFO = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" ' +
+    'cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
+  var SETA = '<svg class="desc-seta" viewBox="0 0 24 24" width="14" height="14" fill="none" ' +
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+    'aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  document.querySelectorAll(".view header").forEach(function (h) {
+    var t = h.querySelector("h1"), l = h.querySelector(".lede");
+    if (!t || !l) return;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "desc-btn"; b.setAttribute("aria-expanded", "false");
+    b.innerHTML = INFO + "<span>Descrição</span>" + SETA;
+    b.addEventListener("click", function () {
+      var on = h.classList.toggle("desc-on");
+      b.setAttribute("aria-expanded", on ? "true" : "false");
+    });
+    t.parentNode.insertBefore(b, t.nextSibling);
+  });
 })();
 
 
