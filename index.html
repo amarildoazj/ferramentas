@@ -162,6 +162,12 @@
    Para atualizar: gere o novo bloco a partir do bookmarks.html exportado do Firefox.
    Usa o tema do site (claro/escuro do menu); só o JS "Favoritos" e o CSS "/* Favoritos */" mexem nela.
 
+ PESQUISAR (Comparador e Formatador)
+   Caixa "Pesquisar" (ids c-q.. e f-q..) com Aa (maiúsculas), anterior/próxima e contagem. Nas caixas de
+   texto as ocorrências são pintadas por uma camada transparente (.psq-ov) e na tela de diferenças do
+   Comparador pelo realce do navegador (::highlight). Ajustes em CONFIG.pesquisa; JS no bloco
+   "Pesquisar", CSS "/* Pesquisar */".
+
  DICAS PARA MEXER
    - Para criar uma página nova: copie uma <section class="view" hidden>, ponha um
      prefixo novo nos ids, inclua o nome em VIEWS (JS) e um <a class="mi"> no menu.
@@ -364,6 +370,9 @@ var CONFIG = {
     largPadrao: 96,                   /* largura padrão das colunas (px) */
     desfazerMax: 30                   /* quantos passos o Desfazer guarda, por aba */
   },
+
+  /* PESQUISAR (Comparador e Formatador): max = limite de ocorrências; atrasoMs = espera ao digitar */
+  pesquisa: { max: 5000, atrasoMs: 150 },
 
   /* PÁGINA INICIAL: bolhas com as ferramentas ao redor do logo. giroSeg = volta da engrenagem no hover */
   inicio: {
@@ -3252,6 +3261,81 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
     #viewFav .fv-painel { padding: 1rem; }
   }
 
+/* Cabeçalho com o botão Expandir e modo expandido */
+  #viewFav header {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1.5rem; row-gap: 0.5rem;
+    align-items: center;
+  }
+  #viewFav header h1 { grid-column: 1 / -1; }
+  #viewFav header .lede { grid-column: 1; margin: 0; }
+  #viewFav .hrs-bar {
+    grid-column: 2; grid-row: 2; display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end;
+  }
+  @media (max-width: 36rem) {
+    #viewFav .hrs-bar { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; }
+  }
+  #viewFav .btn {
+    font: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.2; color: var(--fg);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 0.625rem;
+    padding: 0.5rem 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+  }
+  #viewFav .btn:hover { border-color: var(--accent); }
+  #viewFav .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  html.tela-cheia #viewFav > .wrap {
+    display: flex; flex-direction: column; max-width: none; margin: 0; width: 100%; gap: 0.6rem;
+    min-height: 0; overflow: hidden;
+  }
+  html.tela-cheia #viewFav > .wrap > * { flex-shrink: 0; }
+  html.tela-cheia #viewFav header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+  html.tela-cheia #viewFav .lede, html.tela-cheia #viewFav footer { display: none; }
+  html.tela-cheia #viewFav .hrs-bar .theme-btn { margin-left: 0; }
+  html.tela-cheia #viewFav .fv-main {
+    flex: 1 1 auto; min-height: 0; margin-top: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr);
+  }
+  html.tela-cheia #viewFav .fv-pastas { position: static; overflow-y: auto; min-height: 0; }
+  html.tela-cheia #viewFav .fv-painel { overflow-y: auto; min-height: 0; align-self: stretch; }
+  html.tela-cheia #viewFav .empty { flex: 1 1 auto; }
+  @media (max-width: 47.99rem) {
+    html.tela-cheia #viewFav .fv-main { display: block; overflow-y: auto; }
+    html.tela-cheia #viewFav .fv-painel { overflow-y: visible; }
+  }
+/* Pesquisar (Comparador e Formatador) */
+  #viewCmp .psq, #viewFmt .psq { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .psq .psq-box { position: relative; flex: 0 1 20rem; min-width: 10rem; }
+  .psq .psq-box svg {
+    position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem;
+    color: var(--muted); pointer-events: none;
+  }
+  .psq input[type="search"] {
+    width: 100%; font: inherit; font-size: 0.875rem; color: var(--fg); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 0.625rem; padding: 0.45rem 0.8rem 0.45rem 2.2rem;
+  }
+  .psq input[type="search"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .psq .psq-n {
+    font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 4rem;
+  }
+  .psq .btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .psq .btn:disabled { opacity: 0.45; cursor: default; }
+  @media (max-width: 36rem) { .psq input[type="search"] { font-size: 16px; } .psq .psq-box { flex: 1 1 100%; } }
+  #viewCmp .pane { position: relative; }
+  .psq-ov {
+    position: absolute; margin: 0; overflow: hidden; pointer-events: none; box-sizing: border-box;
+    color: transparent; white-space: pre; font-variant-ligatures: none; z-index: 2; border: 0;
+  }
+  .psq-ov[hidden] { display: none; }
+  .psq-ov mark {
+    color: transparent; border-radius: 2px;
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+  .psq-ov mark.at {
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+    outline: 1px solid var(--accent);
+  }
+  ::highlight(psq) { background-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+  ::highlight(psq-atual) {
+    background-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
 
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
@@ -3658,6 +3742,18 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
       </div>
     </div>
 
+    <div class="psq" id="c-psq" role="search">
+      <label class="psq-box" for="c-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11"
+        cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="c-q" placeholder="Pesquisar nos textos"
+        autocomplete="off" spellcheck="false" aria-label="Pesquisar"></label>
+      <button type="button" class="btn small" id="c-qCase" aria-pressed="false"
+        title="Diferenciar maiúsculas de minúsculas">Aa</button>
+      <button type="button" class="btn small" id="c-qPrev" title="Anterior (Shift+Enter)" disabled>‹</button>
+      <span class="psq-n" id="c-qCount" aria-live="polite"></span>
+      <button type="button" class="btn small" id="c-qNext" title="Próxima (Enter)" disabled>›</button>
+    </div>
+
     <div class="status idle" id="c-status" role="status" aria-live="polite">
       <span class="lead" id="c-statusLead">Pronto</span>
       <span class="msg" id="c-statusMsg"></span>
@@ -3771,6 +3867,18 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
           <option value="tab">Tab</option>
         </select>
       </label>
+    </div>
+
+    <div class="psq" id="f-psq" role="search">
+      <label class="psq-box" for="f-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11"
+        cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="f-q" placeholder="Pesquisar na entrada e na saída"
+        autocomplete="off" spellcheck="false" aria-label="Pesquisar"></label>
+      <button type="button" class="btn small" id="f-qCase" aria-pressed="false"
+        title="Diferenciar maiúsculas de minúsculas">Aa</button>
+      <button type="button" class="btn small" id="f-qPrev" title="Anterior (Shift+Enter)" disabled>‹</button>
+      <span class="psq-n" id="f-qCount" aria-live="polite"></span>
+      <button type="button" class="btn small" id="f-qNext" title="Próxima (Enter)" disabled>›</button>
     </div>
 
     <div class="status idle" id="f-status" role="status" aria-live="polite">
@@ -4726,6 +4834,15 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
   <header>
     <h1>Favoritos</h1>
     <p class="lede" id="fv-lede"></p>
+    <div class="hrs-bar">
+      <button type="button" class="btn btn-full" id="fv-btnFull" aria-pressed="false"
+        title="Expande para ocupar o site todo. Esc para recolher."><svg viewBox="0 0 24 24" width="15"
+        height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true"><path class="i-ex"
+        d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/><path
+        class="i-co" d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1
+        2 2v3"/></svg><span class="lbl">Expandir</span></button>
+    </div>
   </header>
 
   <div class="toolbar">
@@ -11729,6 +11846,248 @@ var FAVORITOS = {
   if (larga.addEventListener) larga.addEventListener("change", ajustaTela);
   ajustaTela();
 })();
+
+/* ===== Pesquisar (Comparador e Formatador) · CSS: bloco Pesquisar · ajustes: CONFIG.pesquisa =====
+   Caixa de pesquisa com contagem, anterior/próximo. Marca todas as ocorrências por cima das caixas de
+   texto (camada transparente "psq-ov") e, na tela de diferenças do Comparador, usa o realce do navegador
+   (CSS Custom Highlight; sem ele só a ocorrência atual é selecionada). */
+(function () {
+  var C = CONFIG.pesquisa || {};
+  var MAX = C.max || 5000, ATRASO = C.atrasoMs || 150;
+  var temHl = !!(window.CSS && CSS.highlights && window.Highlight);
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function regex(q, maiusc) {
+    return new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), maiusc ? "g" : "gi");
+  }
+  var medidor = document.createElement("canvas").getContext("2d");
+
+  /* camada transparente que fica sobre a caixa de texto e pinta as ocorrências */
+  function camada(ta) {
+    var ov = document.createElement("pre");
+    ov.className = "psq-ov"; ov.setAttribute("aria-hidden", "true"); ov.hidden = true;
+    ta.parentNode.insertBefore(ov, ta.nextSibling);
+    return ov;
+  }
+  function geometria(ta, ov) {
+    var cs = getComputedStyle(ta);
+    ov.style.left = ta.offsetLeft + ta.clientLeft + "px";
+    ov.style.top = ta.offsetTop + ta.clientTop + "px";
+    ov.style.width = ta.clientWidth + "px";
+    ov.style.height = ta.clientHeight + "px";
+    ["fontFamily", "fontSize", "lineHeight", "letterSpacing", "tabSize", "paddingTop", "paddingRight",
+        "paddingBottom", "paddingLeft"].forEach(function (k) { ov.style[k] = cs[k]; });
+    ov.scrollTop = ta.scrollTop; ov.scrollLeft = ta.scrollLeft;
+  }
+
+  function cria(P, campos) {
+    var $ = function (s) { return document.getElementById(P + s); };
+    var q = $("q"), nCount = $("qCount"), bPrev = $("qPrev"), bNext = $("qNext"), bCase = $("qCase");
+    if (!q) return;
+    var achados = [], atual = -1, maiusc = false, tim = 0, ovs = [];
+
+    function ativos() {
+      return campos().filter(function (c) { return c.el && c.el.offsetParent !== null; });
+    }
+    function limpa() {
+      ovs.forEach(function (o) { o.hidden = true; o.innerHTML = ""; });
+      if (temHl) { CSS.highlights.delete("psq"); CSS.highlights.delete("psq-atual"); }
+    }
+
+    /* acha as ocorrências em todas as caixas visíveis */
+    function busca(manter) {
+      var txt = q.value, ant = achados[atual];
+      achados = []; atual = -1; limpa();
+      if (txt) {
+        var re = regex(txt, maiusc);
+        ativos().forEach(function (c) {
+          if (achados.length >= MAX) return;
+          if (c.tipo === "ta") {
+            var v = c.el.value, m;
+            re.lastIndex = 0;
+            while ((m = re.exec(v)) && achados.length < MAX) {
+              if (!m[0].length) { re.lastIndex++; continue; }
+              achados.push({ c: c, a: m.index, b: m.index + m[0].length });
+            }
+          } else {
+            c.el.querySelectorAll(c.linhas).forEach(function (ln) {
+              if (achados.length >= MAX) return;
+              var nos = [], t = "", w = document.createTreeWalker(ln, NodeFilter.SHOW_TEXT), n, m;
+              while ((n = w.nextNode())) { nos.push([n, t.length]); t += n.nodeValue; }
+              re.lastIndex = 0;
+              while ((m = re.exec(t)) && achados.length < MAX) {
+                if (!m[0].length) { re.lastIndex++; continue; }
+                var r = document.createRange(), a = m.index, b = a + m[0].length, i, ok = [0, 0];
+                for (i = 0; i < nos.length; i++) {
+                  var ini = nos[i][1], fim = ini + nos[i][0].nodeValue.length;
+                  if (a >= ini && a < fim) { r.setStart(nos[i][0], a - ini); ok[0] = 1; }
+                  if (b > ini && b <= fim) { r.setEnd(nos[i][0], b - ini); ok[1] = 1; }
+                }
+                if (ok[0] && ok[1]) achados.push({ c: c, r: r });
+              }
+            });
+          }
+        });
+        if (achados.length) {
+          atual = 0;
+          if (manter && ant) {   /* mantém a posição aproximada ao redigitar/atualizar o texto */
+            for (var i = 0; i < achados.length; i++) {
+              if (achados[i].c === ant.c && (ant.a === undefined ? false : achados[i].a >= ant.a)) {
+                atual = i; break;
+              }
+            }
+          }
+        }
+      }
+      pinta(false);
+    }
+
+    function contagem() {
+      var n = achados.length;
+      bPrev.disabled = bNext.disabled = !n;
+      if (!q.value) { nCount.textContent = ""; return; }
+      if (!n) { nCount.textContent = "Nada encontrado"; return; }
+      var rot = achados[atual].c.rot;
+      nCount.textContent = (atual + 1) + " de " + n + (n >= MAX ? "+" : "") + (rot ? " · " + rot : "");
+    }
+
+    /* pinta todas (camadas / realce) e leva a atual para a vista */
+    function pinta(rola) {
+      contagem();
+      var porCampo = new Map();
+      achados.forEach(function (x, i) {
+        if (!porCampo.has(x.c)) porCampo.set(x.c, []);
+        porCampo.get(x.c).push(i);
+      });
+      var dom = [], domAt = null;
+      campos().forEach(function (c) {
+        if (c.tipo !== "ta") return;
+        if (!c.ov) c.ov = camada(c.el), ovs.push(c.ov);
+        var lista = porCampo.get(c);
+        if (!lista) { c.ov.hidden = true; c.ov.innerHTML = ""; return; }
+        var v = c.el.value, o = "", u = 0;
+        lista.forEach(function (i) {
+          var x = achados[i];
+          o += esc(v.slice(u, x.a)) + (i === atual ? '<mark class="at">' : "<mark>") + esc(v.slice(x.a, x.b))
+              + "</mark>";
+          u = x.b;
+        });
+        c.ov.innerHTML = o + esc(v.slice(u)) + "\n";
+        c.ov.hidden = false;
+        geometria(c.el, c.ov);
+      });
+      achados.forEach(function (x, i) {
+        if (x.r) { if (i === atual) domAt = x.r; else dom.push(x.r); }
+      });
+      if (temHl) {
+        if (dom.length) CSS.highlights.set("psq", new Highlight(...dom)); else CSS.highlights.delete("psq");
+        if (domAt) CSS.highlights.set("psq-atual", new Highlight(domAt));
+        else CSS.highlights.delete("psq-atual");
+      }
+      if (rola && atual >= 0) vai(achados[atual]);
+    }
+
+    /* rola a caixa para a ocorrência atual ficar visível */
+    function vai(x) {
+      var el = x.c.el;
+      if (x.c.tipo === "ta") {
+        var v = el.value, ini = v.lastIndexOf("\n", x.a - 1) + 1, cs = getComputedStyle(el);
+        var lh = parseFloat(cs.lineHeight) || 20, pt = parseFloat(cs.paddingTop) || 0;
+        var linha = v.slice(0, x.a).split("\n").length - 1, y = pt + linha * lh;
+        if (y < el.scrollTop + lh || y > el.scrollTop + el.clientHeight - 2 * lh) {
+          el.scrollTop = Math.max(0, y - el.clientHeight / 2);
+        }
+        medidor.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+        var tab = parseInt(cs.tabSize, 10) || 2, pl = parseFloat(cs.paddingLeft) || 0;
+        var pref = v.slice(ini, x.a).replace(/\t/g, new Array(tab + 1).join(" "));
+        var xx = pl + medidor.measureText(pref).width;
+        var larg = medidor.measureText(v.slice(x.a, x.b)).width;
+        if (xx < el.scrollLeft + pl || xx + larg > el.scrollLeft + el.clientWidth - pl) {
+          el.scrollLeft = Math.max(0, xx - el.clientWidth / 3);
+        }
+        if (x.c.ov) { x.c.ov.scrollTop = el.scrollTop; x.c.ov.scrollLeft = el.scrollLeft; }
+      } else {
+        var rr = x.r.getBoundingClientRect(), br = el.getBoundingClientRect();
+        if (rr.top < br.top + 20 || rr.bottom > br.bottom - 20) {
+          el.scrollTop += rr.top - br.top - el.clientHeight / 2;
+        }
+        var num = el.querySelector(".ln"), pl2 = num ? num.getBoundingClientRect().width : 0;
+        if (rr.left < br.left + pl2 + 10 || rr.right > br.right - 10) {
+          el.scrollLeft += rr.left - br.left - pl2 - el.clientWidth / 3;
+        }
+        if (!temHl) {
+          var s = getSelection(); s.removeAllRanges(); s.addRange(x.r);
+        }
+      }
+    }
+
+    function anda(d) {
+      if (!achados.length) return;
+      atual = (atual + d + achados.length) % achados.length;
+      pinta(true);
+    }
+    function agenda(manter) {
+      clearTimeout(tim);
+      tim = setTimeout(function () { busca(manter); if (achados.length) vai(achados[atual]); }, ATRASO);
+    }
+
+    q.addEventListener("input", function () { agenda(false); });
+    q.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); if (achados.length) anda(e.shiftKey ? -1 : 1); else busca(); }
+      else if (e.key === "Escape" && q.value) { q.value = ""; busca(); e.stopPropagation(); }
+    });
+    bNext.addEventListener("click", function () { anda(1); });
+    bPrev.addEventListener("click", function () { anda(-1); });
+    bCase.addEventListener("click", function () {
+      maiusc = !maiusc; bCase.setAttribute("aria-pressed", maiusc ? "true" : "false"); busca();
+    });
+
+    /* texto das caixas mudou (digitou, formatou, comparou, trocou de aba): refaz a busca */
+    function refaz() { if (q.value) agenda(true); }
+    campos().forEach(function (c) {
+      if (c.tipo === "ta") {
+        c.el.addEventListener("input", refaz);
+        var d = Object.getOwnPropertyDescriptor(c.el, "value");
+        if (d && d.set) {   /* o Formatador troca o texto por código: acompanha também */
+          Object.defineProperty(c.el, "value", {
+            configurable: true, get: d.get,
+            set: function (v) { d.set.call(c.el, v); refaz(); }
+          });
+        }
+        c.el.addEventListener("scroll", function () {
+          if (c.ov) { c.ov.scrollTop = c.el.scrollTop; c.ov.scrollLeft = c.el.scrollLeft; }
+        });
+        if (window.ResizeObserver) new ResizeObserver(function () {
+          if (c.ov && !c.ov.hidden) geometria(c.el, c.ov);
+        }).observe(c.el);
+      } else if (window.MutationObserver) {
+        new MutationObserver(refaz).observe(c.el, { childList: true });
+      }
+    });
+    (P === "c-" ? ["c-viewInput", "c-viewDiff"] : []).forEach(function (id) {
+      var v = document.getElementById(id);
+      if (v && window.MutationObserver) new MutationObserver(refaz).observe(v, { attributes: true,
+          attributeFilter: ["hidden"] });
+    });
+    window.addEventListener("resize", function () { if (q.value) pinta(false); });
+    contagem();
+  }
+
+  function get(id) { return document.getElementById(id); }
+  var cmp = [
+    { el: get("c-inpA"), tipo: "ta", rot: "Original" },
+    { el: get("c-inpB"), tipo: "ta", rot: "Modificado" },
+    { el: get("c-bodyA"), tipo: "dom", linhas: ".row .tx", rot: "Original" },
+    { el: get("c-bodyB"), tipo: "dom", linhas: ".row .tx", rot: "Modificado" }
+  ];
+  cria("c-", function () { return cmp; });
+  var fmt = [
+    { el: get("f-inp"), tipo: "ta", rot: "Entrada" },
+    { el: get("f-out"), tipo: "ta", rot: "Saída" }
+  ];
+  cria("f-", function () { return fmt; });
+})();
+
 
 /* ===== Menu lateral e tema: troca de página (VIEWS), endereço #..., modo escuro/claro ===== */
 (function () {
