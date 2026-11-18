@@ -3464,6 +3464,11 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
     }
   }
 
+/* Celular: o risco laranja do item aberto no menu fica embaixo do ícone (mesmo formato) */
+  @media (max-width: 56rem) {
+    .mi[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent); }
+  }
+
 
 /* Início */
 /* na página inicial o menu (e o nome da página) ficam escondidos: ele aparece ao escolher uma opção */
