@@ -3282,12 +3282,14 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
   #viewFav .btn:hover { border-color: var(--accent); }
   #viewFav .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   html.tela-cheia #viewFav > .wrap {
-    display: flex; flex-direction: column; max-width: none; margin: 0; width: 100%; gap: 0.6rem;
+    display: flex; flex-direction: column; max-width: none; margin: 0; width: 100%; gap: 1rem;
     min-height: 0; overflow: hidden;
   }
   html.tela-cheia #viewFav > .wrap > * { flex-shrink: 0; }
   html.tela-cheia #viewFav header h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
   html.tela-cheia #viewFav .lede, html.tela-cheia #viewFav footer { display: none; }
+  html.tela-cheia #viewFav header { row-gap: 0.9rem; }
+  html.tela-cheia #viewFav .fv-main { gap: 1.25rem; padding-bottom: 0.5rem; }
   html.tela-cheia #viewFav .hrs-bar .theme-btn { margin-left: 0; }
   html.tela-cheia #viewFav .fv-main {
     flex: 1 1 auto; min-height: 0; margin-top: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr);
