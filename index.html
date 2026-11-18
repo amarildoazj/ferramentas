@@ -3436,8 +3436,7 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
 /* Celular (até 56rem): Expandir no topo ao lado do Modo escuro; "Descrição" abre/fecha o subtítulo */
   .side > .theme-btn.m-full, .view header .desc-btn { display: none; }
   @media (max-width: 56rem) {
-    .side > .theme-btn.m-full { display: inline-flex; right: -1rem; }
-    .side > .theme-btn:not(.m-full) { right: 2rem; }
+    .side > .theme-btn.m-full { display: inline-flex; right: 2rem; }
     .side > .theme-btn.m-full[hidden] { display: none; }
     html:not(.tela-cheia) .view .btn-full, html:not(.tela-cheia) .view .hrs-bar { display: none !important; }
     .view header .desc-btn {
@@ -3453,6 +3452,16 @@ html.tela-cheia #viewPla .pl-grid { flex: 1 1 auto; height: auto; min-height: 16
     .view header .lede { display: none; }
     .view header.desc-on .lede { display: block; }
     html.tela-cheia #viewPla .desc-btn, html.tela-cheia #viewFav .desc-btn { display: none; }
+    /* Modo escuro sempre no canto: Recolher fica à esquerda dele */
+    html.tela-cheia .view .hrs-bar, html.tela-cheia .view#viewHrs .hrs-bar {
+      flex-direction: row-reverse; justify-content: flex-start;
+    }
+    html.tela-cheia #viewCmp .tabs .btn-full, html.tela-cheia #viewFmt .tabs .btn-full {
+      order: 1; margin-left: auto !important;
+    }
+    html.tela-cheia #viewCmp .tabs .theme-btn, html.tela-cheia #viewFmt .tabs .theme-btn {
+      order: 2; margin-left: 0 !important;
+    }
   }
 
 
