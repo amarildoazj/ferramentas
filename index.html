@@ -12298,10 +12298,12 @@ var FAVORITOS = {
     document.documentElement.classList.toggle("inicio", name === "inicio");
     fixaMenu();
     if (name === "inicio") $nome.textContent = "Utilidades";
+    document.title = "Utilidades";   /* título da aba: "Página · Utilidades" (só o nome do site no início) */
     items.forEach(function (a) {
       if (a.getAttribute("data-view") === name) {
         a.setAttribute("aria-current", "page");
         $nome.textContent = a.getAttribute("aria-label") || "";
+        document.title = $nome.textContent + " · Utilidades";
       }
       else a.removeAttribute("aria-current");
     });
