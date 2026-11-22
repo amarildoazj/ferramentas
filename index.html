@@ -12293,6 +12293,29 @@ var FAVORITOS = {
     var h = (location.hash || "").replace(/^#/, "");
     return VIEWS[h] ? h : "inicio";   /* sem endereço: página inicial */
   }
+  var linkIcone = document.querySelector('link[rel="icon"]'), iconeInicio = linkIcone && linkIcone.href;
+  function iconeDaAba(a) {   /* a = item do menu da página aberta (ou null no início = ícone original) */
+    if (!linkIcone) return;
+    var href = iconeInicio;
+    var s = a && a.querySelector("svg");
+    if (s) {
+      var c = s.cloneNode(true);
+      if (a.getAttribute("data-view") === "jogo")   /* espada fica ilegível em 16px: controle simples */
+        c.innerHTML = '<rect x="2" y="6" width="20" height="12" rx="6"/><path d="M8 10v4M6 12h4"/>' +
+          '<circle cx="16" cy="11" r=".6"/><circle cx="18" cy="13.5" r=".6"/>';
+      c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      c.setAttribute("x", "12"); c.setAttribute("y", "12"); c.setAttribute("width", "40"); c.setAttribute("height", "40");
+      c.setAttribute("stroke-width", "2.6"); c.setAttribute("style", "color:#f5f3ec");
+      c.removeAttribute("aria-hidden"); c.removeAttribute("class");
+      var xml = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" ' +
+        'fill="#c4623f"/>' + new XMLSerializer().serializeToString(c) + "</svg>";
+      href = "data:image/svg+xml," + encodeURIComponent(xml);
+    }
+    var novo = linkIcone.cloneNode();   /* troca o elemento: força o navegador a recarregar o ícone */
+    novo.href = href;
+    linkIcone.parentNode.replaceChild(novo, linkIcone);
+    linkIcone = novo;
+  }
   function show(name) {
     Object.keys(VIEWS).forEach(function (k) { document.getElementById(VIEWS[k]).hidden = k !== name; });
     document.documentElement.classList.toggle("inicio", name === "inicio");
@@ -12303,10 +12326,12 @@ var FAVORITOS = {
       if (a.getAttribute("data-view") === name) {
         a.setAttribute("aria-current", "page");
         $nome.textContent = a.getAttribute("aria-label") || "";
-        document.title = $nome.textContent + " · Utilidades";
+        document.title = $nome.textContent;
+        iconeDaAba(a);
       }
       else a.removeAttribute("aria-current");
     });
+    if (name === "inicio") iconeDaAba(null);
     try { localStorage.setItem(CONFIG.chaves.pagina, name); } catch (e) {}
     if (name === "comparador" && window.cmpOnShow) window.cmpOnShow();
     if (name === "horas" && window.hrsOnShow) window.hrsOnShow();
