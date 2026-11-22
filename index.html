@@ -4241,6 +4241,9 @@ html.tela-cheia #viewInv > .wrap { max-width: none; margin: 0; width: 100%; over
         <div class="sal-btns">
           <button type="button" class="sal-b sal-b-main" id="s-save">Salvar meus dados</button>
           <button type="button" class="sal-b" id="s-forget" hidden>Apagar dados salvos</button>
+          <button type="button" class="sal-b" id="s-export">Exportar JSON</button>
+          <button type="button" class="sal-b" id="s-import">Importar JSON</button>
+          <input type="file" id="s-importFile" accept=".json,application/json" hidden>
         </div>
         <p class="sal-hint" id="s-saveMsg">Os dados ficam salvos somente neste navegador, neste aparelho. Não
           são enviados para lugar nenhum, e limpar os dados do navegador apaga tudo.</p>
@@ -6999,6 +7002,34 @@ var FAVORITOS = {
   btnForget.addEventListener("click", function () {
     try { localStorage.removeItem(KEY); } catch (e) {}
     btnForget.hidden = true; aviso("Dados apagados deste navegador. " + msgPadrao, true);
+  });
+  /* Exportar / importar arquivo JSON (mesmos dados do "Salvar meus dados") */
+  $("s-export").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(dados(), null, 2)], { type: "application/json" });
+    var l = document.createElement("a");
+    l.href = URL.createObjectURL(blob); l.download = "salario.json";
+    document.body.appendChild(l); l.click(); l.remove();
+    setTimeout(function () { URL.revokeObjectURL(l.href); }, 1000);
+    aviso("Arquivo salario.json gerado.", true);
+  });
+  var arq = $("s-importFile");
+  $("s-import").addEventListener("click", function () { arq.value = ""; arq.click(); });
+  arq.addEventListener("change", function () {
+    var f = arq.files && arq.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var o = JSON.parse(r.result);
+        if (!o || typeof o !== "object" || Array.isArray(o)) throw new Error("formato");
+        aplica(o); calcula();
+        aviso("Dados importados de " + f.name + ". Clique em Salvar para guardá-los neste navegador.", true);
+      } catch (e) {
+        aviso("Não foi possível importar: o arquivo não é um JSON de salário válido.", false);
+      }
+    };
+    r.onerror = function () { aviso("Não foi possível ler o arquivo.", false); };
+    r.readAsText(f);
   });
   var salvo = lerSalvo();
   if (salvo) {
